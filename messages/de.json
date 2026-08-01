@@ -1,0 +1,465 @@
+{
+  "metadata": {
+    "homeDescription": "AYZENITH ist eine globale B2B-Gruppe für Handel, Beschaffung und Investitionen. Wir beschaffen, bewegen und stehen für Produkte über Grenzen hinweg ein — damit ambitionierte Unternehmen global wachsen, ohne das Risiko selbst zu tragen."
+  },
+  "nav": {
+    "services": "Leistungen",
+    "capabilities": "Kompetenzen",
+    "process": "So arbeiten wir",
+    "products": "Produkte",
+    "about": "Über uns",
+    "contact": "Kontakt",
+    "company": "Unternehmen",
+    "cta": "Partnerschaft beginnen",
+    "menu": "Menü öffnen",
+    "close": "Menü schließen",
+    "skip": "Zum Inhalt springen",
+    "home": "AYZENITH — Startseite"
+  },
+  "cta": {
+    "overline": "Partnerschaft beginnen",
+    "title": "Lassen Sie uns über Grenzen hinweg aufbauen.",
+    "subtitle": "Erzählen Sie uns, woran Sie arbeiten. Auf qualifizierte Anfragen antworten wir innerhalb von zwei Werktagen.",
+    "button": "Partnerschaft beginnen"
+  },
+  "about": {
+    "meta": {
+      "title": "Über AYZENITH",
+      "description": "AYZENITH ist eine unabhängige, globale B2B-Gruppe für Handel, Beschaffung und Investitionen — gebaut, um über Branchen und Jahrzehnte hinweg Vertrauen zu verdienen."
+    },
+    "hero": {
+      "eyebrow": "Unternehmen",
+      "title": "Ein verlässlicher Partner, für Jahrzehnte gebaut.",
+      "subtitle": "AYZENITH ist eine unabhängige Gruppe für Handel, Beschaffung und Investitionen. Wir existieren, um den globalen Handel vertrauenswürdig zu machen — und dieses Vertrauen zu einem beständigen Unternehmen zu verdichten."
+    },
+    "purpose": {
+      "overline": "Warum es uns gibt",
+      "title": "Globaler Handel beruht noch immer auf Distanz, Intransparenz und Risiko. Wir sind angetreten, die Regeln zu ändern.",
+      "body1": "AYZENITH gibt ambitionierten Unternehmen einen einzigen Partner, der Produkte überall beschafft, bewegt und für sie einsteht — mit der Transparenz und den Standards, die das alte System nie bot.",
+      "body2": "Wir sind kein Vermittler, der seine Marge nimmt und verschwindet. Wir sind eine Institution, die Verantwortung übernimmt und bleibt — und nicht nur ein Unternehmen aufbaut, sondern die Infrastruktur für eine neue Generation des globalen Handels.",
+      "imageAlt": "AYZENITH globaler Handelsbetrieb"
+    },
+    "principles": {
+      "overline": "Wofür wir stehen",
+      "title": "Die Prinzipien hinter jeder Entscheidung.",
+      "intro": "Sie sind beständig. Jede Entscheidung, die wir treffen, wird an ihnen gemessen.",
+      "items": {
+        "focus": {
+          "title": "Fokus vor Breite",
+          "description": "Wir dringen tief in eine Kategorie ein, bevor wir die nächste hinzunehmen. Die Multi-Branchen-Gruppe wird Schritt für Schritt verdient — niemals allein aus Ambition."
+        },
+        "trust": {
+          "title": "Das Produkt ist Vertrauen",
+          "description": "Wir konkurrieren über Verlässlichkeit, nicht über den Preis. Jedes gehaltene Versprechen summiert sich; keines ist es wert, für einen einzelnen Abschluss gebrochen zu werden."
+        },
+        "accountability": {
+          "title": "Wir stehen für das Ergebnis",
+          "description": "Ein verantwortlicher Partner über Beschaffung, Qualität, Logistik und Lieferung hinweg. Gleich, wer es ausführt — auf dem Ergebnis steht unser Name."
+        },
+        "permanence": {
+          "title": "Für Beständigkeit gebaut",
+          "description": "Jede Entscheidung wird an einem Jahrzehnt gemessen, nicht an einem Quartal. Wir bauen eine Institution, die jeden Einzelnen überdauert."
+        },
+        "international": {
+          "title": "Ein internationaler Standard",
+          "description": "Wir halten jeden Markt an denselben Standard — die Sorgfalt, Transparenz und Professionalität, die ein ernsthafter Partner überall auf der Welt erwarten sollte."
+        },
+        "responsible": {
+          "title": "Verantwortungsvolles Wachstum",
+          "description": "Wir wachsen nur dort, wo wir es richtig bedienen können. In eine Kategorie oder einen Markt einzutreten heißt, dessen Regeln, Risiken und Verantwortung vollständig anzunehmen."
+        }
+      }
+    },
+    "standards": {
+      "overline": "So arbeiten wir",
+      "title": "Standards, die feststehen, bevor man danach fragt.",
+      "body": "Verlässlichkeit ist eine Disziplin, kein Slogan. Bei Beschaffung, Qualität und Compliance verpflichten wir uns auf ausdrückliche Standards — und wir arbeiten innerhalb des rechtlichen und regulatorischen Rahmens jedes Marktes, den wir bedienen.",
+      "points": {
+        "vetting": "Mehrdimensionale Lieferantenprüfung — Qualität, Kapazität, Verlässlichkeit, Compliance.",
+        "quality": "Qualitätskontrolle vor dem Versand — von uns verantwortet, nicht dem Lieferanten angelastet.",
+        "redundancy": "Keine Einzelquellen-Abhängigkeit bei irgendetwas, das zählt.",
+        "compliance": "Regulierte Kategorien nur innerhalb vollständiger rechtlicher Rahmen."
+      },
+      "imageAlt": "AYZENITH Verantwortung und Standards"
+    },
+    "longview": {
+      "overline": "Der lange Blick",
+      "title": "Wir sind früh dran. Genau darin liegt die Chance.",
+      "body": "AYZENITH beginnt im Handel und wächst weiter — zu Eigenmarken, in neue Branchen, zu eigenen Marken, hin zu einer Holding, die Bestand hat. Wer heute mit uns baut, baut vom Fundament an.",
+      "quote": "Größe sollte sich wie Einfachheit anfühlen. Genau dieses Unternehmen bauen wir."
+    }
+  },
+  "hero": {
+    "eyebrow": "Globale Handels- und Beschaffungsgruppe",
+    "title": "Die Welt ist Ihr Markt.",
+    "subtitle": "AYZENITH beschafft, bewegt und steht für Produkte über Grenzen hinweg ein — und verbindet Fertigung, Logistik und Märkte zu einer verantwortlichen Partnerschaft.",
+    "primaryCta": "Partnerschaft beginnen",
+    "secondaryCta": "Kompetenzen entdecken",
+    "scroll": "Zum Entdecken scrollen"
+  },
+  "belief": {
+    "overline": "Warum es uns gibt",
+    "belief": "Distanz sollte niemals Risiko bedeuten. Grenzen sollten niemals Zweifel bedeuten.",
+    "problem": "Weltweit zu beschaffen heißt, Partnern zu vertrauen, die Sie nicht sehen, in Märkten, die Sie nicht erreichen, mit Kapital, dessen Verlust Sie sich nicht leisten können.",
+    "promise": "AYZENITH nimmt diese Distanz — ein verantwortlicher Partner für Beschaffung, Qualität, Logistik und Lieferung, damit sich Wachstum wie Einfachheit anfühlt, nicht wie ein Risiko."
+  },
+  "capabilities": {
+    "overline": "Was wir tun",
+    "title": "Ein Partner, von der Fertigung bis zum Markt.",
+    "intro": "Ein gebündeltes Kompetenzspektrum, gebaut, um Risiko, Distanz und Komplexität aus dem grenzüberschreitenden Handel zu nehmen.",
+    "items": {
+      "sourcing": {
+        "title": "Globale Beschaffung & Handel",
+        "description": "Geprüfte Lieferanten und OEM-Partner über Kategorien hinweg — Import, Export und internationale Beschaffung in einer verantwortlichen Beziehung."
+      },
+      "distribution": {
+        "title": "Distribution & Logistik",
+        "description": "Verlässlicher Produktfluss zu Einzelhandel, Großhandel, E-Commerce und Firmenkunden — pünktlich, vollständig, fehlerfrei."
+      },
+      "privateLabel": {
+        "title": "Eigenmarken-Entwicklung",
+        "description": "Eigene Marken auf Basis belegter Nachfrage, kontrollierter Qualität und verlässlicher Garantie — Wert, der Ihnen bleibt, nicht gemietete Marge."
+      },
+      "partnerships": {
+        "title": "Fertigungspartnerschaften",
+        "description": "Tiefe Lieferantenbeziehungen, die von transaktionaler Belieferung zu exklusiven Rechten und gemeinsam entwickelter Fertigung reichen."
+      }
+    }
+  },
+  "process": {
+    "overline": "So arbeiten wir",
+    "title": "Nichts wird dem Zufall überlassen.",
+    "intro": "Jeder Auftrag durchläuft eine disziplinierte Abfolge — das System hinter dem Versprechen.",
+    "steps": {
+      "vet": {
+        "title": "Prüfen",
+        "description": "Lieferanten werden nach Qualität, Kapazität, Verlässlichkeit und Compliance qualifiziert — geprüftes Vertrauen."
+      },
+      "source": {
+        "title": "Beschaffen",
+        "description": "Das richtige Produkt, präzise spezifiziert und zu verlässlichen Konditionen gesichert."
+      },
+      "control": {
+        "title": "Qualitätskontrolle",
+        "description": "Prüfung vor dem Versand — von uns verantwortet, nicht dem Lieferanten angelastet."
+      },
+      "ship": {
+        "title": "Logistik",
+        "description": "Zoll, Compliance und Fracht durchgängig gesteuert, in jeder Phase nachverfolgt."
+      },
+      "deliver": {
+        "title": "Liefern",
+        "description": "Pünktlich, vollständig, fehlerfrei — das Versprechen, Auftrag für Auftrag greifbar gemacht."
+      }
+    }
+  },
+  "difference": {
+    "overline": "Der Unterschied",
+    "tension": "In einer Branche anonymer Zwischenhändler verschwinden die meisten Partner in dem Moment, in dem etwas schiefgeht.",
+    "title": "Wir sind die Institution, nicht der Zwischenhändler.",
+    "pillars": {
+      "consolidate": {
+        "title": "Bündeln",
+        "description": "Beschaffung, Fertigung, Logistik und Distribution unter einem verantwortlichen Dach — eine Beziehung statt zwölf."
+      },
+      "derisk": {
+        "title": "Risiko senken",
+        "description": "Geprüfte Partner, Qualitätskontrolle, transparente Konditionen und echte Verantwortung. Die Reibung, die Sie fürchten, nehmen wir auf uns."
+      },
+      "access": {
+        "title": "Zugang schaffen",
+        "description": "Türen, die allein schwer zu öffnen sind — globale Lieferantennetze, neue Märkte und verlässliche Versorgung im großen Maßstab."
+      }
+    }
+  },
+  "proof": {
+    "overline": "Auf Vertrauen gebaut",
+    "title": "Verlässlichkeit, messbar gemacht.",
+    "intro": "Präsenz und Standards, die ernsthafte Käufer prüfen, bevor sie sich binden.",
+    "stats": {
+      "reach": { "value": "3", "label": "Kontinente in aktiver Beschaffung" },
+      "categories": { "value": "24/7", "label": "Grenzüberschreitender Betrieb" },
+      "accountability": { "value": "1", "label": "Verantwortlicher Partner, durchgängig" },
+      "standard": { "value": "100%", "label": "Qualitätskontrolle vor Versand" }
+    },
+    "note": "Jede Kennzahl oben spiegelt wider, wie AYZENITH heute arbeitet. Mit reifenden Partnerschaften und Fallstudien wächst dieser Nachweis — stets ehrlich benannt, nie übertrieben."
+  },
+  "vision": {
+    "overline": "Der lange Blick",
+    "title": "Wir bauen die Infrastruktur für eine neue Generation des globalen Handels.",
+    "body": "AYZENITH beginnt im Handel und wächst weiter — zu Eigenmarken, in neue Branchen, zu eigenen Marken, hin zu einer Holding, die Jahrzehnte Bestand hat. Wir sind früh dran. Genau darin liegt die Chance.",
+    "quote": "Größe sollte sich wie Einfachheit anfühlen. Genau dieses Unternehmen bauen wir.",
+    "cta": "Mit uns bauen"
+  },
+  "contact": {
+    "overline": "Partnerschaft beginnen",
+    "title": "Lassen Sie uns über Grenzen hinweg aufbauen.",
+    "subtitle": "Erzählen Sie uns, woran Sie arbeiten. Auf qualifizierte Anfragen antworten wir innerhalb von zwei Werktagen.",
+    "form": {
+      "name": "Vollständiger Name",
+      "namePlaceholder": "Ihr Name",
+      "company": "Unternehmen",
+      "companyPlaceholder": "Firmenname",
+      "email": "Geschäftliche E-Mail",
+      "emailPlaceholder": "sie@unternehmen.com",
+      "region": "Region",
+      "regionPlaceholder": "Region wählen",
+      "regions": {
+        "europe": "Europa",
+        "turkiye": "Türkei",
+        "mena": "Naher Osten & Nordafrika",
+        "asia": "Asien",
+        "americas": "Amerika",
+        "other": "Andere"
+      },
+      "interest": "Wie können wir helfen?",
+      "interestPlaceholder": "Bereich wählen",
+      "interests": {
+        "sourcing": "Globale Beschaffung & Handel",
+        "distribution": "Distribution & Logistik",
+        "privateLabel": "Eigenmarken-Entwicklung",
+        "partnership": "Fertigungspartnerschaft",
+        "other": "Etwas anderes"
+      },
+      "message": "Ihre Nachricht",
+      "messagePlaceholder": "Einige Zeilen zu Ihrem Bedarf, Ihrer Kategorie und Ihrem Umfang.",
+      "submit": "Partnerschaft beginnen",
+      "submitting": "Wird gesendet …",
+      "successTitle": "Vielen Dank — das ist der Anfang.",
+      "successBody": "Ihre Anfrage hat das AYZENITH-Partnerschaftsteam erreicht. Wir melden uns innerhalb von zwei Werktagen.",
+      "errorTitle": "Beim Senden ist etwas dazwischengekommen.",
+      "errorBody": "Bitte versuchen Sie es erneut oder erreichen Sie uns direkt unter info@ayzenith.com.",
+      "errors": {
+        "name": "Bitte geben Sie Ihren Namen ein.",
+        "company": "Bitte geben Sie Ihr Unternehmen ein.",
+        "email": "Bitte geben Sie eine gültige geschäftliche E-Mail ein.",
+        "region": "Bitte wählen Sie eine Region.",
+        "interest": "Bitte wählen Sie einen Bereich.",
+        "message": "Bitte fügen Sie einige Zeilen hinzu, damit wir helfen können."
+      }
+    }
+  },
+  "services": {
+    "meta": {
+      "title": "Leistungen & Kompetenzen",
+      "description": "Globale Beschaffung, Distribution, Eigenmarken-Entwicklung und Fertigungspartnerschaften — ein verantwortlicher Partner von der Fertigung bis zum Markt."
+    },
+    "hero": {
+      "eyebrow": "Was wir tun",
+      "title": "Ein Partner, von der Fertigung bis zum Markt.",
+      "subtitle": "Ein gebündeltes Kompetenzspektrum, gebaut, um Risiko, Distanz und Komplexität aus dem grenzüberschreitenden Handel zu nehmen."
+    },
+    "intro": {
+      "overline": "Kompetenzen",
+      "title": "Breite, gehalten an einem einzigen Standard der Verlässlichkeit.",
+      "body": "Jede Kompetenz steht für sich — und wirkt im Verbund besser. Alle werden in einer einzigen verantwortlichen Beziehung erbracht, mit derselben Disziplin hinter jedem Auftrag."
+    },
+    "items": {
+      "sourcing": {
+        "title": "Globale Beschaffung & Handel",
+        "outcome": "Das richtige Produkt, zu verlässlichen Konditionen.",
+        "description": "Geprüfte Lieferanten und OEM-Partner über Kategorien hinweg. Import, Export und internationale Beschaffung — Prüfung, Qualität, Zoll und Compliance — übernehmen wir; Sie gewinnen Zugang, ohne das Risiko zu tragen.",
+        "imageAlt": "Globaler Beschaffungs- und Handelsbetrieb"
+      },
+      "distribution": {
+        "title": "Distribution & Logistik",
+        "outcome": "Pünktlich, vollständig, fehlerfrei.",
+        "description": "Verlässlicher Produktfluss zu Handelsketten, Großhändlern, E-Commerce und Firmenkunden. Zoll, Fracht und Fulfillment durchgängig gesteuert und in jeder Phase nachverfolgt.",
+        "imageAlt": "Distributions- und Logistiknetz"
+      },
+      "privateLabel": {
+        "title": "Eigenmarken-Entwicklung",
+        "outcome": "Wert, der Ihnen bleibt, nicht gemietete Marge.",
+        "description": "Eigene Marken auf Basis belegter Nachfrage, kontrollierter Qualität und verlässlicher Garantie. Wir bringen Sie in der Wertschöpfungskette nach oben — vom Wiederverkauf zur Marke im Eigentum.",
+        "imageAlt": "Eigenmarken-Produktentwicklung"
+      },
+      "partnerships": {
+        "title": "Fertigungspartnerschaften",
+        "outcome": "Von der Belieferung zu exklusiven Rechten.",
+        "description": "Tiefe Lieferantenbeziehungen, die von transaktionaler Belieferung über Vorzugskonditionen und exklusive Distribution zu gemeinsam entwickelter Fertigung reichen — Kompetenz ohne eigene Fabrik.",
+        "imageAlt": "Fertigungspartnerschaften"
+      }
+    },
+    "groups": {
+      "overline": "Enterprise-Leistungen",
+      "title": "Ein definiertes Leistungsspektrum, jedes an einem Standard gehalten.",
+      "intro": "Unsere Kompetenzen reichen über Handel, Fertigung und regulierte Versorgung. Jede Leistung unten wird mit derselben Disziplin erbracht — geprüfte Partner, dokumentierte Qualität und klare Verantwortung.",
+      "trade": {
+        "title": "Handel & Distribution",
+        "services": {
+          "techSourcing": {
+            "title": "Globale Technologiebeschaffung",
+            "description": "Beschaffung von Technologieprodukten von geprüften Herstellern und autorisierten Lieferanten weltweit; Compliance und Qualität sind geklärt, bevor Ware in Bewegung gerät."
+          },
+          "electronics": {
+            "title": "Distribution von Unterhaltungselektronik",
+            "description": "Verlässliche Distribution von Unterhaltungselektronik an Einzelhandels-, Großhandels- und E-Commerce-Partner — verlässlicher Bestand, konstante Qualität, keine Überraschungen in der Versorgung."
+          },
+          "wholesale": {
+            "title": "Einzel- & Großhandelsversorgung",
+            "description": "Mengenversorgung von Handelsketten und Großhändlern zu transparenten Konditionen, strukturiert für Margen, die über einen ganzen Versorgungszyklus Bestand haben."
+          },
+          "oem": {
+            "title": "OEM- / Eigenmarken-Lösungen",
+            "description": "Eigenmarken-Entwicklung mit kontrollierter Spezifikation, Qualität und Verpackung — der Weg vom Wiederverkauf zum Eigentum an Produkt und Marge."
+          }
+        }
+      },
+      "manufacturing": {
+        "title": "Fertigungspartnerschaften",
+        "services": {
+          "textile": {
+            "title": "Textilbeschaffung & Fertigungspartnerschaften",
+            "description": "Durchgängige Textilbeschaffung — Spezifikation, Musterung, auditierte Produktion und Lieferung — über Fertigungspartner, die unseren Standards genügen."
+          }
+        }
+      },
+      "healthcareSupply": {
+        "title": "Versorgung im Gesundheitswesen",
+        "note": "Ausschließlich innerhalb des rechtlichen und regulatorischen Rahmens jedes Marktes und über lizenzierte Kanäle abgewickelt.",
+        "services": {
+          "dental": {
+            "title": "Distribution zertifizierter Dentalimplantatsysteme",
+            "description": "Distribution zertifizierter Dentalimplantatsysteme an Kliniken und Distributoren — mit vollständiger Rückverfolgbarkeit, Dokumentation und Compliance."
+          },
+          "medical": {
+            "title": "Versorgung mit Medizinprodukten",
+            "description": "Versorgung mit zertifizierten Medizinprodukten über lizenzierte Kanäle, geführt mit der Dokumentation und Sorgfalt, die die Kategorie verlangt."
+          }
+        }
+      },
+      "healthcarePartnership": {
+        "title": "Partnernetzwerk Gesundheit",
+        "note": "AYZENITH ist ein Koordinations- und Partnernetzwerk. Wir verbinden Patienten und Organisationen mit akkreditierten, lizenzierten Anbietern — wir sind kein Gesundheitsdienstleister oder eine Klinik und erbringen keine medizinische Behandlung.",
+        "services": {
+          "hair": {
+            "title": "Koordination von Haartransplantationen",
+            "description": "Koordination zwischen internationalen Patienten und akkreditierten Kliniken — Terminierung, Logistik und Standards. Die Behandlung erbringt ausschließlich der lizenzierte Anbieter."
+          },
+          "prp": {
+            "title": "Koordination von PRP-Therapie",
+            "description": "Vermittlung und Koordination mit akkreditierten Anbietern von PRP-Therapie; AYZENITH steuert die Verbindung, niemals das Verfahren."
+          },
+          "meso": {
+            "title": "Koordination von Mesotherapie",
+            "description": "Koordination mit lizenzierten Kliniken, die Mesotherapie anbieten — Einführung, Logistik und Sorgfalt, auf professionellem Niveau geführt."
+          },
+          "exosome": {
+            "title": "Koordination von Exosomen-Therapie",
+            "description": "Partnerschaftskoordination mit akkreditierten Anbietern von Exosomen-Therapie; transparent und im Rahmen der geltenden Regulierung arrangiert."
+          }
+        }
+      }
+    }
+  },
+  "products": {
+    "meta": {
+      "title": "Produkte",
+      "description": "Die Kategorien, die AYZENITH beschafft und bewegt — an einem echten Qualitätsstandard gehalten, verfügbar über B2B-Partnerschaft und vertrauenswürdige Marktplatzkanäle."
+    },
+    "hero": {
+      "eyebrow": "Produkte",
+      "title": "Was wir bewegen — und der Standard dahinter.",
+      "subtitle": "Produkte sind Beleg für Kompetenz, kein Katalog. Jede Kategorie ist an dieselbe Prüf- und Qualitätsdisziplin gehalten, die den Namen AYZENITH trägt."
+    },
+    "intro": {
+      "overline": "Kategorien",
+      "title": "Wo unsere Beschaffungstiefe zu verlässlicher Versorgung wird.",
+      "body": "Wir konzentrieren uns auf Kategorien, die wir gut genug verstehen, um sie zu garantieren. Jede unten beschreibt eine Beschaffungskompetenz — die Lieferantennetze, Standards und Kontrolle dahinter — keine Produktliste."
+    },
+    "categories": {
+      "electronics": {
+        "title": "Unterhaltungselektronik",
+        "description": "Geprüfte OEM- und markenautorisierte Versorgung über die Unterhaltungselektronik hinweg; Prüfung vor Versand und Compliance sind erledigt, bevor Ware in Bewegung gerät."
+      },
+      "smart": {
+        "title": "Smarte Geräte",
+        "description": "Vernetzte und Smart-Home-Geräte von Herstellern, die unseren Standards für Verlässlichkeit, Zertifizierung und After-Sales genügen."
+      },
+      "mobile": {
+        "title": "Mobiles Zubehör",
+        "description": "Umsatzstarke Kategorien für mobiles Zubehör, in Menge gesichert — mit konstanter Qualität und Margen, die über einen Versorgungszyklus Bestand haben."
+      },
+      "home": {
+        "title": "Haushalt & Küche",
+        "description": "Langlebige Haushalts- und Küchenwaren aus auditierten Fabriken, präzise spezifiziert und qualitätsgeprüft, um Retouren und Überraschungen zu verringern."
+      },
+      "textile": {
+        "title": "Textilprodukte",
+        "description": "Textilbeschaffung und Fertigungspartnerschaften — von Spezifikation und Musterung bis zu Produktionsaufsicht und verlässlicher Lieferung."
+      },
+      "medical": {
+        "title": "Medizinprodukte",
+        "description": "Zertifizierte Medizinprodukte, innerhalb vollständiger regulatorischer Rahmen abgewickelt, über lizenzierte Kanäle verteilt und in jedem Schritt dokumentiert."
+      },
+      "dental": {
+        "title": "Dentalimplantatsysteme",
+        "description": "Zertifizierte Dentalimplantatsysteme, an Kliniken und Distributoren geliefert — unter strengen Standards für Compliance, Rückverfolgbarkeit und Qualität."
+      }
+    },
+    "engage": {
+      "overline": "So arbeiten wir zusammen",
+      "title": "Zwei Wege der Zusammenarbeit.",
+      "b2b": {
+        "title": "B2B & Großhandel",
+        "description": "Mengenversorgung, Eigenmarke und Partnerschaft. Der primäre Weg, auf dem ernsthafte Käufer mit AYZENITH arbeiten — beginnen Sie eine Partnerschaft, und wir richten uns nach Ihrer Kategorie und Ihrem Umfang."
+      },
+      "marketplace": {
+        "title": "Marktplatzkanäle",
+        "description": "Ausgewählte Produkte sind für transaktionale Käufer über vertrauenswürdige Marktplätze verfügbar; B2B-Beziehungen bleiben der Kern unseres Geschäfts."
+      }
+    }
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Partnerschaft beginnen",
+      "description": "Beginnen Sie eine langfristige Partnerschaft mit AYZENITH. Erzählen Sie uns, woran Sie arbeiten — auf ernsthafte Anfragen antworten wir innerhalb von zwei Werktagen."
+    },
+    "hero": {
+      "eyebrow": "Partnerschaft beginnen",
+      "title": "Lassen Sie uns etwas Beständiges bauen.",
+      "subtitle": "Die besten Partnerschaften beginnen mit einem Gespräch, nicht mit einer Transaktion. Sagen Sie uns, wohin Sie wollen, und wir sagen Ihnen ehrlich, wie wir Sie dorthin begleiten."
+    },
+    "info": {
+      "responseTitle": "Wie es weitergeht",
+      "responseBody": "Ihre Nachricht erreicht unser Team direkt. Wir lesen jede Anfrage und antworten innerhalb von zwei Werktagen, um ein erstes Gespräch zu vereinbaren.",
+      "emailTitle": "E-Mail",
+      "phoneTitle": "Telefon",
+      "locationTitle": "Büro",
+      "hoursTitle": "Geschäftszeiten",
+      "assuranceTitle": "Ein bedachter Partner",
+      "assuranceBody": "Wir übernehmen nur Partnerschaften, die wir richtig bedienen können, und arbeiten innerhalb des rechtlichen und regulatorischen Rahmens jedes Marktes, in den wir eintreten."
+    }
+  },
+  "errors": {
+    "notFoundEyebrow": "Fehler 404",
+    "notFoundTitle": "Diese Adresse existiert nicht.",
+    "notFoundBody": "Die gesuchte Seite ist nicht hier. Bringen wir Sie zurück auf Kurs.",
+    "backHome": "Zurück zur Startseite",
+    "errorEyebrow": "Auf dieser Seite kam etwas dazwischen",
+    "errorTitle": "Ein unerwarteter Fehler ist aufgetreten.",
+    "errorBody": "Wir haben ihn vermerkt. Bitte versuchen Sie es erneut — und wenn es bestehen bleibt, erreichen Sie uns direkt, wir helfen.",
+    "retry": "Erneut versuchen"
+  },
+  "footer": {
+    "tagline": "Globaler Handel. Absolutes Vertrauen.",
+    "description": "Eine globale B2B-Gruppe für Handel, Beschaffung und Investitionen — sie baut die Infrastruktur für eine neue Generation des Handels.",
+    "companyHeading": "Unternehmen",
+    "engageHeading": "Kontaktaufnahme",
+    "contactHeading": "Kontakt",
+    "about": "Über uns",
+    "services": "Leistungen",
+    "capabilities": "Kompetenzen",
+    "process": "So arbeiten wir",
+    "products": "Produkte",
+    "partnership": "Partnerschaft beginnen",
+    "contact": "Kontakt",
+    "rightsLabel": "Alle Rechte vorbehalten.",
+    "legalNote": "AYZENITH arbeitet innerhalb des rechtlichen und regulatorischen Rahmens jedes Marktes, den es bedient.",
+    "backToTop": "Nach oben",
+    "legalHeading": "Rechtliches",
+    "privacy": "Datenschutzerklärung",
+    "cookies": "Cookie-Richtlinie",
+    "terms": "AGB"
+  }
+}

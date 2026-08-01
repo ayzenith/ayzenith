@@ -1,0 +1,465 @@
+{
+  "metadata": {
+    "homeDescription": "AYZENITH; küresel bir B2B ticaret, tedarik ve yatırım grubudur. Ürünleri sınırların ötesinde tedarik eder, taşır ve arkasında dururuz — böylece hırslı işletmeler riski üstlenmeden dünyaya açılır."
+  },
+  "nav": {
+    "services": "Hizmetler",
+    "capabilities": "Yetkinlikler",
+    "process": "Nasıl Çalışırız",
+    "products": "Ürünler",
+    "about": "Hakkımızda",
+    "contact": "İletişim",
+    "company": "Şirket",
+    "cta": "Ortaklık Başlatın",
+    "menu": "Menüyü aç",
+    "close": "Menüyü kapat",
+    "skip": "İçeriğe geç",
+    "home": "AYZENITH — ana sayfa"
+  },
+  "cta": {
+    "overline": "Ortaklık başlatın",
+    "title": "Sınırların ötesinde birlikte inşa edelim.",
+    "subtitle": "Ne inşa ettiğinizi bize anlatın. Nitelikli başvurulara iki iş günü içinde yanıt veriyoruz.",
+    "button": "Ortaklık Başlatın"
+  },
+  "about": {
+    "meta": {
+      "title": "AYZENITH Hakkında",
+      "description": "AYZENITH; bağımsız, küresel bir B2B ticaret, tedarik ve yatırım grubudur — sektörler ve on yıllar boyunca güvenilmek üzere kurulmuştur."
+    },
+    "hero": {
+      "eyebrow": "Şirket",
+      "title": "On yıllara dayanacak, güvenilir bir ortak.",
+      "subtitle": "AYZENITH; bağımsız bir ticaret, tedarik ve yatırım grubudur. Küresel ticareti güvenilir kılmak — ve bu güveni kalıcı bir işe dönüştürmek için varız."
+    },
+    "purpose": {
+      "overline": "Neden varız",
+      "title": "Küresel ticaret hâlâ mesafe, belirsizlik ve risk üzerine kurulu. Biz kuralları değiştirmek için yola çıktık.",
+      "body1": "AYZENITH, hırslı işletmelere tek bir ortak sunar; ürünleri her yerde tedarik eden, taşıyan ve arkasında duran — eski sistemin hiç sunmadığı şeffaflık ve standartlarla.",
+      "body2": "Payını alıp kaybolan bir aracı değiliz. Sorumluluğu üstlenen ve kalıcı olan bir kurumuz — yalnızca bir şirket değil, yeni nesil küresel ticaretin altyapısını inşa ediyoruz.",
+      "imageAlt": "AYZENITH küresel ticaret operasyonları"
+    },
+    "principles": {
+      "overline": "Neyin arkasında duruyoruz",
+      "title": "Her kararın ardındaki ilkeler.",
+      "intro": "Bunlar kalıcıdır. Verdiğimiz her karar bunlara göre sınanır.",
+      "items": {
+        "focus": {
+          "title": "Genişlemeden önce odak",
+          "description": "Bir kategoride derinleşmeden diğerine geçmeyiz. Çok sektörlü grup, adım adım kazanılır — asla yalnızca hırsla değil."
+        },
+        "trust": {
+          "title": "Ürün, güvenin kendisidir",
+          "description": "Fiyatla değil, güvenilirlikle rekabet ederiz. Tutulan her söz birikir; hiçbiri tek bir anlaşma için bozulmaya değmez."
+        },
+        "accountability": {
+          "title": "Sonucun sahibi biziz",
+          "description": "Tedarik, kalite, lojistik ve teslimatta tek ve hesap verebilir bir ortak. Kimin uyguladığından bağımsız, sonuçta bizim adımız var."
+        },
+        "permanence": {
+          "title": "Kalıcılık için kurulduk",
+          "description": "Her karar bir çeyreğe değil, on yıla göre sınanır. Herhangi bir kişiden daha uzun ömürlü olacak bir kurum inşa ediyoruz."
+        },
+        "international": {
+          "title": "Uluslararası bir standart",
+          "description": "Her pazarı aynı standartta tutarız — ciddi bir ortağın dünyanın her yerinde beklemesi gereken özen, şeffaflık ve profesyonellik."
+        },
+        "responsible": {
+          "title": "Sorumlu büyüme",
+          "description": "Yalnızca hakkını verebileceğimiz yerde büyürüz. Bir kategoriye ya da pazara girmek, onun kurallarını, risklerini ve sorumluluklarını tam olarak kabul etmektir."
+        }
+      }
+    },
+    "standards": {
+      "overline": "Nasıl çalışırız",
+      "title": "İstenmeden önce beyan edilen standartlar.",
+      "body": "Güvenilirlik bir slogan değil, bir disiplindir. Tedarik, kalite ve uyum konularında kendimizi açık standartlara bağlarız — ve hizmet verdiğimiz her pazarın yasal ve düzenleyici çerçevesi içinde çalışırız.",
+      "points": {
+        "vetting": "Çok boyutlu tedarikçi değerlendirmesi — kalite, kapasite, güvenilirlik, uyum.",
+        "quality": "Sevkiyat öncesi kalite denetimi; sorumluluğu tedarikçiye yıkmadan, biz üstleniriz.",
+        "redundancy": "Önemli hiçbir konuda tek kaynağa bağımlılık yok.",
+        "compliance": "Düzenlemeye tabi kategorilere yalnızca tam yasal çerçeveler içinde girilir."
+      },
+      "imageAlt": "AYZENITH hesap verebilirlik ve standartlar"
+    },
+    "longview": {
+      "overline": "Uzun vade",
+      "title": "Henüz erken. Fırsat da burada.",
+      "body": "AYZENITH ticaretle başlar ve büyür — özel markaya, yeni sektörlere, kendi markalarına, kalıcı bir holdinge doğru. Bugün bizimle inşa edenler, kuruluş anında inşa ediyor.",
+      "quote": "Ölçek, sadelik gibi hissettirmeli. İnşa ettiğimiz şirket tam da budur."
+    }
+  },
+  "hero": {
+    "eyebrow": "Küresel Ticaret ve Tedarik Grubu",
+    "title": "Dünya sizin pazarınız.",
+    "subtitle": "AYZENITH, ürünleri sınırların ötesinde tedarik eder, taşır ve arkasında durur — üretimi, lojistiği ve pazarları tek ve hesap verebilir bir ortaklıkta buluşturur.",
+    "primaryCta": "Ortaklık Başlatın",
+    "secondaryCta": "Yetkinlikleri Keşfedin",
+    "scroll": "Keşfetmek için kaydırın"
+  },
+  "belief": {
+    "overline": "Neden varız",
+    "belief": "Mesafe asla risk anlamına gelmemeli. Sınırlar asla kuşku anlamına gelmemeli.",
+    "problem": "Dünyanın dört bir yanından tedarik; göremediğiniz ortaklara, ulaşamadığınız pazarlara, kaybetmeyi göze alamayacağınız sermayeyle güvenmek demektir.",
+    "promise": "AYZENITH bu mesafeyi ortadan kaldırır — tedarik, kalite, lojistik ve teslimat için tek ve hesap verebilir bir ortak; böylece büyüme, bir risk değil, sadelik gibi hissettirir."
+  },
+  "capabilities": {
+    "overline": "Ne yaparız",
+    "title": "Fabrikadan nihai pazara tek bir ortak.",
+    "intro": "Sınır ötesi ticaretten riski, mesafeyi ve karmaşayı çıkarmak için tasarlanmış, bütünleşik bir yetkinlik seti.",
+    "items": {
+      "sourcing": {
+        "title": "Küresel Tedarik ve Ticaret",
+        "description": "Kategoriler genelinde onaylı tedarikçiler ve OEM ortakları — ithalat, ihracat ve uluslararası tedarik, tek ve hesap verebilir bir ilişkide."
+      },
+      "distribution": {
+        "title": "Dağıtım ve Lojistik",
+        "description": "Perakende, toptan, e-ticaret ve kurumsal alıcılara güvenilir ürün akışı — zamanında, eksiksiz, kusursuz."
+      },
+      "privateLabel": {
+        "title": "Özel Marka Geliştirme",
+        "description": "Kanıtlanmış talep, kontrollü kalite ve güvenilir garanti üzerine kurulu kendi markalarınız — kiraladığınız marj değil, elinizde kalan değer."
+      },
+      "partnerships": {
+        "title": "Üretim Ortaklıkları",
+        "description": "İşlemsel tedarikten münhasır haklara ve birlikte geliştirilen üretime uzanan derin tedarikçi ilişkileri."
+      }
+    }
+  },
+  "process": {
+    "overline": "Nasıl çalışırız",
+    "title": "Hiçbir şey şansa bırakılmaz.",
+    "intro": "Her sipariş disiplinli bir sıradan geçer — sözün ardındaki sistem.",
+    "steps": {
+      "vet": {
+        "title": "Değerlendirme",
+        "description": "Tedarikçiler kalite, kapasite, güvenilirlik ve uyum üzerinden onaylanır — doğrulanmış güven."
+      },
+      "source": {
+        "title": "Tedarik",
+        "description": "Doğru ürün, tam olarak tanımlanır ve güvenilir koşullarla temin edilir."
+      },
+      "control": {
+        "title": "Kalite Kontrol",
+        "description": "Sevkiyat öncesi denetim — sorumluluğu tedarikçiye yıkmadan, biz üstleniriz."
+      },
+      "ship": {
+        "title": "Lojistik",
+        "description": "Gümrük, uyum ve nakliye uçtan uca yönetilir, her aşamada izlenir."
+      },
+      "deliver": {
+        "title": "Teslimat",
+        "description": "Zamanında, eksiksiz, kusursuz — söz, her siparişte somuta dönüşür."
+      }
+    }
+  },
+  "difference": {
+    "overline": "Fark",
+    "tension": "İsimsiz aracılarla dolu bir kategoride, çoğu ortak bir şeyler ters gittiği anda ortadan kaybolur.",
+    "title": "Biz aracı değil, kurumuz.",
+    "pillars": {
+      "consolidate": {
+        "title": "Bütünleştirin",
+        "description": "Tedarik, üretim, lojistik ve dağıtım tek ve hesap verebilir bir çatı altında — on iki ilişki yerine bir."
+      },
+      "derisk": {
+        "title": "Riski azaltın",
+        "description": "Onaylı ortaklar, kalite kontrol, şeffaf koşullar ve gerçek hesap verebilirlik. Korktuğunuz sürtünmeyi biz üstleniriz."
+      },
+      "access": {
+        "title": "Erişim kazanın",
+        "description": "Tek başına açması zor kapılar — küresel tedarikçi ağları, yeni pazarlar ve ölçekte güvenilir tedarik."
+      }
+    }
+  },
+  "proof": {
+    "overline": "Güven üzerine kurulu",
+    "title": "Ölçülebilir güvenilirlik.",
+    "intro": "Ciddi alıcıların taahhütten önce doğruladığı varlık ve standartlar.",
+    "stats": {
+      "reach": { "value": "3", "label": "Aktif tedarikte kıta" },
+      "categories": { "value": "24/7", "label": "Sınır ötesi operasyon" },
+      "accountability": { "value": "1", "label": "Uçtan uca hesap verebilir ortak" },
+      "standard": { "value": "100%", "label": "Sevkiyat öncesi kalite denetimi" }
+    },
+    "note": "Yukarıdaki her değer, AYZENITH'in bugün nasıl çalıştığını yansıtır. Ortaklıklar ve vaka çalışmaları olgunlaştıkça bu kayıt büyür — her zaman dürüstçe, asla abartılmadan."
+  },
+  "vision": {
+    "overline": "Uzun vade",
+    "title": "Yeni nesil küresel ticaretin altyapısını inşa ediyoruz.",
+    "body": "AYZENITH ticaretle başlar ve büyür — özel markaya, yeni sektörlere, kendi markalarına, on yıllara dayanacak bir holdinge doğru. Henüz erken. Fırsat da burada.",
+    "quote": "Ölçek, sadelik gibi hissettirmeli. İnşa ettiğimiz şirket tam da budur.",
+    "cta": "Bizimle inşa edin"
+  },
+  "contact": {
+    "overline": "Ortaklık başlatın",
+    "title": "Sınırların ötesinde birlikte inşa edelim.",
+    "subtitle": "Ne inşa ettiğinizi bize anlatın. Nitelikli başvurulara iki iş günü içinde yanıt veriyoruz.",
+    "form": {
+      "name": "Ad Soyad",
+      "namePlaceholder": "Adınız",
+      "company": "Şirket",
+      "companyPlaceholder": "Şirket adı",
+      "email": "Kurumsal e-posta",
+      "emailPlaceholder": "siz@sirket.com",
+      "region": "Bölge",
+      "regionPlaceholder": "Bölge seçin",
+      "regions": {
+        "europe": "Avrupa",
+        "turkiye": "Türkiye",
+        "mena": "Orta Doğu ve Kuzey Afrika",
+        "asia": "Asya",
+        "americas": "Amerika",
+        "other": "Diğer"
+      },
+      "interest": "Nasıl yardımcı olabiliriz?",
+      "interestPlaceholder": "Alan seçin",
+      "interests": {
+        "sourcing": "Küresel tedarik ve ticaret",
+        "distribution": "Dağıtım ve lojistik",
+        "privateLabel": "Özel marka geliştirme",
+        "partnership": "Üretim ortaklığı",
+        "other": "Başka bir konu"
+      },
+      "message": "Mesajınız",
+      "messagePlaceholder": "İhtiyacınız, kategoriniz ve ölçeğiniz hakkında birkaç satır.",
+      "submit": "Ortaklık Başlatın",
+      "submitting": "Gönderiliyor…",
+      "successTitle": "Teşekkürler — bu bir başlangıç.",
+      "successBody": "Başvurunuz AYZENITH ortaklıklar ekibine ulaştı. İki iş günü içinde sizinle iletişime geçeceğiz.",
+      "errorTitle": "Gönderim sırasında bir sorun oluştu.",
+      "errorBody": "Lütfen tekrar deneyin ya da doğrudan info@ayzenith.com adresinden bize ulaşın.",
+      "errors": {
+        "name": "Lütfen adınızı girin.",
+        "company": "Lütfen şirketinizi girin.",
+        "email": "Geçerli bir kurumsal e-posta girin.",
+        "region": "Lütfen bir bölge seçin.",
+        "interest": "Lütfen bir alan seçin.",
+        "message": "Yardımcı olabilmemiz için lütfen birkaç satır ekleyin."
+      }
+    }
+  },
+  "services": {
+    "meta": {
+      "title": "Hizmetler ve Yetkinlikler",
+      "description": "Küresel tedarik, dağıtım, özel marka geliştirme ve üretim ortaklıkları — fabrikadan nihai pazara tek ve hesap verebilir bir ortak."
+    },
+    "hero": {
+      "eyebrow": "Ne yaparız",
+      "title": "Fabrikadan nihai pazara tek bir ortak.",
+      "subtitle": "Sınır ötesi ticaretten riski, mesafeyi ve karmaşayı çıkarmak için tasarlanmış, bütünleşik bir yetkinlik seti."
+    },
+    "intro": {
+      "overline": "Yetkinlikler",
+      "title": "Tek bir güvenilirlik standardına bağlı bir genişlik.",
+      "body": "Her yetkinlik tek başına durur — ve bir arada daha iyi çalışır. Hepsi, her siparişin ardındaki aynı disiplinle, tek ve hesap verebilir bir ilişki altında sunulur."
+    },
+    "items": {
+      "sourcing": {
+        "title": "Küresel Tedarik ve Ticaret",
+        "outcome": "Doğru ürün, güvenilir koşullarla.",
+        "description": "Kategoriler genelinde onaylı tedarikçiler ve OEM ortakları. İthalat, ihracat ve uluslararası tedariki — değerlendirme, kalite, gümrük ve uyumu — biz yönetiriz; siz riski üstlenmeden erişim kazanırsınız.",
+        "imageAlt": "Küresel tedarik ve ticaret operasyonları"
+      },
+      "distribution": {
+        "title": "Dağıtım ve Lojistik",
+        "outcome": "Zamanında, eksiksiz, kusursuz.",
+        "description": "Perakende zincirlerine, toptancılara, e-ticarete ve kurumsal alıcılara güvenilir ürün akışı. Gümrük, nakliye ve sipariş karşılama uçtan uca yönetilir ve her aşamada izlenir.",
+        "imageAlt": "Dağıtım ve lojistik ağı"
+      },
+      "privateLabel": {
+        "title": "Özel Marka Geliştirme",
+        "outcome": "Kiraladığınız marj değil, elinizde kalan değer.",
+        "description": "Kanıtlanmış talep, kontrollü kalite ve güvenilir garanti üzerine kurulu kendi markalarınız. Sizi değer zincirinde yukarı taşırız — yeniden satıştan markanın sahipliğine.",
+        "imageAlt": "Özel marka ürün geliştirme"
+      },
+      "partnerships": {
+        "title": "Üretim Ortaklıkları",
+        "outcome": "Tedarikten münhasır haklara.",
+        "description": "İşlemsel tedarikten tercihli koşullara, münhasır dağıtıma ve birlikte geliştirilen üretime ilerleyen derin tedarikçi ilişkileri — fabrika sahibi olmadan yetkinlik.",
+        "imageAlt": "Üretim ortaklıkları"
+      }
+    },
+    "groups": {
+      "overline": "Kurumsal hizmetler",
+      "title": "Her biri tek bir standarda bağlı, tanımlı bir hizmet seti.",
+      "intro": "Yetkinliklerimiz ticaret, üretim ve düzenlemeye tabi tedarik alanlarına uzanır. Aşağıdaki her hizmet aynı disiplinle sunulur — onaylı ortaklar, belgelenmiş kalite ve net hesap verebilirlik.",
+      "trade": {
+        "title": "Ticaret ve Dağıtım",
+        "services": {
+          "techSourcing": {
+            "title": "Küresel Teknoloji Tedariki",
+            "description": "Dünya genelinde onaylı üreticilerden ve yetkili tedarikçilerden teknoloji ürünleri tedariki; uyum ve kalite, mallar yola çıkmadan çözülür."
+          },
+          "electronics": {
+            "title": "Tüketici Elektroniği Dağıtımı",
+            "description": "Perakende, toptan ve e-ticaret ortaklarına güvenilir tüketici elektroniği dağıtımı — güvenilir stok, tutarlı kalite, tedarikte sürpriz yok."
+          },
+          "wholesale": {
+            "title": "Perakende ve Toptan Tedarik",
+            "description": "Perakende zincirlerine ve toptan dağıtıcılara şeffaf koşullarla hacimli tedarik; tüm tedarik döngüsü boyunca korunan marjlar için yapılandırılmış."
+          },
+          "oem": {
+            "title": "OEM / Özel Marka Çözümleri",
+            "description": "Kontrollü spesifikasyon, kalite ve ambalajla kendi marka geliştirmeniz — yeniden satıştan ürünün ve marjın sahipliğine giden yol."
+          }
+        }
+      },
+      "manufacturing": {
+        "title": "Üretim Ortaklıkları",
+        "services": {
+          "textile": {
+            "title": "Tekstil Tedariki ve Üretim Ortaklıkları",
+            "description": "Uçtan uca tekstil tedariki — spesifikasyon, numune, denetlenmiş üretim ve teslimat — standartlarımızı karşılayan üretim ortaklarıyla."
+          }
+        }
+      },
+      "healthcareSupply": {
+        "title": "Sağlık Tedariki",
+        "note": "Her pazarın yasal ve düzenleyici çerçevesi içinde, yalnızca lisanslı kanallar aracılığıyla yürütülür.",
+        "services": {
+          "dental": {
+            "title": "Sertifikalı Diş İmplant Sistemi Dağıtımı",
+            "description": "Kliniklere ve dağıtıcılara sertifikalı diş implant sistemlerinin dağıtımı; tam izlenebilirlik, belgeleme ve uyumla."
+          },
+          "medical": {
+            "title": "Medikal Ürün Tedariki",
+            "description": "Lisanslı kanallar aracılığıyla sertifikalı medikal ürünlerin tedariki; kategorinin gerektirdiği belgeleme ve özenle yönetilir."
+          }
+        }
+      },
+      "healthcarePartnership": {
+        "title": "Sağlık Ortaklık Ağı",
+        "note": "AYZENITH bir koordinasyon ve ortaklık ağıdır. Hastaları ve kurumları akredite, lisanslı sağlayıcılarla buluştururuz — bir sağlık hizmeti sağlayıcısı ya da klinik değiliz ve tıbbi tedavi sunmayız.",
+        "services": {
+          "hair": {
+            "title": "Saç Ekimi Koordinasyonu",
+            "description": "Uluslararası hastalar ile akredite klinikler arasında koordinasyon — planlama, lojistik ve standartlar. Tedavi yalnızca lisanslı sağlayıcı tarafından uygulanır."
+          },
+          "prp": {
+            "title": "PRP Tedavisi Koordinasyonu",
+            "description": "PRP tedavisi sunan akredite sağlayıcılarla kolaylaştırma ve koordinasyon; AYZENITH bağlantıyı yönetir, işlemi asla değil."
+          },
+          "meso": {
+            "title": "Mezoterapi Koordinasyonu",
+            "description": "Mezoterapi sunan lisanslı kliniklerle koordinasyon — tanışma, lojistik ve özen, profesyonel bir standartta yürütülür."
+          },
+          "exosome": {
+            "title": "Ekzozom Tedavisi Koordinasyonu",
+            "description": "Ekzozom tedavisi sunan akredite sağlayıcılarla ortaklık koordinasyonu; şeffaf biçimde ve geçerli mevzuat içinde düzenlenir."
+          }
+        }
+      }
+    }
+  },
+  "products": {
+    "meta": {
+      "title": "Ürünler",
+      "description": "AYZENITH'in tedarik ettiği ve taşıdığı kategoriler — gerçek bir kalite standardına bağlı, B2B ortaklık ve güvenilir pazar yeri kanalları aracılığıyla."
+    },
+    "hero": {
+      "eyebrow": "Ürünler",
+      "title": "Ne taşıdığımız — ve ardındaki standart.",
+      "subtitle": "Ürünler bir katalog değil, yetkinliğin kanıtıdır. Her kategori, AYZENITH adını taşıyan aynı değerlendirme ve kalite disiplinine bağlıdır."
+    },
+    "intro": {
+      "overline": "Kategoriler",
+      "title": "Tedarik derinliğimizin güvenilir arza dönüştüğü yer.",
+      "body": "Garanti edebilecek kadar iyi anladığımız kategorilere odaklanırız. Aşağıdakilerin her biri bir tedarik yetkinliğini anlatır — ardındaki tedarikçi ağlarını, standartları ve kontrolü — bir ürün listesini değil."
+    },
+    "categories": {
+      "electronics": {
+        "title": "Tüketici Elektroniği",
+        "description": "Tüketici elektroniği genelinde onaylı OEM ve marka yetkili tedariki; sevkiyat öncesi denetim ve uyum, mallar yola çıkmadan tamamlanır."
+      },
+      "smart": {
+        "title": "Akıllı Cihazlar",
+        "description": "Güvenilirlik, sertifikasyon ve satış sonrası standartlarımızı karşılayan üreticilerden bağlantılı ve akıllı ev cihazları."
+      },
+      "mobile": {
+        "title": "Mobil Aksesuarlar",
+        "description": "Hızlı devir hızına sahip mobil aksesuar kategorileri; tutarlı kalite ve tedarik döngüsü boyunca korunan marjlarla, hacimde temin edilir."
+      },
+      "home": {
+        "title": "Ev ve Mutfak Ekipmanları",
+        "description": "Denetlenmiş fabrikalardan dayanıklı ev ve mutfak ürünleri; iadeleri ve sürprizleri azaltmak için tam olarak tanımlanır ve kalite kontrolünden geçirilir."
+      },
+      "textile": {
+        "title": "Tekstil Ürünleri",
+        "description": "Tekstil tedariki ve üretim ortaklıkları — spesifikasyon ve numuneden üretim gözetimine ve güvenilir teslimata."
+      },
+      "medical": {
+        "title": "Medikal Ürünler",
+        "description": "Tam düzenleyici çerçeveler içinde ele alınan sertifikalı medikal ürünler; lisanslı kanallar aracılığıyla dağıtılır ve her adımda belgelenir."
+      },
+      "dental": {
+        "title": "Diş İmplant Sistemleri",
+        "description": "Sıkı uyum, izlenebilirlik ve kalite standartları altında kliniklere ve dağıtıcılara sunulan sertifikalı diş implant sistemleri."
+      }
+    },
+    "engage": {
+      "overline": "Nasıl çalışırız",
+      "title": "Bizimle çalışmanın iki yolu.",
+      "b2b": {
+        "title": "B2B ve Toptan",
+        "description": "Hacimli tedarik, özel marka ve ortaklık. Ciddi alıcıların AYZENITH ile çalışmasının başlıca yolu — bir ortaklık başlatın, kategorinize ve ölçeğinize göre uyarlayalım."
+      },
+      "marketplace": {
+        "title": "Pazar Yeri Kanalları",
+        "description": "Seçili ürünler, işlemsel alıcılar için güvenilir pazar yerlerinde sunulur; B2B ilişkileri ise işimizin özü olmayı sürdürür."
+      }
+    }
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Ortaklık Başlatın",
+      "description": "AYZENITH ile uzun vadeli bir ortaklık başlatın. Ne inşa ettiğinizi bize anlatın — değerlendirilmeye değer başvurulara iki iş günü içinde yanıt veriyoruz."
+    },
+    "hero": {
+      "eyebrow": "Ortaklık başlatın",
+      "title": "Kalıcı bir şey inşa edelim.",
+      "subtitle": "En iyi ortaklıklar bir işlemle değil, bir sohbetle başlar. Nereye gitmek istediğinizi bize söyleyin; oraya nasıl ulaşabileceğinizi dürüstçe paylaşalım."
+    },
+    "info": {
+      "responseTitle": "Sırada ne var",
+      "responseBody": "Mesajınız doğrudan ekibimize ulaşır. Her başvuruyu okur ve ilk görüşmeyi ayarlamak için iki iş günü içinde yanıt veririz.",
+      "emailTitle": "E-posta",
+      "phoneTitle": "Telefon",
+      "locationTitle": "Ofis",
+      "hoursTitle": "Çalışma saatleri",
+      "assuranceTitle": "Özenli bir ortak",
+      "assuranceBody": "Yalnızca hakkını verebileceğimiz ortaklıkları üstleniriz ve girdiğimiz her pazarın yasal ve düzenleyici çerçevesi içinde çalışırız."
+    }
+  },
+  "errors": {
+    "notFoundEyebrow": "Hata 404",
+    "notFoundTitle": "Bu adres mevcut değil.",
+    "notFoundBody": "Aradığınız sayfa burada değil. Sizi yeniden rotaya alalım.",
+    "backHome": "Ana sayfaya dön",
+    "errorEyebrow": "Bu sayfada bir aksaklık oldu",
+    "errorTitle": "Beklenmeyen bir hata oluştu.",
+    "errorBody": "Kaydını aldık. Lütfen tekrar deneyin — sorun sürerse doğrudan bize ulaşın, yardımcı olalım.",
+    "retry": "Tekrar dene"
+  },
+  "footer": {
+    "tagline": "Küresel Ticaret. Mutlak Güven.",
+    "description": "Küresel bir B2B ticaret, tedarik ve yatırım grubu — yeni nesil ticaretin altyapısını inşa ediyor.",
+    "companyHeading": "Şirket",
+    "engageHeading": "Etkileşim",
+    "contactHeading": "İletişim",
+    "about": "Hakkımızda",
+    "services": "Hizmetler",
+    "capabilities": "Yetkinlikler",
+    "process": "Nasıl Çalışırız",
+    "products": "Ürünler",
+    "partnership": "Ortaklık Başlatın",
+    "contact": "İletişim",
+    "rightsLabel": "Tüm hakları saklıdır.",
+    "legalNote": "AYZENITH, hizmet verdiği her pazarın yasal ve düzenleyici çerçevesi içinde çalışır.",
+    "backToTop": "Yukarı çık",
+    "legalHeading": "Yasal",
+    "privacy": "Gizlilik Politikası",
+    "cookies": "Çerez Politikası",
+    "terms": "Kullanım Koşulları"
+  }
+}

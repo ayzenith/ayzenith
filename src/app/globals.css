@@ -1,0 +1,342 @@
+@import "tailwindcss";
+
+/*
+ * ============================================================================
+ * AYZENITH — DESIGN TOKENS  (Enterprise Design Manual, frozen v1.0)
+ * ============================================================================
+ * Tailwind v4 is configured CSS-first. Everything below is the single source
+ * of truth for color, type, spacing, radius, elevation and motion. Product
+ * code references SEMANTIC tokens (bg-surface, text-primary, …), never raw
+ * primitives — this is what lets the whole system re-theme (light / sub-brand)
+ * by remapping one layer. Governance Law 1.
+ *
+ * The marketing surface (homepage) is DARK-FIRST — the brand's soul. Light
+ * mode is defined and ready via [data-theme="light"] for future tools/portals.
+ * ============================================================================
+ */
+
+@theme {
+  /* -- Primitive palette · Navy (Depth) --------------------------------- */
+  --color-navy-950: #050b14;
+  --color-navy-900: #0a1a2f;
+  --color-navy-800: #0d2137;
+  --color-navy-700: #123252;
+  --color-navy-600: #1b4068;
+  --color-navy-500: #2c5282;
+  --color-navy-400: #4a6e96;
+  --color-navy-300: #7c97b5;
+  --color-navy-200: #b4c4d6;
+  --color-navy-100: #dce4ec;
+  --color-navy-50: #f0f4f8;
+
+  /* -- Primitive palette · Gold (Value / Zenith) ------------------------ */
+  --color-gold-700: #8a6d1c;
+  --color-gold-600: #a88420;
+  --color-gold-500: #c9a227;
+  --color-gold-400: #d9b84a;
+  --color-gold-300: #e7ce7c;
+  --color-gold-100: #f6edd2;
+
+  /* -- Primitive palette · Neutral (Structure & Clarity) ---------------- */
+  --color-white: #ffffff;
+  --color-offwhite: #f7f8fa;
+  --color-neutral-100: #edeff2;
+  --color-neutral-200: #dde1e7;
+  --color-neutral-300: #c2c8d0;
+  --color-neutral-400: #9aa2ad;
+  --color-neutral-500: #6b7480;
+  --color-neutral-600: #4a525e;
+  --color-neutral-700: #333b45;
+  --color-neutral-800: #1e242c;
+  --color-neutral-900: #12161b;
+
+  /* -- Semantic feedback (muted, brand-family) -------------------------- */
+  --color-success: #1e7a5a;
+  --color-warning: #b8860b;
+  --color-error: #b23a3a;
+  --color-info: #2c5a82;
+
+  /* -- Semantic tokens (dark-first defaults) ---------------------------- */
+  --color-background: var(--color-navy-950);
+  --color-surface: var(--color-navy-900);
+  --color-surface-raised: var(--color-navy-800);
+  --color-surface-sunken: var(--color-navy-950);
+  --color-foreground: var(--color-offwhite);
+  --color-muted: var(--color-navy-300);
+  /* Tertiary text: tuned to ≥4.5:1 on the navy field (WCAG 2.2 AA, small text).
+     navy-400 alone measured ~3.5:1 and did not pass. */
+  --color-subtle: #6f89a8;
+  --color-border: var(--color-navy-700);
+  --color-border-strong: var(--color-navy-600);
+  --color-accent: var(--color-gold-500);
+  --color-accent-hover: var(--color-gold-600);
+  --color-accent-soft: var(--color-gold-300);
+  --color-ring: var(--color-gold-300);
+
+  /* -- Typography families (bound to distinctly-named next/font vars) ---- */
+  --font-sans: var(--font-inter), system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-serif: var(--font-newsreader), Georgia, "Times New Roman", serif;
+  --font-mono: var(--font-plex-mono), "SFMono-Regular", Menlo, Consolas, monospace;
+
+  /* -- Type scale · Major Third (1.250), fluid where dramatic ----------- */
+  --text-display: clamp(2.75rem, 1.6rem + 5.1vw, 4.75rem);
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.02em;
+  --text-h1: clamp(2.25rem, 1.5rem + 3.3vw, 3.8rem);
+  --text-h1--line-height: 1.08;
+  --text-h1--letter-spacing: -0.02em;
+  --text-h2: clamp(1.85rem, 1.35rem + 2.2vw, 3.05rem);
+  --text-h2--line-height: 1.12;
+  --text-h2--letter-spacing: -0.015em;
+  --text-h3: clamp(1.5rem, 1.2rem + 1.3vw, 2.44rem);
+  --text-h3--line-height: 1.18;
+  --text-h3--letter-spacing: -0.01em;
+  --text-h4: clamp(1.3rem, 1.15rem + 0.7vw, 1.95rem);
+  --text-h4--line-height: 1.25;
+  --text-h5: 1.5625rem;
+  --text-h5--line-height: 1.3;
+  --text-h6: 1.25rem;
+  --text-h6--line-height: 1.4;
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.6;
+  --text-body: 1rem;
+  --text-body--line-height: 1.6;
+  --text-small: 0.875rem;
+  --text-small--line-height: 1.5;
+  --text-caption: 0.75rem;
+  --text-caption--line-height: 1.4;
+  --text-overline: 0.75rem;
+  --text-overline--line-height: 1.4;
+  --text-overline--letter-spacing: 0.12em;
+
+  /* -- Reading measures ------------------------------------------------- */
+  --measure-content: 42rem; /* long-form body ~65–75ch */
+  --measure-narrow: 34rem;
+
+  /* -- Layout containers ------------------------------------------------ */
+  --container-site: 75rem;   /* 1200px default */
+  --container-wide: 90rem;   /* 1440px dashboards / wide */
+
+  /* -- Section rhythm (8pt grid, geometric) ----------------------------- */
+  --space-section: clamp(4rem, 2.5rem + 6vw, 8rem);
+  --space-section-lg: clamp(5rem, 3rem + 8vw, 10rem);
+
+  /* -- Radius ----------------------------------------------------------- */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1.25rem;
+  --radius-2xl: 2rem;
+  --radius-pill: 999px;
+
+  /* -- Elevation (soft, navy-tinted — never pure black) ----------------- */
+  --shadow-sm: 0 1px 2px rgba(5, 11, 20, 0.06), 0 1px 3px rgba(5, 11, 20, 0.08);
+  --shadow-md: 0 4px 8px rgba(5, 11, 20, 0.08), 0 2px 4px rgba(5, 11, 20, 0.06);
+  --shadow-lg: 0 12px 24px rgba(5, 11, 20, 0.1), 0 4px 8px rgba(5, 11, 20, 0.06);
+  --shadow-xl: 0 24px 48px rgba(5, 11, 20, 0.14), 0 8px 16px rgba(5, 11, 20, 0.08);
+  --shadow-gold-glow: 0 0 24px rgba(201, 162, 39, 0.16);
+
+  /* -- Motion (weighted, vault-like; no bounce) ------------------------- */
+  --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-emphasis: cubic-bezier(0.2, 0, 0, 1);
+  --duration-fast: 200ms;
+  --duration-base: 320ms;
+  --duration-slow: 480ms;
+  --duration-slower: 640ms;
+}
+
+/*
+ * Dark variant hook — enables `dark:` utilities driven by the data attribute
+ * (or the OS preference) rather than a class, so theming is data-driven.
+ */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* ---------------------------------------------------------------------- */
+/* Base layer                                                             */
+/* ---------------------------------------------------------------------- */
+@layer base {
+  /*
+   * Theme contexts. Both light and dark are self-contained and declared
+   * explicitly (not just as @theme defaults) so they NEST correctly: a navy
+   * section (data-theme="dark") inside a light page, or vice versa, always
+   * resolves the right semantics. This is what powers the alternating
+   * light / navy section rhythm without touching component logic.
+   *
+   * Accent semantics by surface:
+   *   light  → accent is NAVY (eyebrows, icons) — gold as text/icon on light
+   *            fails contrast, so gold is reserved for CTA fills + navy sections.
+   *   dark   → accent is GOLD.
+   * The primary CTA is gold on every surface (set in the Button), so the
+   * action colour is consistent site-wide while accents stay accessible.
+   */
+  [data-theme="light"] {
+    --color-background: var(--color-offwhite);
+    --color-surface: var(--color-white);
+    --color-surface-raised: var(--color-white);
+    --color-surface-sunken: var(--color-neutral-100);
+    --color-foreground: var(--color-neutral-800);
+    --color-muted: var(--color-neutral-600);
+    --color-subtle: var(--color-neutral-500);
+    --color-border: var(--color-neutral-200);
+    --color-border-strong: var(--color-neutral-300);
+    --color-accent: var(--color-navy-700);
+    --color-accent-hover: var(--color-navy-800);
+    --color-accent-soft: var(--color-gold-600);
+    --color-ring: var(--color-navy-600);
+  }
+
+  [data-theme="dark"] {
+    --color-background: var(--color-navy-950);
+    --color-surface: var(--color-navy-900);
+    --color-surface-raised: var(--color-navy-800);
+    --color-surface-sunken: var(--color-navy-950);
+    --color-foreground: var(--color-offwhite);
+    --color-muted: var(--color-navy-300);
+    --color-subtle: #6f89a8;
+    --color-border: var(--color-navy-700);
+    --color-border-strong: var(--color-navy-600);
+    --color-accent: var(--color-gold-500);
+    --color-accent-hover: var(--color-gold-600);
+    --color-accent-soft: var(--color-gold-300);
+    --color-ring: var(--color-gold-300);
+  }
+
+  * {
+    border-color: var(--color-border);
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    color-scheme: light;
+  }
+
+  html:where([data-theme="dark"]) {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body);
+    line-height: var(--text-body--line-height);
+    font-feature-settings: "cv11", "ss01";
+    text-underline-offset: 0.2em;
+    min-height: 100dvh;
+  }
+
+  /* Tabular figures everywhere numbers must align (data, stats). */
+  .tabular-nums,
+  [data-nums="tabular"] {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+  }
+
+  /* Focus is never removed — Governance / Accessibility. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-gold-500);
+    color: var(--color-navy-950);
+  }
+
+  /* Respect the user's motion preference globally (vestibular safety). */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Utilities                                                              */
+/* ---------------------------------------------------------------------- */
+@layer utilities {
+  /* Centered site container with responsive gutters (24 / 48 / 80px). */
+  .container-site {
+    width: 100%;
+    max-width: var(--container-site);
+    margin-inline: auto;
+    padding-inline: 1.5rem;
+  }
+  @media (min-width: 768px) {
+    .container-site {
+      padding-inline: 3rem;
+    }
+  }
+  @media (min-width: 1280px) {
+    .container-site {
+      padding-inline: 5rem;
+    }
+  }
+
+  /* Vertical rhythm between major sections. */
+  .section-y {
+    padding-block: var(--space-section);
+  }
+  .section-y-lg {
+    padding-block: var(--space-section-lg);
+  }
+
+  /* Uppercase, wide-tracked editorial eyebrow (Design Manual signature).
+     Named `.eyebrow` — NOT `.overline` — because `overline` is a built-in
+     Tailwind text-decoration utility, and the name collision was drawing an
+     actual line above every label. */
+  .eyebrow {
+    font-size: var(--text-overline);
+    line-height: var(--text-overline--line-height);
+    letter-spacing: var(--text-overline--letter-spacing);
+    text-transform: uppercase;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  /* Constrained measure for readable body copy. */
+  .measure {
+    max-width: var(--measure-content);
+  }
+  .measure-narrow {
+    max-width: var(--measure-narrow);
+  }
+
+  /* A single, faint gold hairline — the system's structural signature.
+     Kept deliberately soft so it supports the type rather than competing. */
+  .hairline-gold {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(201, 162, 39, 0.3),
+      transparent
+    );
+  }
+
+  /* Text gradient reserved for rare display emphasis (navy→gold glint). */
+  .text-gradient-gold {
+    background-image: linear-gradient(
+      100deg,
+      var(--color-offwhite) 0%,
+      var(--color-offwhite) 55%,
+      var(--color-gold-400) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}

@@ -1,0 +1,465 @@
+{
+  "metadata": {
+    "homeDescription": "AYZENITH is a global B2B commerce, sourcing and investment group. We source, move and stand behind products across borders — so ambitious businesses can grow globally without carrying the risk."
+  },
+  "nav": {
+    "services": "Services",
+    "capabilities": "Capabilities",
+    "process": "How We Work",
+    "products": "Products",
+    "about": "About",
+    "contact": "Contact",
+    "company": "Company",
+    "cta": "Start a Partnership",
+    "menu": "Open menu",
+    "close": "Close menu",
+    "skip": "Skip to content",
+    "home": "AYZENITH — home"
+  },
+  "cta": {
+    "overline": "Start a partnership",
+    "title": "Let's build across borders.",
+    "subtitle": "Tell us what you're building. We reply to qualified inquiries within two business days.",
+    "button": "Start a Partnership"
+  },
+  "about": {
+    "meta": {
+      "title": "About AYZENITH",
+      "description": "AYZENITH is an independent global B2B commerce, sourcing and investment group — built to be trusted across sectors and across decades."
+    },
+    "hero": {
+      "eyebrow": "Company",
+      "title": "A trusted partner, built to last decades.",
+      "subtitle": "AYZENITH is an independent commerce, sourcing and investment group. We exist to make global trade trustworthy — and to compound that trust into a business that endures."
+    },
+    "purpose": {
+      "overline": "Why we exist",
+      "title": "Global trade still runs on distance, opacity and risk. We were built to change the terms.",
+      "body1": "AYZENITH gives ambitious businesses a single partner who can source, move and stand behind products anywhere — with the transparency and standards the old system never offered.",
+      "body2": "We are not a broker that takes a margin and disappears. We are an institution that takes responsibility and remains — building not just a company, but the infrastructure for a new generation of global commerce.",
+      "imageAlt": "AYZENITH global trade operations"
+    },
+    "principles": {
+      "overline": "What we stand for",
+      "title": "The principles behind every decision.",
+      "intro": "These are permanent. Every choice we make is tested against them.",
+      "items": {
+        "focus": {
+          "title": "Focus before breadth",
+          "description": "We win a category deeply before adding another. The multi-sector group is earned, phase by phase — never pursued on ambition alone."
+        },
+        "trust": {
+          "title": "Trust is the product",
+          "description": "We compete on reliability, not price. Every promise kept compounds; not one is worth breaking for a single deal."
+        },
+        "accountability": {
+          "title": "We own the outcome",
+          "description": "One accountable partner across sourcing, quality, logistics and delivery. Our name is on the result, whoever executed it."
+        },
+        "permanence": {
+          "title": "Built for permanence",
+          "description": "Every decision is tested against a decade, not a quarter. We build an institution designed to outlast any individual."
+        },
+        "international": {
+          "title": "An international standard",
+          "description": "We hold every market to the same standard — the diligence, transparency and professionalism a serious partner should expect anywhere in the world."
+        },
+        "responsible": {
+          "title": "Responsible growth",
+          "description": "We grow only where we can serve properly. Entering a category or market means accepting its rules, its risks and its responsibilities in full."
+        }
+      }
+    },
+    "standards": {
+      "overline": "How we operate",
+      "title": "Standards stated before they are asked for.",
+      "body": "Reliability is a discipline, not a slogan. We hold ourselves to explicit standards across sourcing, quality and compliance — and we operate within the legal and regulatory frameworks of every market we serve.",
+      "points": {
+        "vetting": "Multi-factor supplier vetting — quality, capacity, reliability, compliance.",
+        "quality": "Pre-shipment quality inspection owned by us, not blamed on suppliers.",
+        "redundancy": "No single-source dependency on anything that matters.",
+        "compliance": "Regulated categories entered only within full legal frameworks."
+      },
+      "imageAlt": "AYZENITH accountability and standards"
+    },
+    "longview": {
+      "overline": "The long view",
+      "title": "We are early. That is the opportunity.",
+      "body": "AYZENITH begins in trade and compounds — into private label, into new sectors, into proprietary brands, into a holding built to last. Partners who build with us now build at the founding.",
+      "quote": "Scale should feel like simplicity. That is the company we are building."
+    }
+  },
+  "hero": {
+    "eyebrow": "Global Commerce & Sourcing Group",
+    "title": "The world is your market.",
+    "subtitle": "AYZENITH sources, moves and stands behind products across borders — connecting manufacturing, logistics and markets into one accountable partnership.",
+    "primaryCta": "Start a Partnership",
+    "secondaryCta": "Explore Capabilities",
+    "scroll": "Scroll to explore"
+  },
+  "belief": {
+    "overline": "Why we exist",
+    "belief": "Distance should never mean risk. Borders should never mean doubt.",
+    "problem": "Sourcing across the world means trusting partners you cannot see, in markets you cannot reach, with capital you cannot afford to lose.",
+    "promise": "AYZENITH removes that distance — one accountable partner for sourcing, quality, logistics and delivery, so growth feels like simplicity, not exposure."
+  },
+  "capabilities": {
+    "overline": "What we do",
+    "title": "One partner, from factory floor to final market.",
+    "intro": "A consolidated capability set, engineered to remove risk, distance and complexity from cross-border commerce.",
+    "items": {
+      "sourcing": {
+        "title": "Global Sourcing & Trade",
+        "description": "Vetted suppliers and OEM partners across categories — import, export and international sourcing under one accountable relationship."
+      },
+      "distribution": {
+        "title": "Distribution & Logistics",
+        "description": "Reliable product flow to retail, wholesale, e-commerce and corporate buyers — on time, in full, defect-free."
+      },
+      "privateLabel": {
+        "title": "Private Label Development",
+        "description": "Own-brand products built on proven demand, controlled quality and dependable warranty — value you keep, not margin you rent."
+      },
+      "partnerships": {
+        "title": "Manufacturing Partnerships",
+        "description": "Deep supplier relationships that move from transactional supply to exclusive rights and co-developed production."
+      }
+    }
+  },
+  "process": {
+    "overline": "How we work",
+    "title": "Nothing is left to chance.",
+    "intro": "Every order moves through a disciplined sequence — the system behind the promise.",
+    "steps": {
+      "vet": {
+        "title": "Vet",
+        "description": "Suppliers qualified on quality, capacity, reliability and compliance — trust, verified."
+      },
+      "source": {
+        "title": "Source",
+        "description": "The right product, specified precisely and secured on dependable terms."
+      },
+      "control": {
+        "title": "Quality Control",
+        "description": "Inspection before shipment — reliability owned by us, not blamed on the supplier."
+      },
+      "ship": {
+        "title": "Logistics",
+        "description": "Customs, compliance and freight handled end to end, tracked at every stage."
+      },
+      "deliver": {
+        "title": "Deliver",
+        "description": "On time, in full, defect-free — the promise made physical, order after order."
+      }
+    }
+  },
+  "difference": {
+    "overline": "The difference",
+    "tension": "In a category of anonymous middlemen, most partners disappear the moment something goes wrong.",
+    "title": "We are the institution, not the intermediary.",
+    "pillars": {
+      "consolidate": {
+        "title": "Consolidate",
+        "description": "Sourcing, manufacturing, logistics and distribution under one accountable roof — one relationship instead of twelve."
+      },
+      "derisk": {
+        "title": "De-risk",
+        "description": "Vetted partners, quality control, transparent terms and real accountability. We absorb the friction you fear."
+      },
+      "access": {
+        "title": "Access",
+        "description": "Doors that are hard to open alone — global supplier networks, new markets and dependable supply at scale."
+      }
+    }
+  },
+  "proof": {
+    "overline": "Built on trust",
+    "title": "Reliability, made measurable.",
+    "intro": "Presence and standards that serious buyers verify before they commit.",
+    "stats": {
+      "reach": { "value": "3", "label": "Continents in active sourcing" },
+      "categories": { "value": "24/7", "label": "Cross-border operations" },
+      "accountability": { "value": "1", "label": "Accountable partner, end to end" },
+      "standard": { "value": "100%", "label": "Pre-shipment quality inspection" }
+    },
+    "note": "Every figure above reflects how AYZENITH operates today. As partnerships and case studies mature, this record grows — always stated honestly, never inflated."
+  },
+  "vision": {
+    "overline": "The long view",
+    "title": "We are building the infrastructure for a new generation of global commerce.",
+    "body": "AYZENITH begins in trade and compounds — into private label, into new sectors, into proprietary brands, into a holding built to last decades. This is early. That is the opportunity.",
+    "quote": "Scale should feel like simplicity. That is the company we are building.",
+    "cta": "Build with us"
+  },
+  "contact": {
+    "overline": "Start a partnership",
+    "title": "Let's build across borders.",
+    "subtitle": "Tell us what you're building. We reply to qualified inquiries within two business days.",
+    "form": {
+      "name": "Full name",
+      "namePlaceholder": "Your name",
+      "company": "Company",
+      "companyPlaceholder": "Company name",
+      "email": "Work email",
+      "emailPlaceholder": "you@company.com",
+      "region": "Region",
+      "regionPlaceholder": "Select a region",
+      "regions": {
+        "europe": "Europe",
+        "turkiye": "Türkiye",
+        "mena": "Middle East & North Africa",
+        "asia": "Asia",
+        "americas": "Americas",
+        "other": "Other"
+      },
+      "interest": "How can we help?",
+      "interestPlaceholder": "Select an area",
+      "interests": {
+        "sourcing": "Global sourcing & trade",
+        "distribution": "Distribution & logistics",
+        "privateLabel": "Private label development",
+        "partnership": "Manufacturing partnership",
+        "other": "Something else"
+      },
+      "message": "Your message",
+      "messagePlaceholder": "A few lines about your need, category and scale.",
+      "submit": "Start a Partnership",
+      "submitting": "Sending…",
+      "successTitle": "Thank you — this is the beginning.",
+      "successBody": "Your inquiry has reached the AYZENITH partnerships team. We'll be in touch within two business days.",
+      "errorTitle": "Something interrupted the send.",
+      "errorBody": "Please try again, or reach us directly at info@ayzenith.com.",
+      "errors": {
+        "name": "Please enter your name.",
+        "company": "Please enter your company.",
+        "email": "Enter a valid work email.",
+        "region": "Please select a region.",
+        "interest": "Please select an area.",
+        "message": "Please add a few lines so we can help."
+      }
+    }
+  },
+  "services": {
+    "meta": {
+      "title": "Services & Capabilities",
+      "description": "Global sourcing, distribution, private label development and manufacturing partnerships — one accountable partner from factory floor to final market."
+    },
+    "hero": {
+      "eyebrow": "What we do",
+      "title": "One partner, from factory floor to final market.",
+      "subtitle": "A consolidated capability set, engineered to remove risk, distance and complexity from cross-border commerce."
+    },
+    "intro": {
+      "overline": "Capabilities",
+      "title": "Breadth, held to one standard of reliability.",
+      "body": "Each capability stands alone — and works better together. All of them are delivered under a single accountable relationship, with the same discipline behind every order."
+    },
+    "items": {
+      "sourcing": {
+        "title": "Global Sourcing & Trade",
+        "outcome": "The right product, secured on dependable terms.",
+        "description": "Vetted suppliers and OEM partners across categories. We handle import, export and international sourcing — vetting, quality, customs and compliance — so you gain access without carrying the risk.",
+        "imageAlt": "Global sourcing and trade operations"
+      },
+      "distribution": {
+        "title": "Distribution & Logistics",
+        "outcome": "On time, in full, defect-free.",
+        "description": "Reliable product flow to retail chains, wholesalers, e-commerce and corporate buyers. Customs, freight and fulfilment handled end to end and tracked at every stage.",
+        "imageAlt": "Distribution and logistics network"
+      },
+      "privateLabel": {
+        "title": "Private Label Development",
+        "outcome": "Value you keep, not margin you rent.",
+        "description": "Own-brand products built on proven demand, controlled quality and dependable warranty. We move you up the value chain — from reselling to owning the brand.",
+        "imageAlt": "Private label product development"
+      },
+      "partnerships": {
+        "title": "Manufacturing Partnerships",
+        "outcome": "From supply to exclusive rights.",
+        "description": "Deep supplier relationships that progress from transactional supply to preferred terms, exclusive distribution and co-developed production — capability without owning a factory.",
+        "imageAlt": "Manufacturing partnerships"
+      }
+    },
+    "groups": {
+      "overline": "Enterprise services",
+      "title": "A defined set of services, each held to one standard.",
+      "intro": "Our capabilities extend across trade, manufacturing and regulated supply. Every service below is delivered with the same discipline — vetted partners, documented quality and clear accountability.",
+      "trade": {
+        "title": "Trade & Distribution",
+        "services": {
+          "techSourcing": {
+            "title": "Global Technology Sourcing",
+            "description": "Sourcing technology products from vetted manufacturers and authorised suppliers worldwide, with compliance and quality resolved before goods move."
+          },
+          "electronics": {
+            "title": "Consumer Electronics Distribution",
+            "description": "Reliable distribution of consumer electronics to retail, wholesale and e-commerce partners — dependable stock, consistent quality, no supply surprises."
+          },
+          "wholesale": {
+            "title": "Retail & Wholesale Supply",
+            "description": "Volume supply to retail chains and wholesale distributors on transparent terms, structured for margins that hold across a full supply cycle."
+          },
+          "oem": {
+            "title": "OEM / Private Label Solutions",
+            "description": "Own-brand development with controlled specification, quality and packaging — the path from reselling to owning the product and its margin."
+          }
+        }
+      },
+      "manufacturing": {
+        "title": "Manufacturing Partnerships",
+        "services": {
+          "textile": {
+            "title": "Textile Sourcing & Manufacturing Partnerships",
+            "description": "End-to-end textile sourcing — specification, sampling, audited production and delivery — through manufacturing partners who meet our standards."
+          }
+        }
+      },
+      "healthcareSupply": {
+        "title": "Healthcare Supply",
+        "note": "Handled strictly within the legal and regulatory frameworks of each market, through licensed channels.",
+        "services": {
+          "dental": {
+            "title": "Certified Dental Implant Distribution",
+            "description": "Distribution of certified dental implant systems to clinics and distributors, with full traceability, documentation and compliance."
+          },
+          "medical": {
+            "title": "Medical Product Supply",
+            "description": "Supply of certified medical products through licensed channels, managed with the documentation and diligence the category demands."
+          }
+        }
+      },
+      "healthcarePartnership": {
+        "title": "Healthcare Partnership Network",
+        "note": "AYZENITH is a coordination and partnership network. We connect patients and organisations with accredited, licensed providers — we are not a healthcare provider or clinic and do not deliver medical treatment.",
+        "services": {
+          "hair": {
+            "title": "Hair Transplant Coordination",
+            "description": "Coordination between international patients and accredited clinics — scheduling, logistics and standards. Treatment is delivered solely by the licensed provider."
+          },
+          "prp": {
+            "title": "PRP Therapy Coordination",
+            "description": "Facilitation and coordination with accredited providers offering PRP therapy, with AYZENITH managing the connection, never the procedure."
+          },
+          "meso": {
+            "title": "Mesotherapy Coordination",
+            "description": "Coordination with licensed clinics providing mesotherapy — introductions, logistics and diligence, handled to a professional standard."
+          },
+          "exosome": {
+            "title": "Exosome Therapy Coordination",
+            "description": "Partnership coordination with accredited providers offering exosome therapy, arranged transparently and within applicable regulation."
+          }
+        }
+      }
+    }
+  },
+  "products": {
+    "meta": {
+      "title": "Products",
+      "description": "The categories AYZENITH sources and moves — held to a real quality standard, available through B2B partnership and trusted marketplace channels."
+    },
+    "hero": {
+      "eyebrow": "Products",
+      "title": "What we move — and the standard behind it.",
+      "subtitle": "Products are evidence of capability, not a catalogue. Every category is held to the same vetting and quality discipline that carries the AYZENITH name."
+    },
+    "intro": {
+      "overline": "Categories",
+      "title": "Where our sourcing depth translates into dependable supply.",
+      "body": "We focus on categories we understand well enough to guarantee. Each one below describes a sourcing capability — the supplier networks, standards and control behind it — not a list of products."
+    },
+    "categories": {
+      "electronics": {
+        "title": "Consumer Electronics",
+        "description": "Vetted OEM and brand-authorised supply across consumer electronics, with pre-shipment inspection and compliance handled before goods move."
+      },
+      "smart": {
+        "title": "Smart Devices",
+        "description": "Connected and smart-home devices sourced from manufacturers who meet our reliability, certification and after-sales standards."
+      },
+      "mobile": {
+        "title": "Mobile Accessories",
+        "description": "High-turnover mobile accessory categories, secured at volume with consistent quality and margins that hold across a supply cycle."
+      },
+      "home": {
+        "title": "Home & Kitchen Equipment",
+        "description": "Durable home and kitchen goods from audited factories, specified precisely and quality-controlled to reduce returns and surprises."
+      },
+      "textile": {
+        "title": "Textile Products",
+        "description": "Textile sourcing and manufacturing partnerships — from specification and sampling to production oversight and dependable delivery."
+      },
+      "medical": {
+        "title": "Medical Products",
+        "description": "Certified medical products handled within full regulatory frameworks, distributed through licensed channels and documented at every step."
+      },
+      "dental": {
+        "title": "Dental Implant Systems",
+        "description": "Certified dental implant systems supplied to clinics and distributors under strict compliance, traceability and quality standards."
+      }
+    },
+    "engage": {
+      "overline": "How to engage",
+      "title": "Two ways to work with us.",
+      "b2b": {
+        "title": "B2B & Wholesale",
+        "description": "Volume supply, private label and partnership. The primary way serious buyers work with AYZENITH — start a partnership and we'll tailor to your category and scale."
+      },
+      "marketplace": {
+        "title": "Marketplace Channels",
+        "description": "Selected products are available through trusted marketplaces for transactional buyers, while B2B relationships remain the core of what we do."
+      }
+    }
+  },
+  "contactPage": {
+    "meta": {
+      "title": "Start a Partnership",
+      "description": "Begin a long-term partnership with AYZENITH. Tell us what you are building — we reply to considered inquiries within two business days."
+    },
+    "hero": {
+      "eyebrow": "Start a partnership",
+      "title": "Let's build something that lasts.",
+      "subtitle": "The best partnerships begin with a conversation, not a transaction. Tell us where you want to go, and we will tell you honestly how we can help you get there."
+    },
+    "info": {
+      "responseTitle": "What happens next",
+      "responseBody": "Your message reaches our team directly. We read every inquiry, and reply within two business days to arrange a first conversation.",
+      "emailTitle": "Email",
+      "phoneTitle": "Phone",
+      "locationTitle": "Office",
+      "hoursTitle": "Working hours",
+      "assuranceTitle": "A considered partner",
+      "assuranceBody": "We take on partnerships we can serve properly, and we operate within the legal and regulatory frameworks of every market we enter."
+    }
+  },
+  "errors": {
+    "notFoundEyebrow": "Error 404",
+    "notFoundTitle": "This route doesn't exist.",
+    "notFoundBody": "The page you're looking for isn't here. Let's get you back on course.",
+    "backHome": "Back to homepage",
+    "errorEyebrow": "Something interrupted this page",
+    "errorTitle": "An unexpected error occurred.",
+    "errorBody": "We've noted it. Please try again — and if it persists, reach us directly and we'll help.",
+    "retry": "Try again"
+  },
+  "footer": {
+    "tagline": "Global Trade. Absolute Trust.",
+    "description": "A global B2B commerce, sourcing and investment group — building the infrastructure for a new generation of trade.",
+    "companyHeading": "Company",
+    "engageHeading": "Engage",
+    "contactHeading": "Contact",
+    "about": "About",
+    "services": "Services",
+    "capabilities": "Capabilities",
+    "process": "How We Work",
+    "products": "Products",
+    "partnership": "Start a Partnership",
+    "contact": "Contact",
+    "rightsLabel": "All rights reserved.",
+    "legalNote": "AYZENITH operates within the legal and regulatory frameworks of every market it serves.",
+    "backToTop": "Back to top",
+    "legalHeading": "Legal",
+    "privacy": "Privacy Policy",
+    "cookies": "Cookie Policy",
+    "terms": "Terms & Conditions"
+  }
+}

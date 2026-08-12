@@ -1,9 +1,10 @@
 import { Link } from "@/i18n/navigation";
-import { ArrowUp } from "lucide-react";
+import { ArrowUp, Linkedin, Instagram, Twitter, Youtube, Facebook } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { Container } from "@/components/ui/container";
 import { Logo } from "@/components/ui/logo";
-import { companyInfo, footerNav, siteConfig } from "@/config/site";
+import { footerNav, siteConfig } from "@/config/site";
+import { getSiteSettings } from "@/server/settings";
 
 /**
  * Footer — the institutional base (Wireframe 09). Server Component with zero
@@ -16,7 +17,16 @@ import { companyInfo, footerNav, siteConfig } from "@/config/site";
  */
 export async function Footer() {
   const t = await getTranslations("footer");
+  const settings = await getSiteSettings();
   const year = new Date().getFullYear();
+
+  const socials = [
+    { href: settings.linkedin, icon: Linkedin, label: "LinkedIn" },
+    { href: settings.instagram, icon: Instagram, label: "Instagram" },
+    { href: settings.x, icon: Twitter, label: "X" },
+    { href: settings.youtube, icon: Youtube, label: "YouTube" },
+    { href: settings.facebook, icon: Facebook, label: "Facebook" },
+  ].filter((s) => s.href);
 
   return (
     <footer
@@ -74,23 +84,41 @@ export async function Footer() {
             <ul className="flex flex-col gap-3 text-small">
               <li>
                 <a
-                  href={`mailto:${companyInfo.email}`}
+                  href={`mailto:${settings.companyEmail}`}
                   className="text-muted transition-colors hover:text-foreground"
                 >
-                  {companyInfo.email}
+                  {settings.companyEmail}
                 </a>
               </li>
               <li>
                 <a
-                  href={`tel:${companyInfo.phoneHref}`}
+                  href={`tel:${settings.companyPhoneHref}`}
                   className="tabular-nums text-muted transition-colors hover:text-foreground"
                 >
-                  {companyInfo.phone}
+                  {settings.companyPhone}
                 </a>
               </li>
-              <li className="text-muted">{companyInfo.location}</li>
-              <li className="text-subtle">{companyInfo.hoursShort}</li>
+              <li className="text-muted">{settings.companyLocation}</li>
+              <li className="text-subtle">{settings.hoursShort}</li>
             </ul>
+
+            {socials.length > 0 ? (
+              <ul className="mt-2 flex gap-3">
+                {socials.map(({ href, icon: Icon, label }) => (
+                  <li key={label}>
+                    <a
+                      href={href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={label}
+                      className="inline-flex size-9 items-center justify-center rounded-md border border-border text-muted transition-colors hover:border-accent/50 hover:text-foreground"
+                    >
+                      <Icon className="size-4" aria-hidden="true" />
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </div>
 

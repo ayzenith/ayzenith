@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "@/config/site";
 import { routing } from "@/i18n/routing";
+import { getActiveProductSlugs } from "@/server/products";
 
 /**
  * Programmatic sitemap with locale alternates. Each route is emitted once per
@@ -30,10 +31,10 @@ function urlFor(locale: string, path: string): string {
     : `${siteConfig.url}/${locale}${clean}`;
 }
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
 
-  return routes.map(({ path, priority, changeFrequency }) => ({
+  const pages = routes.map(({ path, priority, changeFrequency }) => ({
     url: urlFor(routing.defaultLocale, path),
     lastModified,
     changeFrequency,
@@ -44,4 +45,22 @@ export default function sitemap(): MetadataRoute.Sitemap {
       ),
     },
   }));
+
+  const slugs = await getActiveProductSlugs();
+  const products = slugs.map((slug) => {
+    const path = `/products/${slug}`;
+    return {
+      url: urlFor(routing.defaultLocale, path),
+      lastModified,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+      alternates: {
+        languages: Object.fromEntries(
+          routing.locales.map((locale) => [locale, urlFor(locale, path)]),
+        ),
+      },
+    };
+  });
+
+  return [...pages, ...products];
 }

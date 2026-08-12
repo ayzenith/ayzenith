@@ -21,6 +21,7 @@ export async function generateMetadata(): Promise<Metadata> {
   // No `title` → the brand-first default ("AYZENITH — Global Trade. Absolute
   // Trust.") is used, avoiding a doubled brand name in the homepage title.
   return buildMetadata({
+    fullTitle: t("homeTitle"),
     description: t("homeDescription"),
     path: "/",
   });

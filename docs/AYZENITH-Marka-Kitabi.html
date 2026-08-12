@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Marka Kitabı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#050b14;--navy-900:#0a1a2f;--navy-800:#0d2137;--navy-700:#123252;--navy-600:#1b4068;
+  --navy-500:#2c5282;--navy-400:#4a6e96;--navy-300:#7c97b5;--navy-200:#b4c4d6;--navy-100:#dce4ec;--navy-50:#f0f4f8;
+  --gold-700:#8a6d1c;--gold-600:#a88420;--gold-500:#c9a227;--gold-400:#d9b84a;--gold-300:#e7ce7c;--gold-100:#f6edd2;
+  --white:#fff;--offwhite:#f7f8fa;--n-100:#edeff2;--n-200:#dde1e7;--n-300:#c2c8d0;--n-400:#9aa2ad;
+  --n-500:#6b7480;--n-600:#4a525e;--n-700:#333b45;--n-800:#1e242c;--n-900:#12161b;
+  --ink:#1e242c;--muted:#4a525e;--subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);color:var(--ink);background:#c9ced6;font-size:10.5pt;line-height:1.6;font-feature-settings:"cv11","ss01"}
+.doc{width:210mm;margin:0 auto;background:var(--offwhite);box-shadow:0 14px 34px rgba(5,11,20,.2)}
+.sheet{width:210mm;height:297mm;position:relative;overflow:hidden;color:var(--offwhite)}
+.grid-field{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;height:100%;padding:26mm 22mm;display:flex;flex-direction:column;justify-content:space-between}
+.cover-logo{height:24mm;width:auto;filter:brightness(0) invert(1) brightness(.97)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:5mm}
+.kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:39pt;line-height:1.05;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:155mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:140mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.06em}
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%)}
+.sc-inner{position:relative;height:100%;padding:0 22mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:29pt;line-height:1.1;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:140mm;line-height:1.55}
+.content{padding:16mm 20mm 18mm}
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+.section-open{border-top:2px solid var(--gold-500);padding-top:4mm;margin:10mm 0 5mm}
+.section-open:first-child{margin-top:0}
+h2.h{font-size:20pt;line-height:1.16;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13pt;line-height:1.3;font-weight:700;color:var(--navy-800);margin:7mm 0 2.5mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:5mm 0 1.5mm}
+p{margin:0 0 3mm}
+.lead{font-size:11.5pt;line-height:1.55;color:var(--muted);margin-bottom:5mm}
+strong{font-weight:600;color:var(--navy-900)}em{font-style:italic}
+ul,ol{margin:0 0 3.5mm;padding-left:5.5mm}
+li{margin-bottom:1.5mm}li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.6mm}
+code{font-family:var(--mono);font-size:8.6pt;color:var(--navy-700);background:var(--navy-50);padding:.4mm 1.4mm;border-radius:3px}
+.toc h2.h{margin-bottom:6mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:5mm 0 1mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.3mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 8mm}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);border-radius:8px;padding:4.5mm 5.5mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}.callout p{margin:0}
+.quote{font-family:var(--serif);font-size:14.5pt;line-height:1.4;color:var(--navy-800);border-left:2px solid var(--gold-500);padding-left:6mm;margin:5mm 0;font-style:italic}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm;margin:4.5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:4.5mm 5mm}
+.card h4{margin-top:0}.card p{font-size:9.5pt;color:var(--muted);margin-bottom:0}
+table.data{width:100%;border-collapse:collapse;margin:4.5mm 0;font-size:9.6pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.4mm 4mm 2.4mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:30%}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4mm 4.5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4,.dontbox h4{margin-top:0}.dobox h4{color:#1e7a5a}.dontbox h4{color:#a53b3b}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.4pt;color:var(--n-700)}
+.traitgrid{display:grid;grid-template-columns:1fr 1fr;gap:3.5mm;margin:4.5mm 0}
+.trait{border:1px solid var(--n-200);border-radius:9px;padding:3.5mm 4mm;background:var(--white)}
+.trait .t{font-weight:700;color:var(--gold-600);font-size:10.5pt}
+.trait p{font-size:9.2pt;color:var(--muted);margin:1mm 0 0}
+.logobox{border-radius:12px;padding:11mm;display:flex;align-items:center;justify-content:center;min-height:48mm}
+.logobox.light{background:var(--white);border:1px solid var(--n-200)}
+.logobox.dark{background:var(--navy-950);border:1px solid var(--navy-800);position:relative;overflow:hidden}
+.logobox.dark .gf{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:30px 30px}
+.logo-img{height:28mm;width:auto;position:relative}
+.logo-img.rev{filter:brightness(0) invert(1) brightness(.97)}
+.boxcap{font-family:var(--mono);font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);margin-top:2mm;text-align:center}
+.tile-row{display:flex;gap:5mm;margin:4.5mm 0;flex-wrap:wrap}
+.tile .sq{width:24mm;height:24mm;border-radius:6px;overflow:hidden;background:var(--navy-950);display:flex;align-items:center;justify-content:center;border:1px solid var(--navy-800)}
+.tile .sq.round{border-radius:50%}
+.tile .sq img{width:150%;height:auto;filter:brightness(0) invert(1) brightness(.97);object-fit:cover;object-position:center 34%}
+.tile .cap{font-family:var(--mono);font-size:7pt;letter-spacing:.06em;text-transform:uppercase;color:var(--subtle);margin-top:1.5mm;text-align:center}
+.safe{position:relative;background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:13mm;display:flex;align-items:center;justify-content:center;min-height:46mm}
+.safe .frame{position:absolute;inset:7mm;border:1px dashed var(--gold-500);border-radius:4px}
+.swatchgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:2.5mm;margin:3.5mm 0}
+.swatch{border-radius:6px;overflow:hidden;border:1px solid var(--n-200)}
+.swatch .chip{height:18mm}
+.swatch .meta{padding:1.6mm 2mm;background:var(--white)}
+.swatch .nm{font-size:7.5pt;font-weight:600;color:var(--navy-900)}
+.swatch .hx{font-family:var(--mono);font-size:6.6pt;color:var(--subtle)}
+.typerow{border-bottom:1px solid var(--n-200);padding:3mm 0;display:flex;align-items:baseline;gap:5mm}
+.typerow .lbl{flex:0 0 32mm;font-family:var(--mono);font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);padding-top:1mm}
+.typerow .spec{color:var(--navy-900);line-height:1.1}
+.tok-demos{display:flex;gap:5mm;flex-wrap:wrap;margin:4mm 0}
+.rdemo{text-align:center}
+.rdemo .b{width:22mm;height:14mm;background:var(--navy-100);border:1px solid var(--navy-200)}
+.rdemo .cap{font-family:var(--mono);font-size:6.8pt;color:var(--subtle);margin-top:1.4mm}
+.sdemo{width:28mm;height:18mm;background:var(--white);border-radius:8px}
+.endmark{margin-top:8mm;padding-top:4mm;border-top:1px solid var(--n-200);font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);text-align:center}
+@media print{
+  @page{size:A4;margin:16mm 15mm}
+  @page cover{margin:0}
+  body{background:#fff}
+  .doc{width:auto;box-shadow:none;background:#fff}
+  .sheet{width:auto;height:296mm;page:cover}
+  .cover{break-after:page}
+  .section-cover{break-before:page;break-after:page}
+  .content{padding:0}
+  h2.h,h3,h4,.section-open{break-after:avoid}
+  .card,.callout,.quote,.trait,.logobox,.safe,.swatch,.tile,.dobox,.dontbox{break-inside:avoid}
+  tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- KAPAK -->
+<section class="sheet cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <img class="cover-logo" src="assets/ayzenith-logo.png" alt="AYZENITH">
+      <div class="cover-tag">Küresel Ticaret · Mutlak Güven</div>
+    </div>
+    <div>
+      <div class="kicker">Marka &amp; Kimlik El Kitabı — Belge 03</div>
+      <h1>AYZENITH <span class="accent">Marka Kitabı</span></h1>
+      <p class="cover-sub">AYZENITH'in eksiksiz görsel ve iletişim kimliği — belgelenmiş, rafine edilmiş ve tekrarlanabilir kılınmış; böylece marka yıllarca ve her yüzeyde tanınabilir kalır.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Belge<strong>Marka Kitabı v1.0</strong></div>
+        <div>Sınıflandırma<strong>Şirket İçi · Gizli</strong></div>
+        <div>Temel<strong>Kurumsal Tasarım Kılavuzu</strong></div>
+        <div>Köken<strong>İstanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- İÇİNDEKİLER -->
+<section class="content toc">
+  <div class="eyebrow">İçindekiler</div>
+  <h2 class="h">Bu marka kitabı neleri kapsar</h2>
+  <p class="lead">Bu el kitabı mevcut AYZENITH kimliğini belgeler — onu yeniden tasarlamaz. Bir iyileştirmenin tanınırlığı korurken profesyonelliği artıracağı yerlerde, bu açıkça işaretlenmiş bir opsiyonel öneri olarak sunulur.</p>
+  <div class="toc-part">Kısım A — Temel</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">Marka Felsefesi</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Marka Kişiliği</span></div>
+  <div class="toc-part">Kısım B — Çekirdek Kimlik</div>
+  <div class="toc-row"><span class="num">03</span><span class="t">Logo Sistemi</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Logo Kullanımı</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">Tipografi</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">Renk Sistemi</span></div>
+  <div class="toc-row"><span class="num">07</span><span class="t">Yerleşim Sistemi</span></div>
+  <div class="toc-part">Kısım C — İfade</div>
+  <div class="toc-row"><span class="num">08</span><span class="t">Fotoğraf Yönü</span></div>
+  <div class="toc-row"><span class="num">09</span><span class="t">İllüstrasyon Stili</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">İkonografi</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Hareket İlkeleri</span></div>
+  <div class="toc-part">Kısım D — Ses</div>
+  <div class="toc-row"><span class="num">12</span><span class="t">Ses Tonu</span></div>
+  <div class="toc-row"><span class="num">13</span><span class="t">Yazım Stili</span></div>
+  <div class="toc-part">Kısım E — Uygulamalar</div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Kurumsal Uygulamalar</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Sosyal Medya Kimliği</span></div>
+  <div class="toc-row"><span class="num">16</span><span class="t">Fuar Kimliği</span></div>
+  <div class="toc-row"><span class="num">17</span><span class="t">Geleceğe Yönelik Marka Evrimi</span></div>
+</section>
+
+<!-- KISIM A -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Kısım A</div>
+    <h2>Temel</h2>
+    <p class="sc-desc">Markanın neyi temsil ettiği ve nasıl hissettirmesi gerektiği. Sonraki kimlik, bu fikirlerin görünür ifadesidir — ve her zaman onlara hizmet etmelidir.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">01 · Marka Felsefesi</div></div>
+  <h2 class="h">AYZENITH nedir</h2>
+  <p class="lead">AYZENITH; bağımsız, Türkiye merkezli, küresel bir B2B ticaret, tedarik ve yatırım grubudur — sektörler ve on yıllar boyunca güvenilmek üzere kurulmuştur.</p>
+  <table class="data">
+    <tr><td>Amaç</td><td>Küresel ticaret hâlâ mesafe, belirsizlik ve risk üzerine kuruludur. Şartları değiştirmek için varız — hırslı işletmelere, ürünleri her yerde tedarik edebilen, taşıyabilen ve arkasında durabilen tek bir ortak sunarak.</td></tr>
+    <tr><td>Misyon</td><td>Üretimi, lojistiği ve pazarları tek bir hesap verebilir ortaklıkta birleştirmek — böylece bir işletme, küresel riski taşımadan küresel tedariğe erişebilir.</td></tr>
+    <tr><td>Vizyon</td><td>Yeni nesil küresel ticaretin altyapısını kurmak: ticaretle başlayıp özel markaya, yeni sektörlere ve on yıllar sürecek bir holdinge doğru bileşik büyümek.</td></tr>
+    <tr><td>Marka Sözü</td><td><strong>Global Trade. Absolute Trust. — Küresel Ticaret. Mutlak Güven.</strong> Tedarik, kalite, lojistik ve teslimat için tek bir hesap verebilir ortak. Adımız sonucun üzerindedir.</td></tr>
+    <tr><td>Konumlandırma</td><td>Aracı değil, kurum. İsimsiz aracılarla dolu bir kategoride AYZENITH; birleştiren, riski azaltan ve kalıcı olan ortaktır.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Marka için neden önemli</div><p>Bu kitaptaki her görsel ve sözel seçim, tek bir duyguyu inandırıcı kılmak için vardır: AYZENITH'e güvenilebileceği. Kimlik ölçülü, kesin ve kalıcıdır çünkü <em>ürün, güvenin kendisidir</em>.</p></div>
+
+  <div class="section-open"><div class="eyebrow">02 · Marka Kişiliği</div></div>
+  <h2 class="h">Markanın nasıl hissettirmesi gerektiği</h2>
+  <p class="lead">AYZENITH bir insan olsaydı, zor anlarda başkalarının güvendiği sakin profesyonel olurdu — odadaki en sesli kişi değil, her zaman en güvenilir olan.</p>
+  <div class="traitgrid">
+    <div class="trait"><div class="t">Stratejik</div><p>Anlaşmalarda değil, on yıllar ve sistemler üzerinden düşünürüz. Marka düşünülmüş okunur, asla ani değil.</p></div>
+    <div class="trait"><div class="t">Güvenilir</div><p>Kişilik tutarlılığın kendisidir. Her şey olması gereken yerde, aynı standartta, her seferinde.</p></div>
+    <div class="trait"><div class="t">Uluslararası</div><p>Sınırlar ötesinde evinde. Marka her yerde tek bir standardı tutar ve tek bir pazara değil, dünyaya hitap eder.</p></div>
+    <div class="trait"><div class="t">Modern</div><p>Trendlerin peşinden koşmadan çağdaş ve kesin. Temiz geometri, cömert boşluk, güncel işçilik.</p></div>
+    <div class="trait"><div class="t">Kesin</div><p>Tam dil, tam boşluk, tam rakamlar. Hiçbir şey yaklaşık değil, hiçbir şey şişirilmiş değil.</p></div>
+    <div class="trait"><div class="t">Kendinden emin</div><p>Ses yükseltmeden emin. Marka konumunu açıkça belirtir ve fazla satmaz.</p></div>
+    <div class="trait"><div class="t">Profesyonel</div><p>Duruşu kurumsal. Her yüzey ciddi bir kuruluşun işi gibi görünür.</p></div>
+    <div class="trait"><div class="t">Sakin</div><p>Baskı altında dingin. Ağırlıklı hareket, sessiz renk, aceleci olmayan ton — kontrol duygusu.</p></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Tek satırlık sınama</div><p>Bir tasarım ya da bir cümle sesli, aceleci ya da övüngen hissettiriyorsa, ne kadar etkileyici görünürse görünsün marka dışıdır. Şüphe hâlinde, daha sakin ve daha kesin olanı seçin.</p></div>
+</section>
+
+<!-- KISIM B -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Kısım B</div>
+    <h2>Çekirdek Kimlik</h2>
+    <p class="sc-desc">Sabit sistem: AYZENITH'i anında tanınabilir kılan logo, tipografi, renk ve yerleşim. Bunlar onaylı web sitesinden ve Kurumsal Tasarım Kılavuzu'ndan belgelenmiştir ve yeniden tasarlanmaz.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">03 · Logo Sistemi</div></div>
+  <h2 class="h">Marka ve nasıl kurulduğu</h2>
+  <p class="lead">AYZENITH logosu, üçgen bir <strong>A·Y·Z monogramı</strong> — bir zirve, bir doruk — ve altındaki <strong>AYZENITH kelime markasıdır</strong>. Tek imza detayı altın üç-çizgili "E"dir: markanın tek altın noktası, onun "zirvesi".</p>
+  <div class="grid2">
+    <div><div class="logobox light"><img class="logo-img" src="assets/ayzenith-logo.png" alt="AYZENITH birincil logo"></div><div class="boxcap">Birincil — açık zeminde tam renk</div></div>
+    <div><div class="logobox dark"><div class="gf"></div><img class="logo-img rev" src="assets/ayzenith-logo.png" alt="AYZENITH ters logo"></div><div class="boxcap">Ters — koyu zeminde kırık beyaz</div></div>
+  </div>
+  <h4>Sistem</h4>
+  <table class="data">
+    <tr><td>Birincil logo</td><td>Tam kilit — monogram üstte, kelime markası altta; lacivert işçilik ve altın "E". Açık zeminler, belgeler ve baskı için varsayılan.</td></tr>
+    <tr><td>İkincil logo</td><td>Koyu zeminler için ters tek renk (saf beyaz değil, kırık beyaz). Lacivert web sitesinde, alt bilgide ve koyu uygulamalarda kullanılır.</td></tr>
+    <tr><td>Yatay kilit</td><td><em>Önerilen ekleme.</em> Monogram solda, kelime markası sağda — menü çubukları, antetli kâğıt ve geniş, alçak alanlar için.</td></tr>
+    <tr><td>Dikey kilit</td><td>Birincil istiflenmiş biçim (monogram üstte kelime markası altta) — kapaklar, posterler ve kareye yakın alanlar için.</td></tr>
+    <tr><td>Monogram</td><td>Tek başına üçgen A·Y·Z markası — avatarlar, uygulama simgeleri ve kelime markasının okunmayacağı küçük veya kare yerleşimler için.</td></tr>
+  </table>
+  <div class="tile-row">
+    <div class="tile"><div class="sq round"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">Sosyal avatar</div></div>
+    <div class="tile"><div class="sq"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">Uygulama simgesi</div></div>
+    <div class="tile"><div class="sq" style="width:15mm;height:15mm"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">Favicon</div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Opsiyonel öneri</div><p>Altın "E"yi koruyan özel bir <strong>ters export</strong> (markanın tamamını tek renge indirmek yerine) ve bağımsız bir <strong>monogram dosyası</strong> ile <strong>yatay kilit</strong> vektör (SVG) olarak üretilebilir. Bu, küçük boyutlarda ve koyu zeminlerde tanınırlığı korur ve bir belgeleme iyileştirmesidir — yeniden tasarım değil.</p></div>
+
+  <div class="section-open"><div class="eyebrow">04 · Logo Kullanımı</div></div>
+  <h2 class="h">Markayı korumak</h2>
+  <p class="lead">Logo bu kitaptaki en değerli varlıktır. Bu kurallar, göründüğü her yerde onu okunaklı, tutarlı ve tartışmasız AYZENITH tutar.</p>
+  <div class="grid2">
+    <div><div class="safe"><div class="frame"></div><img class="logo-img" src="assets/ayzenith-logo.png" alt="AYZENITH güvenli alan"></div><div class="boxcap">Boş alan — her yönden korunur</div></div>
+    <div>
+      <h4 style="margin-top:0">Güvenli alan</h4>
+      <p>Logonun etrafında her yönden en az monogramın taban yüksekliği kadar boş alan bırakın. Diğer öğeleri, metinleri ve kenarları bu bölgenin dışında tutun.</p>
+      <h4>Minimum boyut</h4>
+      <p>Markayı asla <strong>28&nbsp;px</strong> (≈ 7&nbsp;mm) yükseklikten küçük göstermeyin — monogramın okunabilirlik alt sınırı. Bunun altında yalnızca monogramı kullanın.</p>
+    </div>
+  </div>
+  <h4>Zemin kuralları</h4>
+  <ul class="tight">
+    <li>Beyaz, kırık beyaz ve açık nötr zeminlerde tam renkli logo.</li>
+    <li>Lacivert ve koyu fotoğraf zeminlerde ters (kırık beyaz) logo.</li>
+    <li>Fotoğraf üzerinde markayı sakin, az detaylı ve yeterli kontrastlı bir alana yerleştirin — gerekirse hafif bir lacivert perde ekleyin.</li>
+  </ul>
+  <div class="dodont">
+    <div class="dobox"><h4>Yap</h4><ul class="tight">
+      <li>Özgün oranları ve boş alanı koru.</li>
+      <li>Yalnızca onaylı renk biçimlerini kullan: tam renk ya da ters.</li>
+      <li>Markaya nefes alacak yer bırak.</li>
+    </ul></div>
+    <div class="dontbox"><h4>Yapma</h4><ul class="tight">
+      <li>Markayı esnetme, döndürme ya da bozma.</li>
+      <li>Renklendirme, efekt ekleme ya da düşük kontrastlı zeminlere koyma.</li>
+      <li>Kelime markasını yeniden kurma/aralama, ya da "E" çizgilerini ayırma.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">05 · Tipografi</div></div>
+  <h2 class="h">Tipografi sistemi</h2>
+  <p class="lead">Markanın sesinin çoğunu tipografi taşır. AYZENITH üç aile kullanır: arayüz ve gövde için <strong>Inter</strong>, nadir editöryal vurgu için <strong>Newsreader</strong>, etiketler ve veriler için <strong>IBM&nbsp;Plex&nbsp;Mono</strong>.</p>
+  <div class="typerow"><div class="lbl">Display · Inter 700</div><div class="spec" style="font-size:29pt;font-weight:700;letter-spacing:-.02em">Dünya sizin pazarınız.</div></div>
+  <div class="typerow"><div class="lbl">Başlık · Inter 700</div><div class="spec" style="font-size:18pt;font-weight:700;letter-spacing:-.015em">Fabrikadan pazara tek ortak.</div></div>
+  <div class="typerow"><div class="lbl">Gövde · Inter 400</div><div class="spec" style="font-size:11pt;font-weight:400;color:var(--muted);max-width:120mm;line-height:1.5">Perakende, toptan ve e-ticaret alıcılarına güvenilir ürün akışı — zamanında, eksiksiz, kusursuz.</div></div>
+  <div class="typerow"><div class="lbl">Alt yazı · Inter 500</div><div class="spec" style="font-size:9pt;font-weight:500;color:var(--subtle)">Aktif tedarikte kıta sayısı</div></div>
+  <div class="typerow"><div class="lbl">Buton · Inter 600</div><div class="spec"><span style="display:inline-block;background:var(--gold-500);color:var(--navy-950);font-size:9.5pt;font-weight:600;padding:2.2mm 5mm;border-radius:8px">Ortaklık Başlatın</span></div></div>
+  <div class="typerow"><div class="lbl">Üst etiket · Mono 600</div><div class="spec" style="font-family:var(--mono);font-size:8.5pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)">Ne yapıyoruz</div></div>
+  <div class="typerow" style="border-bottom:0"><div class="lbl">Alıntı · Newsreader</div><div class="spec" style="font-family:var(--serif);font-style:italic;font-size:15pt;color:var(--navy-800)">Ölçek, sadelik gibi hissettirmeli.</div></div>
+  <h4>Ölçek &amp; kurallar</h4>
+  <p>Tipografi ölçeği bir Büyük Üçlü oranını (1.250) izler, display boyutlarında akışkandır. Başlıklar sakin bir otorite için sıkı harf aralığı (<code>-0.02em</code>) ve cömert satır yüksekliği kullanır; gövde metni ~65–75 karakterlik rahat bir ölçüyü tutar. Verilerdeki rakamlar, sütunlar hizalansın diye tablo rakamları kullanır.</p>
+  <div class="callout"><div class="eyebrow">Yedekler</div><p>Marka yazı tiplerinin bulunmadığı yerlerde (e-posta, bazı belgeler) Inter için <strong>sistem sans-serif</strong>, Newsreader için <strong>Georgia</strong> ve Plex Mono için standart bir monospace'e geçin. Tam yazı tipinden çok hiyerarşi önemlidir.</p></div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">06 · Renk Sistemi</div></div>
+  <h2 class="h">Lacivert, altın ve netlik</h2>
+  <p class="lead">Palet iki marka rengi üzerine kuruludur — <strong>Lacivert</strong> (derinlik ve güven) ve <strong>Altın</strong> (değer, zirve) — disiplinli bir nötr aralıkla desteklenir. Pazarlama yüzeyi koyu-öncelikli; lacivert markanın ruhudur.</p>
+  <h4>Lacivert — birincil (derinlik)</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#050b14"></div><div class="meta"><div class="nm">Lacivert 950</div><div class="hx">#050B14</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0a1a2f"></div><div class="meta"><div class="nm">Lacivert 900</div><div class="hx">#0A1A2F</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0d2137"></div><div class="meta"><div class="nm">Lacivert 800</div><div class="hx">#0D2137</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#123252"></div><div class="meta"><div class="nm">Lacivert 700</div><div class="hx">#123252</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#2c5282"></div><div class="meta"><div class="nm">Lacivert 500</div><div class="hx">#2C5282</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#b4c4d6"></div><div class="meta"><div class="nm">Lacivert 200</div><div class="hx">#B4C4D6</div></div></div>
+  </div>
+  <h4>Altın — ikincil (değer / zirve)</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#8a6d1c"></div><div class="meta"><div class="nm">Altın 700</div><div class="hx">#8A6D1C</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#a88420"></div><div class="meta"><div class="nm">Altın 600</div><div class="hx">#A88420</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#c9a227"></div><div class="meta"><div class="nm">Altın 500 ★</div><div class="hx">#C9A227</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#d9b84a"></div><div class="meta"><div class="nm">Altın 400</div><div class="hx">#D9B84A</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#e7ce7c"></div><div class="meta"><div class="nm">Altın 300</div><div class="hx">#E7CE7C</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f6edd2"></div><div class="meta"><div class="nm">Altın 100</div><div class="hx">#F6EDD2</div></div></div>
+  </div>
+  <h4>Nötr — yapı &amp; netlik</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#ffffff;box-shadow:inset 0 0 0 1px #dde1e7"></div><div class="meta"><div class="nm">Beyaz</div><div class="hx">#FFFFFF</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f7f8fa"></div><div class="meta"><div class="nm">Kırık beyaz</div><div class="hx">#F7F8FA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#dde1e7"></div><div class="meta"><div class="nm">Nötr 200</div><div class="hx">#DDE1E7</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#9aa2ad"></div><div class="meta"><div class="nm">Nötr 400</div><div class="hx">#9AA2AD</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#4a525e"></div><div class="meta"><div class="nm">Nötr 600</div><div class="hx">#4A525E</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#1e242c"></div><div class="meta"><div class="nm">Nötr 800</div><div class="hx">#1E242C</div></div></div>
+  </div>
+  <div class="grid2" style="margin-top:4.5mm">
+    <div class="card"><h4>Altın kullanım ilkeleri</h4><p>Altın değerlidir — az kullanıldığında değerli kalır. Onu birincil harekete geçirici çağrıya (CTA), logo "E"sine, küçük vurgulara ve nadir display vurgusuna ayırın. Gövde metni ya da büyük dolgular olarak altın kontrastta başarısız olur ve markayı ucuzlatır. Genellikle görünüm başına bir altın an yeterlidir.</p></div>
+    <div class="card"><h4>Vurgu &amp; zemin kuralları</h4><p><strong>Koyu</strong> zeminlerde vurgu altındır; <strong>açık</strong> zeminlerde vurgu lacivert olur (açıkta altın kontrastta başarısızdır), CTA ise her yerde altın kalır. Zeminler lacivert ve açık arasında sakin bir ritimde değişir. Yükseklik lacivert tonlu gölgelerle verilir, asla saf siyahla değil.</p></div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">07 · Yerleşim Sistemi</div></div>
+  <h2 class="h">Boşluk, ızgara ve yapı</h2>
+  <p class="lead">Yerleşim, markanın sakinliğinin ve kesinliğinin hissedildiği yerdir. Cömert boşluk boş değildir — her öğenin tek başına durmasına izin verme özgüvenidir.</p>
+  <table class="data">
+    <tr><th>Sistem</th><th>Standart</th></tr>
+    <tr><td>Boşluk</td><td>Tüm boşlukları 8 birimlik bir ızgara yönetir. Ritim keyfi değil geometriktir; boşluk cömertçe kullanılır.</td></tr>
+    <tr><td>Izgara</td><td>Tutarlı boşluklu 12 sütunlu duyarlı bir ızgara. İçerik ızgaraya hizalanır; hiçbir şey sebepsiz kaymaz.</td></tr>
+    <tr><td>Kapsayıcılar</td><td>Site içeriği maksimum genişlik <code>1200px</code>; geniş/panel yerleşimleri <code>1440px</code>. Gövde ölçüsü okunabilirlik için ~65–75 karakterde tutulur.</td></tr>
+    <tr><td>Bölüm ritmi</td><td>Ana bölümler büyük, akışkan dikey boşlukla ayrılır; açık ve lacivert yüzeyler kadans için değişir.</td></tr>
+  </table>
+  <h4>Köşe yarıçapı</h4>
+  <div class="tok-demos">
+    <div class="rdemo"><div class="b" style="border-radius:2px"></div><div class="cap">sm · 4px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:5px"></div><div class="cap">md · 8px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:7px"></div><div class="cap">lg · 12px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:12px"></div><div class="cap">xl · 20px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:18px"></div><div class="cap">2xl · 32px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:999px"></div><div class="cap">hap</div></div>
+  </div>
+  <h4>Yükseklik (gölge)</h4>
+  <div class="tok-demos">
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 1px 2px rgba(5,11,20,.06),0 1px 3px rgba(5,11,20,.08)"></div><div class="cap">sm</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 4px 8px rgba(5,11,20,.08),0 2px 4px rgba(5,11,20,.06)"></div><div class="cap">md</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 12px 24px rgba(5,11,20,.10),0 4px 8px rgba(5,11,20,.06)"></div><div class="cap">lg</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 24px 48px rgba(5,11,20,.14),0 8px 16px rgba(5,11,20,.08)"></div><div class="cap">xl</div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Bileşen ritmi</div><p>Gölgeler yumuşak ve <strong>lacivert tonludur, asla saf siyah değil</strong>. Tek ve soluk bir altın saç çizgisi, sistemin yapısal imzasıdır — ayırmak için kullanılır, süslemek için değil. Her bileşende tutarlı yarıçap ve boşluk, tüm sistemi tek bir elden çıkmış gibi hissettiren şeydir.</p></div>
+</section>
+
+<!-- KISIM C -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Kısım C</div>
+    <h2>İfade</h2>
+    <p class="sc-desc">Markanın tipografi ve rengin ötesindeki davranışı — kimliği yaşama geçiren, ama mesajla asla rekabet etmeyen görsel, ikon ve hareket.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">08 · Fotoğraf Yönü</div></div>
+  <h2 class="h">Gerçek iş, ölçülülükle görülür</h2>
+  <p class="lead">Fotoğraf gerçek hissettirmelidir. AYZENITH gerçek küresel ticareti gösterir — genel, gülümseyen stok görselleri değil. Amaç inandırıcılıktır: izleyicinin güvenebileceği ciddi bir operasyon hissi.</p>
+  <div class="grid2">
+    <div class="card"><h4>Gösterdiğimiz konular</h4><p>Gerçek iş ve ticaret: depolama, üretim zeminleri, lojistik ve navlun, premium ürün fotoğrafı ve profesyonel ortamlarda samimi insan etkileşimi.</p></div>
+    <div class="card"><h4>Kaçındığımız konular</h4><p>Klişe stok — el sıkışma yakın çekimleri, parlayan küreler, gökyüzü üzerinde oklar, sahte "çeşitli ekip çak yapıyor". Yaşanmış değil, satın alınmış görünen her şey.</p></div>
+  </div>
+  <table class="data">
+    <tr><td>Işık</td><td>Doğal ya da düşünülmüş yönlü ışık. Düz parlaklık yerine derin, kontrollü gölgeler — derinlik, sağlamlık olarak okunur.</td></tr>
+    <tr><td>Kompozisyon</td><td>Kendinden emin negatif alan, güçlü çizgiler, kesin çerçeveleme. Tek net konu; hiçbir şey dağınık değil.</td></tr>
+    <tr><td>Renk &amp; gradasyon</td><td>Serin, hafif doygunluğu düşük, lacivert alt tonlu; ara sıra sıcak altın vurgu. Asla aşırı doygun ya da ağır filtreli değil.</td></tr>
+    <tr><td>İnsan etkileşimi</td><td>Gerçek işte gerçek insanlar — odaklı, profesyonel, poz vermemiş. Coşkudan çok vakar.</td></tr>
+    <tr><td>İşleme</td><td>Koyu yerleşimlerde, hafif bir lacivert perde üstteki metni okunaklı tutar ve görselleri palete bağlar.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Ara standart</div><p>Sahip olunan bir fotoğraf kütüphanesi oluşana dek, site zayıf stok yerine marka desenli lacivert yer tutucu yüzeyler kullanır. <strong>Düşünülmüş bir yer tutucu, genel bir fotoğrafa tercih edilir.</strong> Yer tutucuları yalnızca bu yönü karşılayan görsellerle değiştirin.</p></div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">09 · İllüstrasyon Stili</div></div>
+  <h2 class="h">Yapısal, dekoratif değil</h2>
+  <p class="lead">AYZENITH oyunbaz ya da karakter illüstrasyonu kullanmaz. "İllüstrasyon" dili soyut ve yapısaldır — logoyu kuran geometrinin aynısı.</p>
+  <ul class="tight">
+    <li><strong>Kesinlik ızgarası.</strong> Soluk, yumuşakça maskelenmiş lacivert bir çizgi ızgarası; yapı, mühendislik ve küresel koordinatları çağrıştırır. İmza arka plan dokusudur.</li>
+    <li><strong>Altın saç çizgisi.</strong> Ayırmak ve işaret etmek için kullanılan tek, yumuşak bir altın gradyan çizgi — markanın yapısal vurgusu, asla bir gösteriş değil.</li>
+    <li><strong>Geometrik derinlik.</strong> Katmanlı lacivert gradyanlar ve tek bir ölçülü parıltı, görsel olmadan derinlik yaratır; üçgen monogramı yankılar.</li>
+    <li><strong>Ölçülülük.</strong> Grafikler tipografiyi destekler; onunla asla rekabet etmez. Dekoratif bir öğe göze önce çarpıyorsa, yanlıştır.</li>
+  </ul>
+  <div class="section-open"><div class="eyebrow">10 · İkonografi</div></div>
+  <h2 class="h">Net, tutarlı çizgi ikonlar</h2>
+  <p class="lead">İkonlar dekorasyon değil, işlevsel yönlendirmedir. AYZENITH tek ve tutarlı bir çizgi-ikon seti, eşit çizgi kalınlığıyla kullanır.</p>
+  <table class="data">
+    <tr><td>Stil</td><td>Ana hat (çizgi) ikonlar, tutarlı ~1,5px çizgi, yuvarlatılmış birleşimler, minimum detay.</td></tr>
+    <tr><td>Renk</td><td>Metin rengini devralır — açıkta lacivert vurgu, koyuda altın. Asla çok renkli değil.</td></tr>
+    <tr><td>Kullanım</td><td>Yalnızca kavrayışa ve gezinmeye yardımcı olmak için. Fikir başına bir ikon; asla sadece süs.</td></tr>
+    <tr><td>Tutarlılık</td><td>Tek bir kütüphaneden (site tek bir çizgi seti kullanır) çekin; böylece her ikon aynı ailenin parçası hissettirir.</td></tr>
+  </table>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">11 · Hareket İlkeleri</div></div>
+  <h2 class="h">Ağırlıklı ve emin hissettiren hareket</h2>
+  <p class="lead">Hareket bir kasa kapısı gibi hissettirmeli: sağlam, akıcı ve kasıtlı — asla zıplayan, oyunbaz ya da kendisi için hızlı değil. Zarif, sakin, amaçlı, asla dikkat dağıtan değil.</p>
+  <div class="grid2">
+    <div class="card"><h4>Nasıl hissettirir</h4><p>Ağırlıklı ve kontrollü. Öğeler yumuşakça girer ve yerine oturur; hiçbir şey fırlamaz, aşmaz ya da zıplamaz. Hareket güven verir — kendine hâkim bir sistemin işaretidir.</p></div>
+    <div class="card"><h4>Ne yapar</h4><p>Kaydırmada içeriği sakince açar, durumlar arasında dikkati yönlendirir ve eylemleri onaylar. Her zaman kavrayışa hizmet eder, gösteriye asla.</p></div>
+  </div>
+  <table class="data">
+    <tr><th>Değer</th><th>Süre &amp; kullanım</th></tr>
+    <tr><td>Süre — hızlı</td><td><code>200ms</code> · küçük durum değişiklikleri, üzerine gelmeler.</td></tr>
+    <tr><td>Süre — temel</td><td><code>320ms</code> · standart geçişler ve açılışlar.</td></tr>
+    <tr><td>Süre — yavaş</td><td><code>480ms</code> · daha büyük, daha kasıtlı hareketler.</td></tr>
+    <tr><td>Süre — daha yavaş</td><td><code>640ms</code> · nadir, vurgulu açılışlar.</td></tr>
+    <tr><td>Yumuşatma</td><td>Standart <code>cubic-bezier(0.4, 0, 0.2, 1)</code> ve vurgu <code>cubic-bezier(0.2, 0, 0, 1)</code>. Yay yok, zıplama yok.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Erişilebilirlik — taviz yok</div><p>Hareket her zaman <code>prefers-reduced-motion</code> tercihine saygı gösterir. Azaltılmış hareket isteyen kullanıcılar için animasyon fiilen kaldırılır. Odak durumları asla bastırılmaz. Sakin olmak, aynı zamanda düşünceli olmaktır.</p></div>
+</section>
+
+<!-- KISIM D -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Kısım D</div>
+    <h2>Ses</h2>
+    <p class="sc-desc">AYZENITH nasıl konuşur. Ses, logo kadar kimliğin bir parçasıdır — kendinden emin, net ve ölçülü; her dilde ve her kanalda aynı.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">12 · Ses Tonu</div></div>
+  <h2 class="h">AYZENITH nasıl konuşur</h2>
+  <p class="lead">Nasıl güvenilmek istiyorsak öyle konuşuruz: kendinden emin, net ve ölçülü. Konumumuzu açıkça belirtir ve olduğu gibi bırakırız — onu sesle satmayız.</p>
+  <div class="dodont">
+    <div class="dobox"><h4>AYZENITH böyle konuşur</h4><ul class="tight">
+      <li>Açık ve kesin — her kelime yerini hak eder.</li>
+      <li>Övünmeden, kendinden emin.</li>
+      <li>Dürüstçe — rakamlar bugün nasıl çalıştığımızı yansıtır, asla şişirilmez.</li>
+      <li>Sakince — aciliyet yok, baskı yok, abartı yok.</li>
+      <li>Sorumlulukla — ne yaptığımız ve ne yapmadığımız konusunda net.</li>
+    </ul></div>
+    <div class="dontbox"><h4>AYZENITH böyle konuşmaz</h4><ul class="tight">
+      <li>"Dünya çapında", "lider", "çığır açan", "sınıfının en iyisi" yok.</li>
+      <li>Abartılı iddia ya da uydurma istatistik yok.</li>
+      <li>Saldırgan ya da yüksek baskılı satış dili yok.</li>
+      <li>Netleştirmek yerine gizleyen jargon yok.</li>
+      <li>Argo, abartı ya da ünlemle sürüklenen coşku yok.</li>
+    </ul></div>
+  </div>
+  <h4>Profesyonel örnekler</h4>
+  <p><strong>Marka uyumlu:</strong> <em>"Nitelikli başvurulara iki iş günü içinde yanıt veriyoruz."</em> · <em>"Fiyatta değil, güvenilirlikte rekabet ederiz."</em> · <em>"Her rakam bugün nasıl çalıştığımızı yansıtır — dürüstçe belirtilir, asla şişirilmez."</em></p>
+  <p><strong>Marka dışı:</strong> <em>"Dünyanın lider ticaret ortağıyız!"</em> · <em>"Rakipsiz fiyatlar, hemen harekete geçin!"</em> · <em>"Devrim niteliğinde, çığır açan bir platform."</em></p>
+  <div class="quote">Mesafe asla risk anlamına gelmemeli. Sınırlar asla şüphe anlamına gelmemeli.</div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">13 · Yazım Stili</div></div>
+  <h2 class="h">Kanallar arası yazım</h2>
+  <p class="lead">Ses sabittir; kayıt uyarlanır. Aşağıda, aynı kendinden emin ve ölçülü tonun her yüzeye nasıl uygulandığı yer alır.</p>
+  <table class="data">
+    <tr><th>Kanal</th><th>Nasıl yazarız</th></tr>
+    <tr><td>Web sitesi</td><td>Editöryal ve kesin. Kısa, açık cümleler; net bir üst etiket, güçlü bir başlık, bölüm başına tek fikir. Sıfatlarla değil, netlikle güven.</td></tr>
+    <tr><td>E-postalar</td><td>Doğrudan ve saygılı. Sadede çabuk gel, tek bir net istekte bulun, nazikçe kapat. Asla ısrarcı değil, asla şişirilmiş değil.</td></tr>
+    <tr><td>LinkedIn</td><td>Profesyonel ve yararlı. Öz-tanıtım değil, içerik paylaş; bir satıcı değil, inandırıcı bir kurum olarak konuş.</td></tr>
+    <tr><td>Satış belgeleri</td><td>Yapılandırılmış ve tam. Kapsamı, standartları, sorumlulukları ve koşulları açıkça belirt. Yalnızca operasyonun teslim edebileceğini vaat et.</td></tr>
+    <tr><td>Sunumlar</td><td>Az metin, güçlü hiyerarşi, cömert boşluk. Slayt konuşmacıyı destekler; sesli okunacak bir belge değildir.</td></tr>
+  </table>
+  <h4>Evrensel kurallar</h4>
+  <ul class="tight">
+    <li>Önce ana noktayla başla. Okuyanın zamanına saygı göster.</li>
+    <li>Geneli değil, belirliyi; etkileyiciyi değil, dürüstü tercih et.</li>
+    <li>Üç dilde tutarlılık: İngilizce, Türkçe ve Almanca'da aynı anlam ve aynı ölçülülük.</li>
+    <li>Emin değilsen, kısalt. Kısalık güven olarak okunur.</li>
+  </ul>
+</section>
+
+<!-- KISIM E -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Kısım E</div>
+    <h2>Uygulamalar</h2>
+    <p class="sc-desc">Kimliğin dünyadaki hâli — bir kartvizitten bir fuar standına — ve tanınabilir kalırken önümüzdeki on yılda nasıl gelişmesi gerektiği.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">14 · Kurumsal Uygulamalar</div></div>
+  <h2 class="h">Marka kâğıtta ve gelen kutusunda</h2>
+  <p class="lead">Kurumsal materyaller çoğu zaman markanın ilk fiziksel kanıtıdır. Web sitesi gibi hissettirmeli: kesin, ferah ve tartışmasız AYZENITH.</p>
+  <table class="data">
+    <tr><td>Kartvizit</td><td>Lacivert ya da kırık beyaz, cömert kenar boşlukları. Monogram ya da tam marka, Inter ile ad ve unvan, mono ile detaylar. İsteğe bağlı altın kenar ya da tek bir altın saç çizgisi. Süsten çok ölçülülük.</td></tr>
+    <tr><td>Antetli kâğıt</td><td>Tam boş alanıyla sol üstte logo, üstbilginin altında soluk bir altın saç çizgisi, alt bilgide mono iletişim şeridi. Geniş kenar boşlukları; sayfa nefes almalı.</td></tr>
+    <tr><td>E-posta imzası</td><td>Sade, tek sütun: ad (Inter 600 lacivert), unvan ve şirket, sonra daha küçük nötr tonda iletişim bilgileri. İsteğe bağlı küçük logo. İstemcilerde bozulan afiş, alıntı ya da görsel yok.</td></tr>
+    <tr><td>Sunum şablonu</td><td>Lacivert ve açık ana slaytlar, büyük tipografi, slayt başına tek fikir, slayt başına en fazla bir kez altın. Mono üst etiketler bölümleri işaretler.</td></tr>
+    <tr><td>Teklif şablonu</td><td>Bu el kitabını yansıtır: kapak, net hiyerarşi, cömert boşluk, lacivert/altın sistemi. Kapsam, standartlar, sorumluluklar ve koşullar etrafında yapılandırılır.</td></tr>
+  </table>
+  <div class="card" style="margin-top:1mm">
+    <div class="eyebrow" style="color:var(--gold-600);margin-bottom:2mm">E-posta imzası — referans</div>
+    <p style="color:var(--navy-900);font-weight:600;margin-bottom:1mm">[Ad Soyad]</p>
+    <p style="color:var(--muted);margin-bottom:1mm;font-size:9pt">Ortaklıklar · AYZENITH</p>
+    <p style="color:var(--subtle);font-family:var(--mono);font-size:8pt;margin:0">info@ayzenith.com · +90 541 437 19 07 · ayzenith.com · İstanbul, Türkiye</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">15 · Sosyal Medya Kimliği</div></div>
+  <h2 class="h">Tutarlı bir varlık</h2>
+  <p class="lead">Sosyal platformlarda AYZENITH bir pazarlamacı olarak değil, inandırıcı bir kurum olarak görünür. Profiller her kanalda tutarlı, ölçülü ve tartışmasız marka uyumludur.</p>
+  <div class="grid3">
+    <div class="card"><h4>LinkedIn</h4><p>Birincil kanal. Lacivert üzerinde monogram avatar, sloganıyla lacivert/ızgara bir afiş. İçerik özdür — yetkinlik, standartlar, düşünülmüş bakış. Profesyonel, asla tanıtımsal değil.</p></div>
+    <div class="card"><h4>Instagram</h4><p>Gerçek operasyonun, ürünün ve marka işçiliğinin görsel kaydı — fotoğraf yönüne bağlı. Uyumlu lacivert-altın ızgara; nicelikten çok nitelik.</p></div>
+    <div class="card"><h4>YouTube</h4><p>Düşünülmüş, iyi üretilmiş içerik: yetkinlik anlatımları, ortak bakışları, operasyonun ardı. Sakin tempo ve markaya uygun hareket.</p></div>
+  </div>
+  <h4>Ortak standartlar</h4>
+  <ul class="tight">
+    <li>Her yerde aynı avatar: lacivert üzerinde monogram, doğru boşluklu ve ortalanmış.</li>
+    <li>Afiş, sloganıyla lacivert alan ve ızgara dokusu kullanır — karmaşa yok.</li>
+    <li>Kanallar arası tek ses: kendinden emin, net, ölçülü; tüm dillerde aynı biyografi anlamı.</li>
+    <li>Altın küçük bir vurgu olarak görünür, asla baskın bir dolgu olarak değil.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">Yöneten fikir</div><p>Her gönderi, güveni ya kuran ya da harcayan bir marka izlenimidir. Bir gönderi web sitesinin yanında rahatça durmayacaksa, bir AYZENITH kanalına ait değildir.</p></div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">16 · Fuar Kimliği</div></div>
+  <h2 class="h">AYZENITH fuarlarda nasıl görünür</h2>
+  <p class="lead">Uluslararası fuarlarda — Hostech, IFA, Ambiente ve benzeri ticaret etkinlikleri gibi — stant markanın üç boyutlu bir ifadesidir. Web sitesine girmek gibi hissettirmelidir.</p>
+  <table class="data">
+    <tr><td>Varlık</td><td>Ölçülü ve kendinden emin, sesli değil. Kesin aydınlatmalı sakin bir lacivert alan, ciddi alıcıları gürültü ve renkten daha etkili çeker.</td></tr>
+    <tr><td>Malzeme &amp; renk</td><td>Derin lacivert yüzeyler, temiz nötr yapı, ölçülü altın vurgular. Kaliteli malzeme ve işçilik, markanın iddia ettiği kurumun işaretidir.</td></tr>
+    <tr><td>Marka</td><td>İyi boşluklu ve iyi aydınlatılmış monogram ve kelime markası, çapa olarak. Lacivert duvarlarda ters (kırık beyaz). Asla rakip grafiklerle kalabalıklaştırılmaz.</td></tr>
+    <tr><td>Mesaj</td><td>Yoğun metin yerine tek net satır — slogan ya da temel söz. Yetkinlik sloganlarla değil, gerçek ürün ve düşünülmüş görsellerle gösterilir.</td></tr>
+    <tr><td>Işık &amp; hareket</td><td>Sıcak, yönlü ışık ve ekran hareketi, hareket ilkelerine uygun olarak ağırlıklı ve sakin tutulur. Gösterişten çok derinlik ve odak.</td></tr>
+    <tr><td>İnsanlar</td><td>Ekip kimliğin parçasıdır: profesyonel, sakin, gerçekten yardımsever. Stant yayın yapmak için değil, sohbet başlatmak için vardır.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Stant sınaması</div><p>Bir ziyaretçi, tek kelime okumadan önce AYZENITH'in kesin, uluslararası ve güvenilir olduğunu hissedebilmelidir. Stant kalabalık ya da genel hissettiriyorsa, markanın aleyhine çalışıyordur.</p></div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">17 · Geleceğe Yönelik Marka Evrimi</div></div>
+  <h2 class="h">Kendimizi kaybetmeden gelişmek</h2>
+  <p class="lead">Kalıcılık için kurulmuş bir marka olgunlaşmalı, yeniden icat etmemeli. Önümüzdeki on yılda AYZENITH kategoriler ve sektörler boyunca büyüyecek — ve bu süre boyunca anında tanınabilir kalmalı.</p>
+  <p>Vizyon, ticareti özel markaya, yeni sektörlere, kendi markalarımıza ve kalıcı bir holdinge dönüştürerek biriktirir. Bu olurken kimlik değişmek yerine derinleşmeli. Aşağıdakiler evrimin korkulukları.</p>
+  <div class="grid2">
+    <div class="card"><h4>Değişmemesi gerekenler</h4><p>Üçgen A·Y·Z monogramı, lacivert-altın palet, altın "E", ölçülü ve kesin kişilik ve söz — <em>Küresel Ticaret. Mutlak Güven.</em> Bunlar tanınırlığın çapalarıdır.</p></div>
+    <div class="card"><h4>Gelişebilecekler</h4><p>Rafine bir vektör logo sistemi ve yeni girişimler için alt-marka işaretleri; sahip olunan bir fotoğraf kütüphanesi; genişletilmiş, belgelenmiş bir bileşen ve yerleşim sistemi; olgunlaşan bir hareket dili — hepsi mevcut kimlik içinde.</p></div>
+  </div>
+  <h4>Aşamalı bir yol (opsiyonel öneriler)</h4>
+  <table class="data">
+    <tr><td>Yakın vade</td><td>Logoyu vektörleştir; monogramı, yatay kilidi ve altın "E"yi koruyan ters export'u üret. Bu kitabı tek doğruluk kaynağı olarak resmileştir.</td></tr>
+    <tr><td>Orta vade</td><td>Fotoğraf yönüne uygun, sahip olunan bir fotoğraf kütüphanesi kur. Çekirdeği değiştirmeden tasarım sistemini yeni uygulamalara (teklifler, sunumlar, ambalaj) genişlet.</td></tr>
+    <tr><td>Uzun vade</td><td>Özel marka ve yeni sektörler için tutarlı bir alt-marka mimarisi tanıt — her biri açıkça AYZENITH ailesinin bir üyesi olarak, monogram mantığını, paleti ve sesi paylaşarak.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Evrim ilkesi</div><p>Gelecekteki her değişiklik tek bir soruya göre sınanır: <em>bu, tanınırlığı ve güveni derinleştiriyor mu, yoksa sulandırıyor mu?</em> Kimliği rafine ederiz; onu yeniden başlatmayız. Kalıcılık için kurulmak, markanın kendisi için de geçerlidir.</p></div>
+  <div class="quote">Ölçek, sadelik gibi hissettirmeli. İnşa ettiğimiz şirket — ve marka — budur.</div>
+  <div class="endmark">AYZENITH · Marka Kitabı v1.0 · Şirket İçi / Gizli</div>
+</section>
+
+</div>
+</body>
+</html>

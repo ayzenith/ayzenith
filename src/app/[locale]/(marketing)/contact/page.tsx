@@ -7,7 +7,7 @@ import { PageHero } from "@/components/ui/page-hero";
 import { Reveal } from "@/components/ui/reveal";
 import { ContactForm } from "@/components/sections/contact-form";
 import { buildMetadata } from "@/lib/seo";
-import { companyInfo } from "@/config/site";
+import { getSiteSettings } from "@/server/settings";
 
 /**
  * Contact — the conversion page (Website Experience Blueprint). Reframes
@@ -27,6 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ContactPage() {
   const t = await getTranslations("contactPage");
+  const settings = await getSiteSettings();
 
   const infoItems: Array<{
     icon: LucideIcon;
@@ -38,15 +39,15 @@ export default async function ContactPage() {
     {
       icon: Mail,
       title: t("info.emailTitle"),
-      link: { href: `mailto:${companyInfo.email}`, label: companyInfo.email },
+      link: { href: `mailto:${settings.companyEmail}`, label: settings.companyEmail },
     },
     {
       icon: Phone,
       title: t("info.phoneTitle"),
-      link: { href: `tel:${companyInfo.phoneHref}`, label: companyInfo.phone },
+      link: { href: `tel:${settings.companyPhoneHref}`, label: settings.companyPhone },
     },
-    { icon: MapPin, title: t("info.locationTitle"), body: companyInfo.location },
-    { icon: Clock, title: t("info.hoursTitle"), body: companyInfo.hoursLong },
+    { icon: MapPin, title: t("info.locationTitle"), body: settings.companyLocation },
+    { icon: Clock, title: t("info.hoursTitle"), body: settings.hoursLong },
     {
       icon: ShieldCheck,
       title: t("info.assuranceTitle"),

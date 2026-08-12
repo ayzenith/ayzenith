@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { assets, type AssetKey, type AssetDescriptor } from "@/config/assets";
+import { getAssetOverrides } from "@/server/assets";
 import { cn } from "@/lib/utils";
 
 /**
@@ -11,7 +12,13 @@ import { cn } from "@/lib/utils";
  * built today with placeholders becomes a page with photography by editing only
  * config/assets.ts. Business logic never touches a file path.
  *
- * Isomorphic (no "use client") so it is usable in Server and Client trees.
+ * The owner can also swap any slot's image from the "Sayfalar & Metinler → Görseller"
+ * panel: a DB override (getAssetOverrides, fail-safe) wins over the compiled
+ * registry entry, so a placeholder becomes real photography with no code change.
+ *
+ * Async Server Component (reads the override map). Used only in the server-
+ * rendered marketing pages; the layout is identical whether a slot resolves to
+ * an override, a registry image, or a placeholder.
  */
 
 type Aspect = "square" | "video" | "portrait" | "wide" | "ultrawide";
@@ -47,7 +54,7 @@ type MediaProps = {
   className?: string;
 };
 
-export function Media({
+export async function Media({
   assetKey,
   alt,
   aspect = "video",
@@ -63,6 +70,10 @@ export function Media({
   // legitimately handles both branches.
   const asset = assets[assetKey] as AssetDescriptor;
 
+  // An owner-set override (Media Library URL) wins over the registry entry.
+  const overrides = await getAssetOverrides();
+  const overrideSrc = overrides[assetKey];
+
   return (
     <div
       className={cn(
@@ -72,7 +83,16 @@ export function Media({
         className,
       )}
     >
-      {asset.kind === "image" ? (
+      {overrideSrc ? (
+        <Image
+          src={overrideSrc}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          className="object-cover"
+        />
+      ) : asset.kind === "image" ? (
         <Image
           src={asset.src}
           alt={alt}

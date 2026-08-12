@@ -1,0 +1,533 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Operating System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ============================================================================
+   AYZENITH — Internal Manual Design System (print-ready)
+   Grounded in the frozen Enterprise Design Manual v1.0 (globals.css).
+   ============================================================================ */
+:root{
+  --navy-950:#050b14; --navy-900:#0a1a2f; --navy-800:#0d2137; --navy-700:#123252;
+  --navy-600:#1b4068; --navy-500:#2c5282; --navy-400:#4a6e96; --navy-300:#7c97b5;
+  --navy-200:#b4c4d6; --navy-100:#dce4ec; --navy-50:#f0f4f8;
+  --gold-700:#8a6d1c; --gold-600:#a88420; --gold-500:#c9a227; --gold-400:#d9b84a;
+  --gold-300:#e7ce7c; --gold-100:#f6edd2;
+  --white:#ffffff; --offwhite:#f7f8fa;
+  --n-100:#edeff2; --n-200:#dde1e7; --n-300:#c2c8d0; --n-400:#9aa2ad;
+  --n-500:#6b7480; --n-600:#4a525e; --n-700:#333b45; --n-800:#1e242c; --n-900:#12161b;
+  --ink:#1e242c; --muted:#4a525e; --subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{
+  font-family:var(--sans); color:var(--ink); background:var(--n-200);
+  font-size:10.5pt; line-height:1.62; font-feature-settings:"cv11","ss01";
+}
+/* ---- On-screen page frame ------------------------------------------------ */
+.page{
+  background:var(--offwhite); width:210mm; min-height:297mm; margin:10mm auto;
+  padding:22mm 20mm 20mm; position:relative; box-shadow:0 12px 24px rgba(5,11,20,.14);
+  overflow:hidden;
+}
+.page.cover, .page.section-cover{color:var(--offwhite)}
+/* ---- Cover --------------------------------------------------------------- */
+.cover{
+  background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%);
+  padding:0; display:flex; flex-direction:column; justify-content:space-between;
+}
+.cover .grid-field{position:absolute;inset:0;opacity:.5;
+  background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);
+  background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;padding:26mm 20mm;display:flex;flex-direction:column;justify-content:space-between;height:297mm}
+.wordmark{font-weight:800;letter-spacing:.34em;font-size:20pt;color:var(--offwhite)}
+.wordmark .z{color:var(--gold-400)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:4mm}
+.cover-mid .kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:40pt;line-height:1.04;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:150mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:130mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.08em}
+/* ---- Running header / footer (screen approximation) ---------------------- */
+.rhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);
+  font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);
+  padding-bottom:5mm;margin-bottom:9mm;border-bottom:1px solid var(--n-200)}
+.rhead .l{color:var(--navy-700);font-weight:600}
+.rfoot{position:absolute;left:20mm;right:20mm;bottom:12mm;display:flex;justify-content:space-between;
+  font-family:var(--mono);font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);
+  padding-top:4mm;border-top:1px solid var(--n-200)}
+/* ---- Section divider pages ---------------------------------------------- */
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%);padding:0}
+.sc-inner{position:relative;height:297mm;padding:40mm 20mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:30pt;line-height:1.08;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm;border:0;padding:0}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:135mm;line-height:1.55}
+/* ---- Typographic hierarchy ---------------------------------------------- */
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+h2.h{font-size:21pt;line-height:1.14;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13.5pt;line-height:1.25;letter-spacing:-.01em;font-weight:700;color:var(--navy-800);margin:9mm 0 3mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:6mm 0 1.5mm;letter-spacing:.01em}
+p{margin:0 0 3.2mm;max-width:165mm}
+.lead{font-size:12pt;line-height:1.55;color:var(--muted);margin-bottom:6mm}
+strong{font-weight:600;color:var(--navy-900)}
+em{font-style:italic}
+a{color:var(--navy-700);text-decoration:none}
+ul,ol{margin:0 0 4mm;padding-left:5.5mm}
+li{margin-bottom:1.8mm}
+li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.8mm}
+/* ---- Components ---------------------------------------------------------- */
+.section-open{border-top:2px solid var(--gold-500);padding-top:5mm;margin-bottom:6mm}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);
+  border-radius:8px;padding:5mm 6mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}
+.quote{font-family:var(--serif);font-size:15pt;line-height:1.4;color:var(--navy-800);
+  border-left:2px solid var(--gold-500);padding:1mm 0 1mm 6mm;margin:6mm 0;font-style:italic;max-width:150mm}
+.principle{display:flex;gap:5mm;padding:4mm 0;border-bottom:1px solid var(--n-200)}
+.principle:last-child{border-bottom:0}
+.principle .idx{font-family:var(--mono);font-size:10pt;font-weight:600;color:var(--gold-600);flex:0 0 12mm;padding-top:.5mm}
+.principle .body h4{margin:0 0 1mm}
+.principle .body p{margin:0;color:var(--muted);font-size:10pt}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:5mm 5.5mm;box-shadow:0 1px 2px rgba(5,11,20,.05)}
+.card h4{margin-top:0}
+.card p{font-size:9.7pt;color:var(--muted);margin-bottom:0}
+.flow{counter-reset:step;margin:5mm 0}
+.flow .step{display:flex;gap:5mm;padding:3.5mm 0;border-bottom:1px dashed var(--n-200)}
+.flow .step:last-child{border-bottom:0}
+.flow .step .n{flex:0 0 8mm;height:8mm;border-radius:50%;background:var(--navy-900);color:var(--gold-300);
+  font-family:var(--mono);font-size:9pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+.flow .step .c h4{margin:0 0 1mm}
+.flow .step .c p{margin:0;font-size:9.7pt;color:var(--muted)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
+.kpi{background:var(--navy-900);border-radius:10px;padding:5mm;color:var(--offwhite)}
+.kpi .v{font-size:20pt;font-weight:700;color:var(--gold-400);letter-spacing:-.02em}
+.kpi .l{font-size:8pt;color:var(--navy-200);margin-top:1.5mm;line-height:1.35}
+table.data{width:100%;border-collapse:collapse;margin:5mm 0;font-size:9.7pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);
+  border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.6mm 4mm 2.6mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:38%}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4.5mm 5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}
+.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4{color:#1e7a5a;margin-top:0}.dontbox h4{color:#a53b3b;margin-top:0}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.5pt;color:var(--n-700)}
+.meta-strip{font-family:var(--mono);font-size:8pt;letter-spacing:.1em;color:var(--subtle);text-transform:uppercase}
+/* ---- Table of contents --------------------------------------------------- */
+.toc h2.h{margin-bottom:7mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:6mm 0 2mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.6mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.toc-row .d{flex:1;border-bottom:1px dotted var(--n-300);transform:translateY(-2px)}
+.toc-row .pg{font-family:var(--mono);font-size:9pt;color:var(--subtle)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 9mm}
+/* ---- Print --------------------------------------------------------------- */
+@page{size:A4;margin:0}
+@media print{
+  body{background:var(--white)}
+  .page{margin:0;box-shadow:none;width:auto;min-height:auto;
+    padding:20mm 20mm 22mm;page-break-after:always;break-after:page}
+  .page:last-child{page-break-after:auto}
+  .cover,.section-cover{padding:0}
+  .cover-inner,.sc-inner{height:auto;min-height:257mm}
+  .rfoot{position:static;margin-top:10mm}
+  h3,h4{break-after:avoid}
+  .card,.callout,.quote,.principle,.kpi,.flow .step,.dobox,.dontbox{break-inside:avoid}
+  a{color:var(--navy-700)}
+}
+.nobreak{break-inside:avoid}
+</style>
+</head>
+<body>
+
+<!-- ========================= COVER ========================= -->
+<section class="page cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <div class="wordmark">AY<span class="z">Z</span>ENITH</div>
+      <div class="cover-tag">Global Trade · Absolute Trust</div>
+    </div>
+    <div class="cover-mid">
+      <div class="kicker">Internal Operating Manual — Document 01</div>
+      <h1>The AYZENITH <span class="accent">Operating System</span></h1>
+      <p class="cover-sub">How we decide, how we work, and how we keep the promise our name carries — the internal standard for everyone who operates under AYZENITH.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Document<strong>Operating System v1.0</strong></div>
+        <div>Classification<strong>Internal · Confidential</strong></div>
+        <div>Owner<strong>Office of the Founder</strong></div>
+        <div>Origin<strong>Istanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= TOC ========================= -->
+<section class="page toc">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Contents</span></div>
+  <div class="eyebrow">Contents</div>
+  <h2 class="h">What this manual contains</h2>
+  <p class="lead">This document defines how AYZENITH operates as an institution. It is written to remain useful for years, and to be read by anyone joining the company as the first account of how we think and act.</p>
+
+  <div class="toc-part">Part I — Foundations</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">Company Purpose</span><span class="d"></span><span class="pg">04</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Vision</span><span class="d"></span><span class="pg">04</span></div>
+  <div class="toc-row"><span class="num">03</span><span class="t">Mission</span><span class="d"></span><span class="pg">05</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Core Promise</span><span class="d"></span><span class="pg">05</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">Operating Philosophy</span><span class="d"></span><span class="pg">06</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">Decision-Making Principles</span><span class="d"></span><span class="pg">07</span></div>
+
+  <div class="toc-part">Part II — How Value Flows</div>
+  <div class="toc-row"><span class="num">07</span><span class="t">The Customer Journey</span><span class="d"></span><span class="pg">08</span></div>
+  <div class="toc-row"><span class="num">08</span><span class="t">The Supplier Journey</span><span class="d"></span><span class="pg">09</span></div>
+
+  <div class="toc-part">Part III — Core Workflows</div>
+  <div class="toc-row"><span class="num">09</span><span class="t">Sales Workflow</span><span class="d"></span><span class="pg">10</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">Purchasing Workflow</span><span class="d"></span><span class="pg">11</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Partnership Workflow</span><span class="d"></span><span class="pg">12</span></div>
+
+  <div class="toc-part">Part IV — Operating Standards</div>
+  <div class="toc-row"><span class="num">12</span><span class="t">Internal Communication Standards</span><span class="d"></span><span class="pg">13</span></div>
+  <div class="toc-row"><span class="num">13</span><span class="t">Quality Standards</span><span class="d"></span><span class="pg">14</span></div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Problem-Solving Principles</span><span class="d"></span><span class="pg">15</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Risk Awareness</span><span class="d"></span><span class="pg">16</span></div>
+
+  <div class="toc-part">Part V — The Long Game</div>
+  <div class="toc-row"><span class="num">16</span><span class="t">Long-Term Thinking</span><span class="d"></span><span class="pg">17</span></div>
+  <div class="toc-row"><span class="num">17</span><span class="t">Five-Year Operational Direction</span><span class="d"></span><span class="pg">18</span></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>02</span></div>
+</section>
+
+<!-- ========================= PART I DIVIDER ========================= -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part I</div>
+    <h2>Foundations</h2>
+    <p class="sc-desc">Why the company exists, where it is going, and the fixed principles every decision is tested against. These do not change with markets or quarters.</p>
+  </div>
+</section>
+
+<!-- ========================= FOUNDATIONS ========================= -->
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part I — Foundations</span></div>
+
+  <div class="section-open"><div class="eyebrow">01 · Company Purpose</div></div>
+  <h2 class="h">Why AYZENITH exists</h2>
+  <p class="lead">Global trade still runs on distance, opacity and risk. AYZENITH was built to change the terms.</p>
+  <p>Sourcing across the world means trusting partners you cannot see, in markets you cannot reach, with capital you cannot afford to lose. For most businesses this is the ceiling on their ambition: the opportunity is real, but the exposure is unacceptable. Our purpose is to remove that exposure — to give ambitious businesses a single partner who can source, move and stand behind products anywhere, with the transparency and standards the old system never offered.</p>
+  <p>We are not a broker that takes a margin and disappears. We are an institution that takes responsibility and remains. That distinction is the whole company. Everything in this manual exists to protect it.</p>
+  <div class="quote">Distance should never mean risk. Borders should never mean doubt.</div>
+
+  <div class="section-open"><div class="eyebrow">02 · Vision</div></div>
+  <h2 class="h">Where we are going</h2>
+  <p>AYZENITH is building the infrastructure for a new generation of global commerce. We begin in trade and compound — into private label, into new sectors, into proprietary brands, into a holding built to last decades. We are early, and we treat that as the opportunity rather than a limitation: partners who build with us now build at the founding.</p>
+  <p>The vision is not size for its own sake. It is a company where <strong>scale feels like simplicity</strong> — where a partner can grow across categories and borders through one relationship, and never feel the complexity we absorb on their behalf.</p>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>04</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part I — Foundations</span></div>
+
+  <div class="section-open"><div class="eyebrow">03 · Mission</div></div>
+  <h2 class="h">What we do, concretely</h2>
+  <p>Our mission is to connect manufacturing, logistics and markets into one accountable partnership — so a business can access global supply without carrying global risk. In practice this means we take end-to-end responsibility across four capabilities:</p>
+  <div class="grid2">
+    <div class="card"><h4>Global Sourcing &amp; Trade</h4><p>Vetted suppliers and OEM partners across categories — import, export and international sourcing under one accountable relationship.</p></div>
+    <div class="card"><h4>Distribution &amp; Logistics</h4><p>Reliable product flow to retail, wholesale, e-commerce and corporate buyers — on time, in full, defect-free.</p></div>
+    <div class="card"><h4>Private Label Development</h4><p>Own-brand products built on proven demand, controlled quality and dependable warranty — value kept, not margin rented.</p></div>
+    <div class="card"><h4>Manufacturing Partnerships</h4><p>Relationships that move from transactional supply to exclusive rights and co-developed production.</p></div>
+  </div>
+  <p>Where we operate in regulated categories — such as certified medical and dental supply, or healthcare coordination — the mission is unchanged but the discipline is stricter: we act only within the legal and regulatory frameworks of each market, through licensed channels, and we never present ourselves as a provider we are not.</p>
+
+  <div class="section-open"><div class="eyebrow">04 · Core Promise</div></div>
+  <h2 class="h">The promise our name carries</h2>
+  <div class="callout"><div class="eyebrow">Frozen — do not reword</div><p style="margin:0;font-size:12.5pt;color:var(--navy-900);font-weight:600">Global Trade. Absolute Trust.</p></div>
+  <p>This is not a slogan; it is a commitment we can be measured against. <strong>Absolute Trust</strong> means one accountable partner for sourcing, quality, logistics and delivery — our name is on the result, whoever executed it. It means we compete on reliability, not price, and that every promise kept compounds into the next relationship. When something goes wrong, we are the partner who is still there. The entire operating system that follows exists to make this promise true, order after order.</p>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>05</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part I — Foundations</span></div>
+
+  <div class="section-open"><div class="eyebrow">05 · Operating Philosophy</div></div>
+  <h2 class="h">How we think about the work</h2>
+  <p class="lead">We are the institution, not the intermediary. Everything below follows from that single stance.</p>
+  <p>In a category of anonymous middlemen, most partners disappear the moment something goes wrong. We built AYZENITH to be the opposite: an organisation that consolidates what is normally fragmented, absorbs the friction others pass on, and remains accountable long after the transaction. Our philosophy rests on three operating commitments that shape daily behaviour.</p>
+  <h4>Consolidate</h4>
+  <p>Sourcing, manufacturing, logistics and distribution belong under one accountable roof — one relationship instead of twelve. Internally, this means we resist handing a partner off between disconnected functions. The person who owns the relationship owns the outcome across the whole chain.</p>
+  <h4>De-risk</h4>
+  <p>Vetted partners, quality control, transparent terms and real accountability. We are paid to absorb the risks a partner fears — supplier failure, quality variance, customs and compliance exposure — not to pass them along. When we are unsure whether we can de-risk something, we say so before we commit.</p>
+  <h4>Access</h4>
+  <p>We open doors that are hard to open alone: global supplier networks, new markets, dependable supply at scale. Access is earned through relationships we protect carefully; we never spend a supplier's trust for a single deal.</p>
+
+  <div class="callout"><div class="eyebrow">The internal test</div><p style="margin:0">Before any significant decision, ask: <em>does this consolidate, de-risk, or expand access for the partner — and does it keep our name safe to stand behind the result?</em> If it does none of these, it is not AYZENITH work.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>06</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part I — Foundations</span></div>
+
+  <div class="section-open"><div class="eyebrow">06 · Decision-Making Principles</div></div>
+  <h2 class="h">The principles behind every decision</h2>
+  <p class="lead">These are permanent. Every choice we make is tested against them — from which supplier to approve to which market to enter.</p>
+  <div class="principle"><div class="idx">01</div><div class="body"><h4>Focus before breadth</h4><p>We win a category deeply before adding another. The multi-sector group is earned, phase by phase — never pursued on ambition alone.</p></div></div>
+  <div class="principle"><div class="idx">02</div><div class="body"><h4>Trust is the product</h4><p>We compete on reliability, not price. Every promise kept compounds; not one is worth breaking for a single deal.</p></div></div>
+  <div class="principle"><div class="idx">03</div><div class="body"><h4>We own the outcome</h4><p>One accountable partner across sourcing, quality, logistics and delivery. Our name is on the result, whoever executed it.</p></div></div>
+  <div class="principle"><div class="idx">04</div><div class="body"><h4>Built for permanence</h4><p>Every decision is tested against a decade, not a quarter. We build an institution designed to outlast any individual.</p></div></div>
+  <div class="principle"><div class="idx">05</div><div class="body"><h4>An international standard</h4><p>We hold every market to the same standard — the diligence, transparency and professionalism a serious partner should expect anywhere.</p></div></div>
+  <div class="principle"><div class="idx">06</div><div class="body"><h4>Responsible growth</h4><p>We grow only where we can serve properly. Entering a category or market means accepting its rules, its risks and its responsibilities in full.</p></div></div>
+  <div class="callout"><div class="eyebrow">How to use these</div><p style="margin:0">When two principles appear to conflict, the earlier one usually governs: focus over breadth, trust over a single deal, permanence over a quarter. When a decision cannot be reconciled with these principles, it is escalated — not quietly made.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>07</span></div>
+</section>
+
+<!-- ========================= PART II DIVIDER ========================= -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part II</div>
+    <h2>How Value Flows</h2>
+    <p class="sc-desc">The two relationships the company is built on — the customer we serve and the supplier we rely on — described as journeys, not transactions.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part II — How Value Flows</span></div>
+
+  <div class="section-open"><div class="eyebrow">07 · The Customer Journey</div></div>
+  <h2 class="h">From first inquiry to lasting partnership</h2>
+  <p class="lead">A customer does not buy a shipment from us; they enter a relationship. The journey is designed so that trust is earned early and compounded over years.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Inquiry &amp; qualification</h4><p>A considered inquiry reaches the partnerships team. We reply to qualified inquiries within two business days, and we qualify honestly — the goal is a partnership we can serve properly, not a logo.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Discovery conversation</h4><p>We begin with a conversation, not a quote. We learn the category, the scale, the pressures and the real objective, and we tell the partner honestly how we can help them reach it.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Proposal &amp; terms</h4><p>A structured proposal: scope, standards, responsibilities, and transparent terms. We state what we own and what we do not, so there is no ambiguity when goods move.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>First execution</h4><p>The first order is run through the full operating sequence (Part III). It is deliberately over-served: the first delivery sets the standard the relationship will be measured against.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Account growth</h4><p>Reliability compounds into more categories, larger volumes, private label and exclusive supply. The relationship deepens from buyer to partner to co-builder.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Standard to hold</div><p style="margin:0">Every stage answers one question the customer is silently asking: <em>can I stop worrying about this part of my business?</em> Our job is to make the answer yes, and then to keep it yes.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>08</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part II — How Value Flows</span></div>
+
+  <div class="section-open"><div class="eyebrow">08 · The Supplier Journey</div></div>
+  <h2 class="h">From vetted source to strategic partner</h2>
+  <p class="lead">Our access is only as good as our suppliers, and our reliability begins with theirs. We treat supplier relationships as long-term assets, not interchangeable line items.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Identification</h4><p>We seek manufacturers and authorised suppliers with genuine capability in a category we understand well enough to guarantee.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Multi-factor vetting</h4><p>Every supplier is assessed on quality, capacity, reliability and compliance — not price alone. A low price with unreliable delivery fails our vetting.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Controlled first orders</h4><p>Early orders are run with pre-shipment inspection and close oversight. Performance, not promises, earns a supplier standing.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Preferred status</h4><p>Reliable suppliers earn preferred terms, larger allocations and a real relationship. We build redundancy so nothing that matters depends on a single source.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Strategic partnership</h4><p>The strongest relationships progress to exclusive distribution and co-developed production — capability without owning a factory.</p></div></div>
+  </div>
+  <p>We are demanding but fair. We pay properly, we communicate clearly, and we do not squeeze a good supplier for a point of margin at the cost of the relationship. A supplier who trusts AYZENITH is part of our moat.</p>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>09</span></div>
+</section>
+
+<!-- ========================= PART III DIVIDER ========================= -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part III</div>
+    <h2>Core Workflows</h2>
+    <p class="sc-desc">The disciplined sequences behind the promise. Nothing that carries the AYZENITH name is left to chance; each workflow is a repeatable standard, not an improvisation.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part III — Core Workflows</span></div>
+
+  <div class="section-open"><div class="eyebrow">09 · Sales Workflow</div></div>
+  <h2 class="h">How a partnership is won</h2>
+  <p class="lead">The sales workflow prioritises long-term partnerships over short-term transactions. It is covered in full in the Sales Playbook (Document 02); the operating summary follows.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Qualify</h4><p>Confirm the inquiry fits our Ideal Customer Profile and a category we can serve properly. Decline honestly when it does not.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Discover</h4><p>Understand the need, category, scale and constraints before proposing anything. Listen more than we present.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Propose</h4><p>A clear, structured proposal — scope, standards, responsibilities and transparent terms.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Align</h4><p>Handle questions and objections with candour; negotiate toward a durable agreement, not a cornered one.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Commit &amp; hand to operations</h4><p>Close cleanly, then transfer to the purchasing and logistics workflow with complete context so the first order is flawless.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Non-negotiable</div><p style="margin:0">We never oversell to win. A promise made in sales becomes an obligation in operations — and our name is on it. If we cannot deliver it, we do not say it.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>10</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part III — Core Workflows</span></div>
+
+  <div class="section-open"><div class="eyebrow">10 · Purchasing Workflow</div></div>
+  <h2 class="h">How an order is executed</h2>
+  <p class="lead">Every order moves through a disciplined sequence — the system behind the promise. This is the operational heart of AYZENITH.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Vet</h4><p>Suppliers qualified on quality, capacity, reliability and compliance — trust, verified before we commit a partner's order.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Source</h4><p>The right product, specified precisely and secured on dependable terms. Specification ambiguity is resolved before purchase, not after.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Quality Control</h4><p>Pre-shipment inspection owned by us — reliability is our responsibility, never blamed on the supplier after the fact.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Logistics</h4><p>Customs, compliance and freight handled end to end, tracked at every stage. No silent gaps in the chain.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Deliver</h4><p>On time, in full, defect-free — the promise made physical, order after order.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Standards enforced here</div><p style="margin:0">Multi-factor supplier vetting; pre-shipment quality inspection owned by us; no single-source dependency on anything that matters; regulated categories entered only within full legal frameworks. These four are not optional steps — they are the definition of a completed order.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>11</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part III — Core Workflows</span></div>
+
+  <div class="section-open"><div class="eyebrow">11 · Partnership Workflow</div></div>
+  <h2 class="h">How relationships deepen over time</h2>
+  <p class="lead">The most valuable outcomes are not single orders but partnerships that compound. This workflow governs how a transactional relationship becomes a strategic one — on both the customer and supplier side.</p>
+  <table class="data">
+    <tr><th>Stage</th><th>What it looks like</th><th>What earns the next stage</th></tr>
+    <tr><td>Transactional</td><td>Discrete orders, standard terms, proven on delivery.</td><td>Consistent, flawless execution and honest communication.</td></tr>
+    <tr><td>Preferred</td><td>Repeat volume, priority handling, shared forecasting.</td><td>Reliability under pressure and mutual transparency.</td></tr>
+    <tr><td>Private label / exclusive</td><td>Own-brand development or exclusive distribution rights.</td><td>Demonstrated demand, controlled quality, aligned incentives.</td></tr>
+    <tr><td>Co-development</td><td>Jointly specified products; deep operational integration.</td><td>Trust proven over time and a shared long-term horizon.</td></tr>
+  </table>
+  <p>Partnership decisions are made deliberately and documented. We do not grant exclusivity casually, and we do not enter co-development without the standards, capacity and trust to honour it for years. A partnership is a promise with a longer horizon — and the same rule applies: if we cannot stand behind it, we do not enter it.</p>
+  <div class="quote">Partners who build with us now build at the founding.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>12</span></div>
+</section>
+
+<!-- ========================= PART IV DIVIDER ========================= -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part IV</div>
+    <h2>Operating Standards</h2>
+    <p class="sc-desc">The everyday disciplines that make the promise repeatable — how we communicate, how we define quality, how we solve problems, and how we stay aware of risk.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part IV — Operating Standards</span></div>
+
+  <div class="section-open"><div class="eyebrow">12 · Internal Communication Standards</div></div>
+  <h2 class="h">How we communicate inside the company</h2>
+  <p class="lead">Reliability to partners begins with clarity between us. We communicate the way we want to be perceived: precise, calm and honest.</p>
+  <div class="dodont">
+    <div class="dobox"><h4>We do</h4><ul class="tight">
+      <li>State the situation, the facts and the recommendation — in that order.</li>
+      <li>Raise problems early, while they are still small and solvable.</li>
+      <li>Write clearly enough that a colleague can act without a second conversation.</li>
+      <li>Confirm ownership explicitly: who is doing what, by when.</li>
+      <li>Keep a written record of decisions that affect a partner or an order.</li>
+    </ul></div>
+    <div class="dontbox"><h4>We don't</h4><ul class="tight">
+      <li>Hide bad news, soften it into ambiguity, or wait for it to resolve itself.</li>
+      <li>Over-promise internally to avoid a difficult conversation.</li>
+      <li>Let a partner-facing commitment live only in someone's memory.</li>
+      <li>Use volume or urgency as a substitute for clarity.</li>
+      <li>Assign blame before we have understood the cause.</li>
+    </ul></div>
+  </div>
+  <p>Internal messages that touch a partner, an order or a supplier are treated as part of the record. The standard is simple: <strong>a message should reduce uncertainty, never add to it.</strong></p>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>13</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part IV — Operating Standards</span></div>
+
+  <div class="section-open"><div class="eyebrow">13 · Quality Standards</div></div>
+  <h2 class="h">What "quality" means at AYZENITH</h2>
+  <p class="lead">Reliability is a discipline, not a slogan. We hold ourselves to explicit standards across sourcing, quality and compliance — stated before they are asked for.</p>
+  <div class="grid2">
+    <div class="card"><h4>Supplier vetting</h4><p>Multi-factor assessment — quality, capacity, reliability, compliance — before any supplier carries a partner's order.</p></div>
+    <div class="card"><h4>Pre-shipment inspection</h4><p>Quality is inspected before goods move, and it is owned by us. We do not discover defects at the partner's dock.</p></div>
+    <div class="card"><h4>No single-source dependency</h4><p>Nothing that matters relies on one supplier. Redundancy is designed in, not improvised in a crisis.</p></div>
+    <div class="card"><h4>Regulated categories</h4><p>Entered only within full legal frameworks, through licensed channels, with traceability and documentation the category demands.</p></div>
+  </div>
+  <div class="callout"><div class="eyebrow">The measurable standard</div><p style="margin:0">Our operating benchmark is <strong>100% pre-shipment quality inspection</strong> and delivery that is <strong>on time, in full, defect-free</strong>. When a figure describes AYZENITH, it reflects how we operate today — stated honestly, never inflated. As our record grows, we report it the same way.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part IV — Operating Standards</span></div>
+
+  <div class="section-open"><div class="eyebrow">14 · Problem-Solving Principles</div></div>
+  <h2 class="h">How we respond when something goes wrong</h2>
+  <p class="lead">In a category where most partners disappear the moment something goes wrong, our response to problems <em>is</em> the brand. It is where trust is either proven or lost.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Own it first</h4><p>We take responsibility to the partner immediately. Our name is on the outcome; we do not deflect to the supplier, the carrier or the market.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Contain the impact</h4><p>Stabilise the partner's position before diagnosing at leisure. Protect the delivery, the relationship and the partner's own commitments.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Diagnose honestly</h4><p>Find the real cause without assigning blame prematurely. Facts before fault.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Resolve and communicate</h4><p>Fix it, tell the partner plainly what happened and what we changed, and absorb the friction rather than passing it on.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Prevent recurrence</h4><p>Update the standard so the same failure cannot repeat. A problem solved once should never be solved twice.</p></div></div>
+  </div>
+  <div class="quote">Every promise kept compounds; not one is worth breaking for a single deal.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>15</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part IV — Operating Standards</span></div>
+
+  <div class="section-open"><div class="eyebrow">15 · Risk Awareness</div></div>
+  <h2 class="h">The risks we manage on our partners' behalf</h2>
+  <p class="lead">We are paid to absorb risk, which means we must understand it better than anyone in the chain. Awareness is a permanent operating posture, not a one-time review.</p>
+  <table class="data">
+    <tr><th>Risk domain</th><th>How we manage it</th></tr>
+    <tr><td>Supplier failure</td><td>Multi-factor vetting, performance history, and designed-in redundancy — no single-source dependency on anything critical.</td></tr>
+    <tr><td>Quality variance</td><td>Precise specification up front and pre-shipment inspection owned by us, before goods move.</td></tr>
+    <tr><td>Customs &amp; compliance</td><td>End-to-end handling within the legal and regulatory frameworks of each market; regulated goods only through licensed channels.</td></tr>
+    <tr><td>Logistics disruption</td><td>Tracked freight at every stage, contingency routing, and early communication when timelines are threatened.</td></tr>
+    <tr><td>Financial &amp; counterparty</td><td>Transparent terms, disciplined exposure, and diligence on both customers and suppliers.</td></tr>
+    <tr><td>Reputational</td><td>We decline work we cannot serve properly, and we never overstate a capability, a figure or a claim.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">The posture</div><p style="margin:0">Responsible growth means entering a category or market only when we can accept its rules, its risks and its responsibilities <em>in full</em>. When we cannot, the honest answer is not yet.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>16</span></div>
+</section>
+
+<!-- ========================= PART V DIVIDER ========================= -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part V</div>
+    <h2>The Long Game</h2>
+    <p class="sc-desc">How we think across decades, and the operational direction for the next five years — written to be revisited, not framed and forgotten.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part V — The Long Game</span></div>
+
+  <div class="section-open"><div class="eyebrow">16 · Long-Term Thinking</div></div>
+  <h2 class="h">Built for permanence</h2>
+  <p class="lead">Every decision is tested against a decade, not a quarter. We are building an institution designed to outlast any individual — including its founders.</p>
+  <p>Long-term thinking is not a sentiment; it is a set of trade-offs we make consistently. We choose the durable relationship over the profitable exit. We choose the category we can guarantee over the one we could merely enter. We choose the honest figure over the impressive one, because a reputation compounds only if it is never spent. And we accept slower, earned growth over fast, fragile growth — because an institution is judged by what it still is in ten years, not what it claimed in one.</p>
+  <p>This posture is also our advantage. Partners, suppliers and future team members can rely on AYZENITH behaving the same way next year as this year. That consistency is the foundation on which trust — our actual product — is built.</p>
+  <div class="quote">Scale should feel like simplicity. That is the company we are building.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>17</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Operating System</span><span>Part V — The Long Game</span></div>
+
+  <div class="section-open"><div class="eyebrow">17 · Five-Year Operational Direction</div></div>
+  <h2 class="h">Where the operation goes next</h2>
+  <p class="lead">Direction, not prediction. These phases describe how we intend to compound — each one entered only when the previous is genuinely earned, in keeping with focus before breadth.</p>
+  <table class="data">
+    <tr><th>Horizon</th><th>Operational focus</th></tr>
+    <tr><td>Foundation<br><span class="meta-strip">Years 1–2</span></td><td>Win core sourcing and distribution categories deeply. Prove the operating sequence — vet, source, control, ship, deliver — until reliability is unquestioned. Build the first bench of preferred suppliers and reference partnerships.</td></tr>
+    <tr><td>Consolidation<br><span class="meta-strip">Years 2–3</span></td><td>Deepen accounts into repeat volume and preferred terms. Introduce private label where demand is proven. Formalise quality, compliance and communication standards as the operation scales.</td></tr>
+    <tr><td>Expansion<br><span class="meta-strip">Years 3–4</span></td><td>Add adjacent categories we can guarantee, and enter new markets to a single international standard. Move selected suppliers to exclusive and co-developed production.</td></tr>
+    <tr><td>Institution<br><span class="meta-strip">Years 4–5</span></td><td>Compound trade into proprietary brands and a structured group. Operate as a multi-category institution whose parts share one standard, one reputation and one accountable name.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">The discipline that governs all of it</div><p style="margin:0">We grow only where we can serve properly. Each horizon is a commitment to be earned, not a milestone to be rushed. The measure of success is not how fast we moved between phases, but that the promise — <strong>Global Trade. Absolute Trust.</strong> — held true at every one.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential · Operating System v1.0</span><span>18</span></div>
+</section>
+
+</body>
+</html>

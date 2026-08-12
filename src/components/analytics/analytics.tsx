@@ -1,20 +1,18 @@
 import Script from "next/script";
-import { env } from "@/lib/env";
+import { getSiteSettings } from "@/server/settings";
 
 /**
  * Analytics — prepared integration points for GA4 and Microsoft Clarity.
  *
- * NOTHING loads unless the corresponding env id is set, so tracking is OFF by
- * default (Sprint 3: "prepare the architecture, do not activate"). Scripts use
- * next/script `afterInteractive` so they never block first paint or compete with
- * LCP. Google Search Console verification is handled separately via metadata.
- *
- * Enabling later is purely configuration: set NEXT_PUBLIC_GA4_ID /
- * NEXT_PUBLIC_CLARITY_ID in the environment — no code change. (The CSP already
- * allow-lists the required hosts; see next.config.ts.)
+ * NOTHING loads unless the corresponding id is set, so tracking is OFF by
+ * default. Ids now come from the CMS Site Settings (with the env vars as a
+ * fallback), so the owner can enable/disable analytics without a redeploy.
+ * Scripts use next/script `afterInteractive` so they never block first paint or
+ * compete with LCP. (The CSP already allow-lists the required hosts; see
+ * next.config.ts.)
  */
-export function Analytics() {
-  const { ga4Id, clarityId } = env.analytics;
+export async function Analytics() {
+  const { ga4Id, clarityId } = await getSiteSettings();
 
   return (
     <>

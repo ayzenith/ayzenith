@@ -1,6 +1,7 @@
 {
   "metadata": {
-    "homeDescription": "AYZENITH ist eine globale B2B-Gruppe für Handel, Beschaffung und Investitionen. Wir beschaffen, bewegen und stehen für Produkte über Grenzen hinweg ein — damit ambitionierte Unternehmen global wachsen, ohne das Risiko selbst zu tragen."
+    "homeDescription": "AYZENITH ist eine globale B2B-Gruppe für Handel, Beschaffung und Investitionen. Wir beschaffen, bewegen und stehen für Produkte über Grenzen hinweg ein — damit ambitionierte Unternehmen global wachsen, ohne das Risiko selbst zu tragen.",
+    "homeTitle": "AYZENITH — Globale B2B-Beschaffung, Handel & Logistik"
   },
   "nav": {
     "services": "Leistungen",
@@ -30,14 +31,31 @@
     "hero": {
       "eyebrow": "Unternehmen",
       "title": "Ein verlässlicher Partner, für Jahrzehnte gebaut.",
-      "subtitle": "AYZENITH ist eine unabhängige Gruppe für Handel, Beschaffung und Investitionen. Wir existieren, um den globalen Handel vertrauenswürdig zu machen — und dieses Vertrauen zu einem beständigen Unternehmen zu verdichten."
+      "subtitle": "AYZENITH ist eine unabhängige Gruppe für Handel, Beschaffung und Investitionen, die den Produkt- und Beschaffungsbedarf von Unternehmen über Märkte hinweg deckt — und B2B-Handel, Distribution und Beschaffung durchgängig steuert."
     },
     "purpose": {
       "overline": "Warum es uns gibt",
       "title": "Globaler Handel beruht noch immer auf Distanz, Intransparenz und Risiko. Wir sind angetreten, die Regeln zu ändern.",
-      "body1": "AYZENITH gibt ambitionierten Unternehmen einen einzigen Partner, der Produkte überall beschafft, bewegt und für sie einsteht — mit der Transparenz und den Standards, die das alte System nie bot.",
+      "body1": "AYZENITH gibt ambitionierten Unternehmen einen einzigen Partner, der Produkte auf internationalen Märkten beschafft, den Handel und die Logistik abwickelt und für die Lieferung einsteht — mit der Transparenz und den Standards, die das alte System nie bot.",
       "body2": "Wir sind kein Vermittler, der seine Marge nimmt und verschwindet. Wir sind eine Institution, die Verantwortung übernimmt und bleibt — und nicht nur ein Unternehmen aufbaut, sondern die Infrastruktur für eine neue Generation des globalen Handels.",
       "imageAlt": "AYZENITH globaler Handelsbetrieb"
+    },
+    "mission": {
+      "overline": "Unsere Mission",
+      "title": "Was wir heute tun.",
+      "body": "AYZENITH deckt den internationalen Beschaffungs- und Handelsbedarf von Unternehmen über einen einzigen verantwortlichen Partner. Wir steuern internationale Produktbeschaffung, B2B-Handel, Distribution, Groß- und Firmenbelieferung sowie Eigenmarken-Fertigung (OEM) durchgängig.",
+      "model": "Wenn ein Kunde Produkte aus einem anderen Land beziehen möchte, besteht unsere Aufgabe nicht darin, einfach ein Produkt zu finden und zu verkaufen. Wir übernehmen die Verantwortung für die gesamte Kette — von der Auswahl der richtigen Lieferanten und der Qualitätskontrolle über die Gestaltung des kommerziellen Prozesses bis zu Logistik und Lieferung — und führen Beschaffung, Handel, Distribution, Partnerschaft und Betrieb als ein Ganzes.",
+      "fieldsLabel": "Bereiche, in denen wir arbeiten",
+      "fields": {
+        "electronics": "Unterhaltungselektronik",
+        "smartDevices": "Smarte Geräte",
+        "mobileAccessories": "Mobiles Zubehör",
+        "homeKitchen": "Haus & Küche",
+        "textile": "Textilien",
+        "medical": "Medizinprodukte",
+        "dental": "Dentalimplantat-Systeme"
+      },
+      "health": "Im Gesundheitsbereich erbringen wir keine klinische oder Patientenbehandlung; wir arbeiten ausschließlich über Koordination und kommerzielle Kooperationen mit qualifizierten fachlichen und institutionellen Partnern."
     },
     "principles": {
       "overline": "Wofür wir stehen",
@@ -81,6 +99,11 @@
         "compliance": "Regulierte Kategorien nur innerhalb vollständiger rechtlicher Rahmen."
       },
       "imageAlt": "AYZENITH Verantwortung und Standards"
+    },
+    "vision": {
+      "overline": "Unsere Vision",
+      "title": "Wohin wir gehen.",
+      "body": "Wir beginnen im Handel, treten dann in neue Kategorien ein, entwickeln Eigenmarken und bauen mit der Zeit eigene Marken auf. Unser Ziel ist eine beständige internationale Unternehmensgruppe — die verantwortungsvoll über Märkte hinweg wächst und für Jahrzehnte gebaut ist."
     },
     "longview": {
       "overline": "Der lange Blick",
@@ -177,10 +200,22 @@
     "title": "Verlässlichkeit, messbar gemacht.",
     "intro": "Präsenz und Standards, die ernsthafte Käufer prüfen, bevor sie sich binden.",
     "stats": {
-      "reach": { "value": "3", "label": "Kontinente in aktiver Beschaffung" },
-      "categories": { "value": "24/7", "label": "Grenzüberschreitender Betrieb" },
-      "accountability": { "value": "1", "label": "Verantwortlicher Partner, durchgängig" },
-      "standard": { "value": "100%", "label": "Qualitätskontrolle vor Versand" }
+      "reach": {
+        "value": "3",
+        "label": "Kontinente in aktiver Beschaffung"
+      },
+      "categories": {
+        "value": "24/7",
+        "label": "Grenzüberschreitender Betrieb"
+      },
+      "accountability": {
+        "value": "Ein",
+        "label": "Verantwortlicher Partner, durchgängig"
+      },
+      "standard": {
+        "value": "100%",
+        "label": "Qualitätskontrolle vor Versand"
+      }
     },
     "note": "Jede Kennzahl oben spiegelt wider, wie AYZENITH heute arbeitet. Mit reifenden Partnerschaften und Fallstudien wächst dieser Nachweis — stets ehrlich benannt, nie übertrieben."
   },
@@ -408,6 +443,38 @@
         "title": "Marktplatzkanäle",
         "description": "Ausgewählte Produkte sind für transaktionale Käufer über vertrauenswürdige Marktplätze verfügbar; B2B-Beziehungen bleiben der Kern unseres Geschäfts."
       }
+    },
+    "showcase": {
+      "overline": "Schaufenster",
+      "title": "Eine Auswahl dessen, was wir beschaffen und bewegen.",
+      "body": "Ein kuratierter Blick auf Produkte, die AYZENITH liefert — jedes mit derselben Beschaffungs- und Qualitätsdisziplin. Keine Preisliste, sondern ein Fenster zur Kompetenz."
+    },
+    "card": {
+      "viewDetails": "Details ansehen",
+      "badges": {
+        "new": "Neu",
+        "bestseller": "Bestseller",
+        "featured": "Empfohlen"
+      },
+      "availability": {
+        "in-stock": "Auf Lager",
+        "limited": "Begrenzt verfügbar",
+        "coming-soon": "Demnächst"
+      }
+    },
+    "detail": {
+      "breadcrumbProducts": "Produkte",
+      "overview": "Überblick",
+      "specifications": "Technische Daten",
+      "features": "Merkmale",
+      "useCases": "Passende Anwendungsfälle",
+      "downloads": "Downloads",
+      "availableOn": "Verfügbar auf",
+      "buyOn": "Kaufen bei",
+      "wholesaleTitle": "Großhandel & B2B",
+      "wholesaleBody": "Abnahme in Mengen, für Private Label oder als Distributor? Arbeiten Sie direkt mit AYZENITH.",
+      "wholesaleCta": "Großhandelspartnerschaft anfragen",
+      "related": "Ähnliche Produkte"
     }
   },
   "contactPage": {

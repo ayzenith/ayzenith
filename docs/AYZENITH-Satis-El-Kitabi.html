@@ -1,0 +1,452 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Satış El Kitabı</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#050b14;--navy-900:#0a1a2f;--navy-800:#0d2137;--navy-700:#123252;--navy-600:#1b4068;
+  --navy-500:#2c5282;--navy-400:#4a6e96;--navy-300:#7c97b5;--navy-200:#b4c4d6;--navy-100:#dce4ec;--navy-50:#f0f4f8;
+  --gold-700:#8a6d1c;--gold-600:#a88420;--gold-500:#c9a227;--gold-400:#d9b84a;--gold-300:#e7ce7c;--gold-100:#f6edd2;
+  --white:#fff;--offwhite:#f7f8fa;--n-100:#edeff2;--n-200:#dde1e7;--n-300:#c2c8d0;--n-400:#9aa2ad;
+  --n-500:#6b7480;--n-600:#4a525e;--n-700:#333b45;--n-800:#1e242c;--n-900:#12161b;
+  --ink:#1e242c;--muted:#4a525e;--subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);color:var(--ink);background:#c9ced6;font-size:10.5pt;line-height:1.6;font-feature-settings:"cv11","ss01"}
+.doc{width:210mm;margin:0 auto;background:var(--offwhite);box-shadow:0 14px 34px rgba(5,11,20,.2)}
+.sheet{width:210mm;height:297mm;position:relative;overflow:hidden;color:var(--offwhite)}
+.grid-field{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;height:100%;padding:26mm 22mm;display:flex;flex-direction:column;justify-content:space-between}
+.wordmark{font-weight:800;letter-spacing:.34em;font-size:20pt;color:var(--offwhite)}
+.wordmark .z{color:var(--gold-400)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:4mm}
+.kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:39pt;line-height:1.05;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:155mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:140mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.06em}
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%)}
+.sc-inner{position:relative;height:100%;padding:0 22mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:29pt;line-height:1.1;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:140mm;line-height:1.55}
+.sc-quote{font-family:var(--serif);font-style:italic;font-size:15pt;line-height:1.4;color:var(--navy-100);border-left:2px solid var(--gold-500);padding-left:6mm;margin-top:12mm;max-width:135mm}
+.content{padding:16mm 20mm 18mm}
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+.section-open{border-top:2px solid var(--gold-500);padding-top:4mm;margin:10mm 0 5mm}
+.section-open:first-child{margin-top:0}
+h2.h{font-size:20pt;line-height:1.16;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13pt;line-height:1.3;font-weight:700;color:var(--navy-800);margin:7mm 0 2.5mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:5mm 0 1.5mm}
+p{margin:0 0 3mm}
+.lead{font-size:11.5pt;line-height:1.55;color:var(--muted);margin-bottom:5mm}
+strong{font-weight:600;color:var(--navy-900)}em{font-style:italic}
+ul,ol{margin:0 0 3.5mm;padding-left:5.5mm}
+li{margin-bottom:1.5mm}li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.6mm}
+.toc h2.h{margin-bottom:6mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:6mm 0 1.5mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.5mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 8mm}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);border-radius:8px;padding:4.5mm 5.5mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}.callout p{margin:0}
+.quote{font-family:var(--serif);font-size:14.5pt;line-height:1.4;color:var(--navy-800);border-left:2px solid var(--gold-500);padding-left:6mm;margin:5mm 0;font-style:italic}
+.principle{display:flex;gap:5mm;padding:3.5mm 0;border-bottom:1px solid var(--n-200)}
+.principle:last-child{border-bottom:0}
+.principle .idx{font-family:var(--mono);font-size:10pt;font-weight:600;color:var(--gold-600);flex:0 0 11mm;padding-top:.5mm}
+.principle h4{margin:0 0 1mm}.principle p{margin:0;color:var(--muted);font-size:10pt}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:4.5mm 5mm}
+.card h4{margin-top:0}.card p{font-size:9.6pt;color:var(--muted);margin-bottom:0}
+.flow .step{display:flex;gap:4.5mm;padding:3mm 0;border-bottom:1px dashed var(--n-200)}
+.flow .step:last-child{border-bottom:0}
+.flow .n{flex:0 0 7.5mm;height:7.5mm;border-radius:50%;background:var(--navy-900);color:var(--gold-300);font-family:var(--mono);font-size:9pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+.flow .step h4{margin:0 0 .8mm}.flow .step p{margin:0;font-size:9.6pt;color:var(--muted)}
+table.data{width:100%;border-collapse:collapse;margin:4.5mm 0;font-size:9.6pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.4mm 4mm 2.4mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:34%}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4mm 4.5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4,.dontbox h4{margin-top:0}.dobox h4{color:#1e7a5a}.dontbox h4{color:#a53b3b}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.4pt;color:var(--n-700)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:3.5mm;margin:5mm 0}
+.kpi{background:var(--navy-900);border-radius:10px;padding:4.5mm}
+.kpi .v{font-size:16pt;font-weight:700;color:var(--gold-400);letter-spacing:-.02em}
+.kpi .l{font-size:8pt;color:var(--navy-200);margin-top:1.5mm;line-height:1.35}
+.template{background:var(--navy-900);border-radius:10px;padding:4.5mm 5.5mm;margin:5mm 0}
+.template .tlabel{font-family:var(--mono);font-size:7.5pt;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400);margin-bottom:2.5mm;display:block}
+.template p{color:var(--navy-100);margin-bottom:2.2mm;font-size:9.5pt;line-height:1.55}
+.template p:last-child{margin-bottom:0}
+.template .field{color:var(--gold-300)}
+.meta-strip{font-family:var(--mono);font-size:8pt;letter-spacing:.08em;color:var(--subtle);text-transform:uppercase}
+.endmark{margin-top:8mm;padding-top:4mm;border-top:1px solid var(--n-200);font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);text-align:center}
+@media print{
+  @page{size:A4;margin:16mm 15mm}
+  @page cover{margin:0}
+  body{background:#fff}
+  .doc{width:auto;box-shadow:none;background:#fff}
+  .sheet{width:auto;height:296mm;page:cover}
+  .cover{break-after:page}
+  .section-cover{break-before:page;break-after:page}
+  .content{padding:0}
+  h2.h,h3,h4,.section-open{break-after:avoid}
+  .card,.callout,.quote,.principle,.flow .step,.dobox,.dontbox,.template,.kpi{break-inside:avoid}
+  tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- KAPAK -->
+<section class="sheet cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <div class="wordmark">AY<span class="z">Z</span>ENITH</div>
+      <div class="cover-tag">Küresel Ticaret · Mutlak Güven</div>
+    </div>
+    <div>
+      <div class="kicker">İç Satış El Kitabı — Belge 02</div>
+      <h1>AYZENITH <span class="accent">Satış El Kitabı</span></h1>
+      <p class="cover-sub">Değeri korunmaya değer ortaklıkları nasıl kazanırız — kısa vadeli işlemlerden çok uzun vadeli ilişkileri önceleyen, disiplinli ve dürüst bir B2B satış yaklaşımı.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Belge<strong>Satış El Kitabı v1.0</strong></div>
+        <div>Sınıflandırma<strong>Şirket İçi · Gizli</strong></div>
+        <div>Sahip<strong>Ortaklık Ekibi</strong></div>
+        <div>Köken<strong>İstanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- İÇİNDEKİLER -->
+<section class="content toc">
+  <div class="eyebrow">İçindekiler</div>
+  <h2 class="h">Bu el kitabı neleri kapsar</h2>
+  <p class="lead">AYZENITH B2B satışa böyle yaklaşır. Doğru ortaklıkları doğru şekilde kazanmak için bir kılavuzdur — asla baskıyla değil, her zaman netlik, güvenilirlik ve sabırla.</p>
+  <div class="toc-part">Bölüm I — Kime Satış Yaparız</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">İdeal Müşteri Profili</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Müşteri Niteleme</span></div>
+  <div class="toc-part">Bölüm II — Huni &amp; Erişim</div>
+  <div class="toc-row"><span class="num">03</span><span class="t">Satış Hunisi</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Potansiyel Müşteri Stratejisi</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">LinkedIn Erişimi</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">E-posta Erişimi</span></div>
+  <div class="toc-part">Bölüm III — Ortaklığı Kazanmak</div>
+  <div class="toc-row"><span class="num">07</span><span class="t">Keşif Görüşmeleri</span></div>
+  <div class="toc-row"><span class="num">08</span><span class="t">Teklif Yapısı</span></div>
+  <div class="toc-row"><span class="num">09</span><span class="t">Müzakere İlkeleri</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">İtiraz Yönetimi</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Takip Süreci</span></div>
+  <div class="toc-row"><span class="num">12</span><span class="t">Kapanış Stratejisi</span></div>
+  <div class="toc-part">Bölüm IV — "Evet"ten Sonra</div>
+  <div class="toc-row"><span class="num">13</span><span class="t">İlişki Kurma</span></div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Uzun Vadeli Hesap Yönetimi</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Satış KPI'ları</span></div>
+</section>
+
+<!-- BÖLÜM I -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm I</div>
+    <h2>Kime Satış Yaparız</h2>
+    <p class="sc-desc">Herkese satış yapmayız ve buna çalışmayız da. Portföyümüzün kalitesi, öncelikle peşine düşmeyi seçtiğimiz ortakların kalitesine bağlıdır.</p>
+    <div class="sc-quote">En iyi ortaklıklar bir işlemle değil, bir sohbetle başlar.</div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">01 · İdeal Müşteri Profili</div></div>
+  <h2 class="h">Hizmet vermek için kurulduğumuz ortaklar</h2>
+  <p class="lead">İdeal müşterimiz, ürünleri sınırlar ötesinde tedarik etmek ya da taşımak isteyen ve güvenilir bir ortağı mümkün olan en düşük fiyattan daha değerli bulan ciddi bir işletmedir.</p>
+  <p>AYZENITH en çok değeri, var olma nedenimiz olan sorunu birebir yaşayan alıcılar için üretir: yurt dışında gerçek fırsat, ama mesafe, belirsizlik ve riske karşı kabul edilemez maruziyet. En güçlü uyumlar tanınabilir bir profili paylaşır.</p>
+  <div class="grid2">
+    <div class="card"><h4>Perakende &amp; toptan alıcılar</h4><p>Bir döngü boyunca güvenilir stok, tutarlı kalite ve tedarik sürprizi olmayan zincirler, distribütörler ve toptancılar.</p></div>
+    <div class="card"><h4>E-ticaret &amp; pazaryeri satıcıları</h4><p>Hacmi büyüten, güvenilir tedarik ve karşılamaya ihtiyaç duyan ve özel markaya doğru değer zincirinde yükselmek isteyen operatörler.</p></div>
+    <div class="card"><h4>Kurumsal &amp; satın alma alıcıları</h4><p>Bir aracılar zinciri yerine belge, uyum ve tek bir hesap verebilir ortak isteyen kuruluşlar.</p></div>
+    <div class="card"><h4>Marka kuranlar</h4><p>Kanıtlanmış talep üzerine kendi markalı ürünlerini geliştirmeye hazır işletmeler — marjı kiralamak yerine ona sahip olmak.</p></div>
+  </div>
+  <h4>Güçlü uyumu ne belirler</h4>
+  <ul class="tight">
+    <li>En ucuz teklif yerine güvenilirlik ve hesap verebilirliğe değer verir.</li>
+    <li>Gerçekten iyi hizmet verebileceğimiz bir hacim ve kategoride çalışır.</li>
+    <li>Tek seferlik anlaşmalarda değil, ilişkilerde ve tekrar eden işte düşünür.</li>
+    <li>Meşru şekilde faaliyet gösterir ve düzgün çerçeveler içinde çalışmayı bekler.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">Genişlikten önce odak</div><p>Garanti edebilecek kadar iyi anladığımız kategorilere yoğunlaşırız. Henüz gereği gibi hizmet veremeyeceğimiz bir kategorideki alıcı, kötü bir aday değildir — yalnızca erken bir adaydır. Bunu dürüstçe söyleriz.</p></div>
+
+  <div class="section-open"><div class="eyebrow">02 · Müşteri Niteleme</div></div>
+  <h2 class="h">Erkenden, dürüstçe niteleme</h2>
+  <p class="lead">Niteleme her iki tarafı da korur. Hiç almamamız gereken bir ortağı hayal kırıklığına uğratmaktansa, uyumsuz bir adayı erken reddetmeyi tercih ederiz. Her sonucun üzerinde adımız var.</p>
+  <p>Beş boyuta göre niteleriz. Amaç insanları elemek değil; AYZENITH'in, yapmaya çalıştıkları şey için doğru ortak olup olmadığını hızlıca anlamaktır.</p>
+  <table class="data">
+    <tr><th>Boyut</th><th>Neyi dinliyoruz</th></tr>
+    <tr><td>İhtiyaç</td><td>Gerçek bir tedarik, dağıtım, özel marka ya da ortaklık ihtiyacı — boş fiyat sorgusu değil.</td></tr>
+    <tr><td>Kategori uyumu</td><td>Bugün standardımıza hizmet verebileceğimiz bir kategori ya da ona giden güvenilir bir yol.</td></tr>
+    <tr><td>Ölçek</td><td>Şimdi ya da zamanla gerçek bir ortaklığı haklı çıkaran hacim ve hırs.</td></tr>
+    <tr><td>Değerler</td><td>Yalnızca fiyatı değil, güvenilirliği ve hesap verebilirliği tartan bir alıcı.</td></tr>
+    <tr><td>Meşruiyet</td><td>Düzgün faaliyet gösteren ve yasal ile düzenleyici çerçeveler içinde çalışmayı bekleyen bir işletme.</td></tr>
+  </table>
+  <div class="dodont">
+    <div class="dobox"><h4>Şu durumda kabul et</h4><ul class="tight">
+      <li>Alıcı, uçtan uca üstlenebileceğimiz tekrar eden bir ihtiyaç tanımlıyor.</li>
+      <li>Yalnızca maliyeti değil, sorunların nasıl çözüldüğünü de önemsiyor.</li>
+      <li>Kategori, tedarik derinliğimizle örtüşüyor.</li>
+    </ul></div>
+    <div class="dontbox"><h4>Şu durumda reddet / ertele</h4><ul class="tight">
+      <li>Tek soru kimin en ucuz olduğuysa.</li>
+      <li>Kategori henüz garanti edemeyeceğimiz bir kategoriyse.</li>
+      <li>Talep, düzgün yasal ya da düzenleyici çerçevelerin dışındaysa.</li>
+    </ul></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Standart</div><p>Reddedilen bir başvuru bile bir marka izlenimidir. Saygı ve netlikle reddederiz ve mümkün olduğunda alıcıyı yararlı bir yöne yönlendiririz. İtibar her iki yönde de birikir.</p></div>
+</section>
+
+<!-- BÖLÜM II -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm II</div>
+    <h2>Huni &amp; Erişim</h2>
+    <p class="sc-desc">Fırsatların işe nasıl girdiği ve birlikte çalışmak istediğimiz kişilere nasıl ulaştığımız — ölçülülük, ilgililik ve zamanlarına saygıyla.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">03 · Satış Hunisi</div></div>
+  <h2 class="h">Bir ortaklık nasıl şekillenir</h2>
+  <p class="lead">Hunimiz bilinçli olarak dar ve derindir. Gereği gibi hizmet veremeyeceğimiz hacmi zorlamaktansa, daha az ama daha iyi fırsatı özenle taşımayı tercih ederiz.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Belirle</h4><p>İdeal Müşteri Profili'ne uyan işletmeleri bul — gelen başvurular, tavsiyeler ve düşünülmüş dış erişim yoluyla.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Etkileşime geç</h4><p>İlgili, baskısız bir sohbet başlat. Amaç anında satış değil, her zaman ilk bir görüşmedir.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Nitele</h4><p>Beş boyuta göre uyumu doğrula. Birlikte ilerle ya da iyi koşullarda ayrıl.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Keşfet</h4><p>İhtiyacı derinlemesine anla — kategori, ölçek, kısıtlar ve talebin arkasındaki gerçek hedef.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Öner &amp; uzlaş</h4><p>Net bir teklif sun; soruları dürüstçe, kalıcı bir anlaşmaya doğru çöz.</p></div></div>
+    <div class="step"><div class="n">6</div><div><h4>Bağla</h4><p>Temiz kapat ve tam bağlamla operasyona devret; ilk sipariş sözü kanıtlasın.</p></div></div>
+    <div class="step"><div class="n">7</div><div><h4>Büyüt</h4><p>İlk siparişi kalıcı bir hesaba dönüştür (Bölüm IV). Huni kapanışta bitmez; derinleşir.</p></div></div>
+  </div>
+
+  <div class="section-open"><div class="eyebrow">04 · Potansiyel Müşteri Stratejisi</div></div>
+  <h2 class="h">Doğru ortakları bulmak</h2>
+  <p class="lead">Hacim için değil, uyum için potansiyel müşteri ararız. İyi seçilmiş, iyi araştırılmış az sayıda yaklaşım, toplu erişimden her zaman daha iyi sonuç verir — ve markayı korur.</p>
+  <h4>İyi adaylar nereden gelir</h4>
+  <ul class="tight">
+    <li><strong>Tavsiyeler</strong> — en yüksek kaliteli kaynak. Memnun bir ortağın tanıştırması güvenilirliğimizi de beraberinde taşır.</li>
+    <li><strong>Gelen başvurular</strong> — bizi bulan ve konumlandırmayı zaten anlayan alıcılar. İki iş günü içinde yanıt veririz.</li>
+    <li><strong>Düşünülmüş dış erişim</strong> — kategorilerimizde, yaptığımız işten gerçekten fayda görecek belirli işletmeler.</li>
+    <li><strong>Ticaret ağları &amp; fuarlar</strong> — ciddi alıcı ve tedarikçilerin buluştuğu sektör etkinlikleri (bkz. Marka Kitabı, Fuar Kimliği).</li>
+  </ul>
+  <h4>Erişmeden önce nasıl hazırlanırız</h4>
+  <p>Her yaklaşım araştırmayla başlar. Adayın kategorisini, ölçeğini, olası tedarik sıkıntısını ve AYZENITH'in onlar için neden ilgili olduğuna dair belirli, inandırıcı bir nedeni öğreniriz. Bu nedeni tek bir dürüst cümleyle ifade edemiyorsak, erişmeye hazır değilizdir.</p>
+  <div class="callout"><div class="eyebrow">Erişim sınaması</div><p>Herhangi bir erişimden önce: <em>bu mesaj, alıcı hiç yanıt vermese bile ona yararlı olur muydu?</em> Değilse, olana kadar rafine ederiz. İlgiyi hak ederiz; talep etmeyiz.</p></div>
+
+  <div class="section-open"><div class="eyebrow">05 · LinkedIn Erişimi</div></div>
+  <h2 class="h">Profesyonel, sabırlı, ilgili</h2>
+  <p class="lead">LinkedIn, satış yapılacak değil, profesyonel itibar kurulacak bir yerdir. İnandırıcı bir kurum olarak görünür ve yüz yüze de memnuniyetle yapacağımız sohbetleri açarız.</p>
+  <div class="template">
+    <span class="tlabel">Bağlantı notu — örnek</span>
+    <p>Merhaba <span class="field">[Ad]</span> — AYZENITH'te ortaklıklardan sorumluyum; Türkiye merkezli bir tedarik ve ticaret grubuyuz. <span class="field">[kategori]</span> alanındaki işleri takip ediyorum, bağlantı kurmaya değer diye düşündüm. Bir gündemim yok; sınır ötesi tedarik <span class="field">[Şirket]</span> için ileride konu olursa yararlı bir bağlantı olmaktan memnuniyet duyarım.</p>
+  </div>
+  <div class="template">
+    <span class="tlabel">Bağlantı sonrası ilk mesaj — örnek</span>
+    <p>Bağlantı için teşekkürler <span class="field">[Ad]</span>. Size bir şey pazarlamayacağım — yalnızca kapıyı aralamak istedim. <span class="field">[kategori]</span> alanındaki işletmelerin ürünleri sınır ötesinde tedarik etmesine ve taşımasına, kalite, lojistik ve teslimat için tek bir hesap verebilir ortakla yardımcı oluyoruz. İşinize yararsa, nasıl çalıştığımızı memnuniyetle paylaşırım. Değilse, yine de bağlantıda olmak güzel.</p>
+  </div>
+  <div class="callout"><div class="eyebrow">Ton</div><p>Sakin ve güvenli. Asla kovalamaz, pohpohlamaz ya da yapay aciliyet yaratmayız. Korunmaya değer bir ortak, beklemeye de değerdir.</p></div>
+
+  <div class="section-open"><div class="eyebrow">06 · E-posta Erişimi</div></div>
+  <h2 class="h">Net, belirli, evet demesi kolay</h2>
+  <p class="lead">İyi bir erişim e-postası okuyanın zamanına saygı gösterir: kısadır, ilgilidir ve tek, makul, küçük bir sonraki adım ister.</p>
+  <h4>Güçlü bir e-postanın yapısı</h4>
+  <ol class="tight">
+    <li><strong>İlgili açılış</strong> — onlara yazmamızın belirli, gerçek bir nedeni.</li>
+    <li><strong>Ne yaptığımız, tek cümlede</strong> — mekanik değil, değer.</li>
+    <li><strong>Neden önemli olabileceği</strong> — kategorilerine ya da durumlarına bağlı.</li>
+    <li><strong>Net, düşük taahhütlü tek istek</strong> — genellikle kısa bir görüşme.</li>
+  </ol>
+  <div class="template">
+    <span class="tlabel">Soğuk e-posta — örnek</span>
+    <p><strong style="color:#fff">Konu:</strong> <span class="field">[kategori]</span> sınır ötesi tedarik — tek bir hesap verebilir ortak</p>
+    <p>Merhaba <span class="field">[Ad]</span>,</p>
+    <p>AYZENITH'te ortaklıklardan sorumluyum; Türkiye merkezli bir B2B tedarik ve ticaret grubuyuz. <span class="field">[Şirket]</span> gibi işletmelerin <span class="field">[kategori]</span> ürünlerini uluslararası tedarik etmesine ve taşımasına yardımcı oluyoruz — denetim, kalite kontrolü, gümrük ve teslimatı tek bir hesap verebilir ilişki olarak yönetiyoruz; böylece riski taşımadan erişim kazanıyorsunuz.</p>
+    <p>Bu yıl güvenilir sınır ötesi tedarik üzerinde çalışıyorsanız, ihtiyaçlarınızı anlamak ve doğru ortak olup olmadığımızı dürüstçe söylemek için kısa bir görüşmeden memnuniyet duyarım. Önümüzdeki bir-iki hafta içinde 20 dakikalık bir görüşme işinize yarar mı?</p>
+    <p>Her hâlükârda, zamanınız için teşekkürler.<br>— <span class="field">[Ad]</span>, AYZENITH · info@ayzenith.com</p>
+  </div>
+  <div class="dodont">
+    <div class="dobox"><h4>Yap</h4><ul class="tight"><li>150 kelimenin altında tut.</li><li>İlk satırı onlara özel yap.</li><li>Kolay, saygılı bir sonraki adım sun.</li></ul></div>
+    <div class="dontbox"><h4>Yapma</h4><ul class="tight"><li>Yapay aciliyet ya da "son kontenjan" kullanma.</li><li>Ölçekli genel toplu gönderim yapma.</li><li>Sonuçları ya da ölçeği abartma.</li></ul></div>
+  </div>
+</section>
+
+<!-- BÖLÜM III -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm III</div>
+    <h2>Ortaklığı Kazanmak</h2>
+    <p class="sc-desc">İlk gerçek sohbetten imzalı anlaşmaya — samimiyet, yapı ve saygıyla yürütülür. En yüksek sesli değil, en net ve en güvenilir seçenek olarak kazanırız.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">07 · Keşif Görüşmeleri</div></div>
+  <h2 class="h">Önermeden önce anla</h2>
+  <p class="lead">Keşif görüşmesi satıştaki en önemli sohbettir. Görevimiz, ortağın dünyasını, ona nasıl — ya da nasıl — yardımcı olabileceğimizi dürüstçe söyleyebilecek kadar iyi anlamaktır.</p>
+  <p>Konuşmaktan çok dinleriz. İyi bir keşif, adayı satılmış değil, anlaşılmış hissettirir. Her keşif görüşmesinden dört soruyu yanıtlayabilecek şekilde ayrılmayı hedefleriz.</p>
+  <div class="grid2">
+    <div class="card"><h4>Gerçekte ne yapmaya çalışıyorlar?</h4><p>Talebin arkasındaki iş hedefi — büyüme, güvenilirlik, marj, yeni bir pazar.</p></div>
+    <div class="card"><h4>Baskı nedir?</h4><p>Bunu acil kılan sıkıntı — tedarikçi başarısızlığı, kalite sorunları, karmaşıklık, risk.</p></div>
+    <div class="card"><h4>Başarı neye benziyor?</h4><p>Bir ortağın sorunu çözüp çözmediğini nasıl ölçecekleri.</p></div>
+    <div class="card"><h4>Buna gereği gibi hizmet verebilir miyiz?</h4><p>AYZENITH'in bu sonucu gerçekten üstlenip üstlenemeyeceği — ve öyle değilse dürüst cevap.</p></div>
+  </div>
+  <h4>Sorduğumuz sorular</h4>
+  <ul class="tight">
+    <li>Bugün ne tedarik ediyor ya da taşıyorsunuz ve nerede zorlaşıyor?</li>
+    <li>Önceki tedarikçiler ya da ortaklarla ne ters gitti?</li>
+    <li>Önümüzdeki yıl hangi hacimler ve kategoriler en önemli?</li>
+    <li>Bu tam umduğunuz gibi işleseydi, işiniz için ne değişirdi?</li>
+  </ul>
+
+  <div class="section-open"><div class="eyebrow">08 · Teklif Yapısı</div></div>
+  <h2 class="h">Neyi üstlendiğimizi belirten bir teklif</h2>
+  <p class="lead">Güçlü bir AYZENITH teklifi belirsizliği ortadan kaldırır. Ortağa tam olarak ne yapacağımızı, hangi standartta ve sorumluluğumuzun nerede başlayıp bittiğini söyler.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Anlayış</h4><p>Ortağın hedefinin ve kısıtlarının kısa bir özeti — dinlediğimizin kanıtı.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Kapsam</h4><p>Sunacağımız belirli yetkinlikler: tedarik, dağıtım, özel marka ya da ortaklık.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Standartlar</h4><p>İşin arkasındaki disiplinler — denetim, sevkiyat öncesi muayene, uyum, izlenen lojistik.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Sorumluluklar</h4><p>AYZENITH'in ve ortağın neyi üstlendiği. Sessiz varsayım yok.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Koşullar</h4><p>Bir döngü boyunca ayakta kalacak şekilde yapılandırılmış şeffaf ticari koşullar.</p></div></div>
+    <div class="step"><div class="n">6</div><div><h4>Sonraki adımlar</h4><p>İlk siparişe giden net, sürtünmesiz bir yol.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Yöneten kural</div><p>Bir teklifte operasyonun teslim edemeyeceği hiçbir şeyi vaat etmeyiz. Teklif, sözümüzün ilk fiziksel halidir — tam olarak doğru olmalıdır.</p></div>
+
+  <div class="section-open"><div class="eyebrow">09 · Müzakere İlkeleri</div></div>
+  <h2 class="h">Kalıcı bir anlaşmaya doğru müzakere</h2>
+  <p class="lead">Her iki tarafın da korumak isteyeceği bir ilişki kurmak için müzakere ederiz — tek bir anlaşmadan en fazlasını çıkarmak için değil. Köşeye sıkıştırılmış bir ortak, kalıcı bir ortak değildir.</p>
+  <div class="principle"><div class="idx">01</div><div><h4>Fiyata değil, değere demir at</h4><p>Güvenilirlikte rekabet ederiz. Maliyeti konuşmadan önce hesap verebilirliğin ve risk azaltmanın değerini anlatırız.</p></div></div>
+  <div class="principle"><div class="idx">02</div><div><h4>Şeffaf ol</h4><p>Net koşullar, kurnaz koşullardan daha hızlı güven kurar. Kafa karışıklığıyla kazanmayız.</p></div></div>
+  <div class="principle"><div class="idx">03</div><div><h4>İlişkiyi koru</h4><p>Sonradan ortaklığa zarar verecek haksız bir kazanç yerine adil bir konumu korumayı tercih ederiz.</p></div></div>
+  <div class="principle"><div class="idx">04</div><div><h4>Tabanımızı bil</h4><p>İşin standardımıza göre yapılamayacağı koşulları biliriz — ve onları sakince koruruz.</p></div></div>
+  <div class="principle"><div class="idx">05</div><div><h4>İyi ayrıl</h4><p>Koşullar adımızın gerektirdiği standardı destekleyemiyorsa, saygıyla reddederiz. İyi bir "hayır" markayı korur.</p></div></div>
+
+  <div class="section-open"><div class="eyebrow">10 · İtiraz Yönetimi</div></div>
+  <h2 class="h">Endişeleri samimiyetle karşılamak</h2>
+  <p class="lead">Bir itiraz reddediş değil, güvence talebidir. Dürüstçe yanıtlarız — ve bir endişe haklıysa, tartışmak yerine kabul ederiz.</p>
+  <table class="data">
+    <tr><th>Duyduğumuz</th><th>Nasıl yanıtlarız</th></tr>
+    <tr><td>"Başka tedarikçi daha ucuz."</td><td>Kabul ederiz, sonra fiyatın neleri içermediğini anlatırız: denetim, kalite kontrolü, bir şey ters gittiğinde hesap verebilirlik. Güvenilirlikte rekabet ederiz ve alıcının tartmasına bırakırız.</td></tr>
+    <tr><td>"Zaten tedarikçilerimiz var."</td><td>Güzel — işe yarayanı değiştirmelerini istemiyoruz. Nerede zorlaştığını sorar, o kısım için hesap verebilir ortak ya da güvenilir bir ikinci kaynak olmayı öneririz.</td></tr>
+    <tr><td>"Size güvenebileceğimizi nereden bilelim?"</td><td>Haklı bir soru. Tam olarak nasıl çalıştığımızı anlatır, kontrollü bir ilk siparişle başlar ve ilişkiyi performansın kazanmasına bırakırız.</td></tr>
+    <tr><td>"Genç bir şirketsiniz."</td><td>Erken bir aşamadayız ve bunu avantaj sayarız: bugün bizimle inşa eden ortaklar, doğrudan erişim ve tam ilgiyle, temelin atıldığı anda inşa eder.</td></tr>
+    <tr><td>"Henüz hazır değiliz."</td><td>O zaman baskı yok. Yararlı bir bağlantı olarak temasta kalır, ihtiyaç gerçek olduğunda hazır oluruz.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Kural</div><p>Bir itirazı asla bir yetkinliği abartarak karşılamayız. Bir endişeyi lehimize doğrulukla yanıtlayamıyorsak, doğru cevap dürüst olandır.</p></div>
+
+  <div class="section-open"><div class="eyebrow">11 · Takip Süreci</div></div>
+  <h2 class="h">Baskısız süreklilik</h2>
+  <p class="lead">Çoğu ortaklık ilk görüşmede kazanılmaz. Tutarlı ve saygılı biçimde takip ederiz — her seferinde değer katarak, asla sadece "durum sormak" için değil.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Aynı gün özeti</h4><p>Her görüşmenin ardından, duyduğumuzu ve mutabık kalınan sonraki adımı özetleyen kısa bir not.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Değer katan takipler</h4><p>Sonraki her temas yararlı bir şey getirir — bir yanıt, bir seçenek, ilgili bir görüş — yalnızca bir hatırlatma değil.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Saygılı sıklık</h4><p>Aralıklı, profesyonel, asla her gün değil. Yeniden bağlanmayı ve "şimdi değil" demeyi kolaylaştırırız.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Zarif duraklama</h4><p>Zamanlama yanlışsa, temasta kalacağımızı söyler — ve rahatsız etmeden kalırız.</p></div></div>
+  </div>
+  <div class="template">
+    <span class="tlabel">Sessiz bir dönemin ardından takip — örnek</span>
+    <p>Merhaba <span class="field">[Ad]</span> — hiç baskı yok, yalnızca kapıyı açık tutuyorum. <span class="field">[kategori]</span> tedariği önceliklerinizde yükseldiyse, kaldığımız yerden devam etmekten memnuniyet duyarım. Zamanlama hâlâ uygun değilse, tamamen anlarım — uygun olduğunda yararlı bir bağlantı olarak kalırım.</p>
+  </div>
+
+  <div class="section-open"><div class="eyebrow">12 · Kapanış Stratejisi</div></div>
+  <h2 class="h">Doğal bir sonuç olarak kapanış</h2>
+  <p class="lead">İyi nitelediğimiz, derinlemesine anladığımız ve dürüstçe teklif verdiğimizde, kapanış bir manevra değil — doğal bir sonraki adımdır. Onu kolay, net ve baskısız kılarız.</p>
+  <h4>Nasıl kapatırız</h4>
+  <ul class="tight">
+    <li><strong>Uyumu doğrula</strong> — üzerinde anlaştığımızı tekrarla ve çözülmemiş bir şey kalmadığını kontrol et.</li>
+    <li><strong>Sürtünmeyi kaldır</strong> — ilk adımı küçük, somut ve atması kolay yap.</li>
+    <li><strong>İlk siparişi öner</strong> — geleceği performansın kazanmasına izin veren, kontrollü ve iyi kapsamlı bir ilk çalışma.</li>
+    <li><strong>Beklentileri belirle</strong> — evet dediklerinde tam olarak ne olacağı ve ne zamana kadar.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">Asla yapmadığımız</div><p>Yapay son tarihler yok, indirim baskısı yok, "bugün imzala" taktikleri yok. Bir ortağın zamana ihtiyacı varsa, zaman ilişkinin bir parçasıdır. Baskı altında kapatılan güven kalıcı olmaz.</p></div>
+  <div class="quote">İlk sipariş, tutma fırsatı bulduğumuz bir sözdür. Asıl satış böyle başlar.</div>
+</section>
+
+<!-- BÖLÜM IV -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm IV</div>
+    <h2>"Evet"ten Sonra</h2>
+    <p class="sc-desc">Satış sonun değil, başlangıçtır. En önemli satışımız ilk siparişten sonra gerçekleşir — nasıl teslim ettiğimizde, sorunları nasıl ele aldığımızda ve ilişkiyi yıllar içinde nasıl büyüttüğümüzde.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">13 · İlişki Kurma</div></div>
+  <h2 class="h">Bir alıcıyı ortağa dönüştürmek</h2>
+  <p class="lead">Tutulan her söz birikir. İlk kusursuz teslimat, ilişki için herhangi bir sunumdan daha fazlasını yapar — ve güvenin gerçek olduğu yer burasıdır.</p>
+  <p>İlişki kurma, bir yan ürün değil, bilinçli bir iştir. Siparişler arasında ortaklara yakın kalır, işlerinin nasıl değiştiğini anlar ve istenmeden önce daha yararlı olmanın yollarını ararız. Bir şey ters gittiğinde oradayızdır ve bu şirketin iletişim kurduğu gibi iletişim kurarız: kesin, sakin ve dürüst.</p>
+  <div class="grid2">
+    <div class="card"><h4>Görünür şekilde güvenilir ol</h4><p>Zamanında, eksiksiz, kusursuz — tutarlı biçimde. Güvenilirlik ilişkinin kendisidir.</p></div>
+    <div class="card"><h4>Amaçla temasta kal</h4><p>Siparişler arasında düzenli, yararlı temas — yalnızca bir şey istediğimizde değil.</p></div>
+    <div class="card"><h4>Sorunları tam üstlen</h4><p>Bir şey ters gittiğinde, hâlâ orada duran ortak biziz. Sadakat işte o zaman kazanılır.</p></div>
+    <div class="card"><h4>Onlar için ileriye bak</h4><p>İhtiyaçları öngör, seçenekleri sun ve ortakların yeni kategorilere büyümesine yardım et.</p></div>
+  </div>
+
+  <div class="section-open"><div class="eyebrow">14 · Uzun Vadeli Hesap Yönetimi</div></div>
+  <h2 class="h">Hesapları doğru şekilde büyütmek</h2>
+  <p class="lead">İyi hizmet verilen bir hesap kendi ivmesiyle büyür — ilk siparişten daha çok kategoriye, daha büyük hacme, özel markaya ve münhasır tedariğe. Görevimiz her adımı hak etmektir.</p>
+  <table class="data">
+    <tr><th>Hesap aşaması</th><th>Odağımız</th><th>Büyümeyi ne açar</th></tr>
+    <tr><td>Yeni hesap</td><td>İlk siparişleri kusursuz teslim et; standardı belirle.</td><td>Tutarlılık ve dürüst iletişim.</td></tr>
+    <tr><td>Yerleşik hesap</td><td>Kategorileri ve hacmi derinleştir; birlikte tahmin yap.</td><td>Baskı altında güvenilirlik; proaktif hizmet.</td></tr>
+    <tr><td>Stratejik hesap</td><td>Özel marka, münhasır tedarik, ortak planlama.</td><td>Kanıtlanmış güven ve hizalı uzun vadeli hedefler.</td></tr>
+    <tr><td>Kayıtlı ortak</td><td>Birlikte geliştirme; varsayılan ortak olarak AYZENITH.</td><td>Yıllarca tutulan sözler.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Disiplin</div><p>Bir hesabı, hizmet verebileceğimizden daha hızlı büyütmeyiz. Bir ilişkiyi henüz garanti edemeyeceğimiz bir kategoriye genişletmek, hesabın üzerine kurulu tüm güveni riske atar. Sorumlu büyüme yalnızca şirkete değil, hesaplara da uygulanır.</p></div>
+
+  <div class="section-open"><div class="eyebrow">15 · Satış KPI'ları</div></div>
+  <h2 class="h">Neyi ölçüyoruz — ve neden</h2>
+  <p class="lead">Yalnızca işlem hacmini değil, ilişkilerin sağlığını ölçeriz. Metriklerimiz, kısa vadeli baskı yerine uzun vadeli ortaklığı ödüllendirecek şekilde seçilir.</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="v">Uyum</div><div class="l">İdeal Müşteri Profili'ne uyan yeni ortakların payı</div></div>
+    <div class="kpi"><div class="v">Tekrar</div><div class="l">Geri dönen ortaklardan gelen gelir oranı</div></div>
+    <div class="kpi"><div class="v">Tutundurma</div><div class="l">Yıldan yıla korunan ortaklar</div></div>
+    <div class="kpi"><div class="v">Büyüme</div><div class="l">Mevcut hesaplar içinde genişleme</div></div>
+  </div>
+  <h4>İzlediğimiz metrikler</h4>
+  <table class="data">
+    <tr><th>KPI</th><th>Bize ne söyler</th></tr>
+    <tr><td>Nitelikli başvuru yanıt süresi</td><td>İki iş günü standardımızı tutup tutmadığımızı.</td></tr>
+    <tr><td>Keşiften teklife oranı</td><td>Önermeden önce ne kadar iyi nitelediğimizi ve anladığımızı.</td></tr>
+    <tr><td>İlk sipariş başarı oranı</td><td>Operasyonun, satışın vaat ettiğini teslim edip etmediğini.</td></tr>
+    <tr><td>Tekrar &amp; genişleme geliri</td><td>En doğru ölçü — ortakların bizi yeniden seçmesi.</td></tr>
+    <tr><td>Ortak tutundurma</td><td>İlişkilerin kalıcı olup olmadığını; ki bütün strateji budur.</td></tr>
+    <tr><td>Tavsiye oranı</td><td>Ortakların bizi tanıştıracak kadar güvenip güvenmediğini.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Optimize etmeyi reddettiğimiz</div><p>Gösterişçi hacmin, tek seferlik kazançların ya da sabır yerine baskıyı ödüllendiren metriklerin peşinden gitmeyiz. Bir ilişki pahasına iyileşen bir rakam, yanlış yöne giden bir rakamdır.</p></div>
+  <div class="quote">Fiyatta değil, güvenilirlikte rekabet ederiz — ve biriken tek metrik güvenilirliktir.</div>
+  <div class="endmark">AYZENITH · Satış El Kitabı v1.0 · Şirket İçi / Gizli</div>
+</section>
+
+</div>
+</body>
+</html>

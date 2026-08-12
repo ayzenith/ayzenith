@@ -26,6 +26,9 @@ export async function generateMetadata(): Promise<Metadata> {
     creator: siteConfig.name,
     publisher: siteConfig.name,
     formatDetection: { email: false, address: false, telephone: false },
+    verification: {
+      google: "4wDG53GqXshepIPZSTOBy6fjiTu1nEYKEFvC3Jy2sx4",
+    },
   };
 }
 

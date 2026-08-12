@@ -18,6 +18,8 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { PageHero } from "@/components/ui/page-hero";
 import { Reveal } from "@/components/ui/reveal";
 import { CTASection } from "@/components/sections/cta-section";
+import { ProductGrid } from "@/components/products/product-grid";
+import { getActiveProducts } from "@/server/products";
 import { buildMetadata } from "@/lib/seo";
 
 /**
@@ -26,6 +28,10 @@ import { buildMetadata } from "@/lib/seo";
  * catalogue — and routes to the premium B2B path (marketplaces kept clearly
  * secondary so the brand never reads as a discount reseller).
  */
+
+// Product data is DB-backed and editable from the CMS — always render fresh so
+// published changes appear on the site immediately.
+export const revalidate = 0;
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getTranslations("products.meta");
@@ -53,6 +59,7 @@ const engagements: ReadonlyArray<{ key: string; icon: LucideIcon }> = [
 
 export default async function ProductsPage() {
   const t = await getTranslations("products");
+  const products = await getActiveProducts();
 
   return (
     <>
@@ -61,6 +68,23 @@ export default async function ProductsPage() {
         title={t("hero.title")}
         subtitle={t("hero.subtitle")}
       />
+
+      {/* Product showcase — the tangible catalogue (no prices; routes to detail) */}
+      <Section labelledBy="showcase-heading" tone="gray">
+        <Container>
+          <Reveal>
+            <SectionHeader
+              headingId="showcase-heading"
+              overline={t("showcase.overline")}
+              title={t("showcase.title")}
+              intro={t("showcase.body")}
+            />
+          </Reveal>
+          <div className="mt-14">
+            <ProductGrid products={products} priorityCount={3} />
+          </div>
+        </Container>
+      </Section>
 
       {/* Categories as proof of sourcing capability */}
       <Section labelledBy="products-intro-heading">

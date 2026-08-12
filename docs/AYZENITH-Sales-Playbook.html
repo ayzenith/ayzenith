@@ -1,0 +1,540 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Sales Playbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#050b14; --navy-900:#0a1a2f; --navy-800:#0d2137; --navy-700:#123252;
+  --navy-600:#1b4068; --navy-500:#2c5282; --navy-400:#4a6e96; --navy-300:#7c97b5;
+  --navy-200:#b4c4d6; --navy-100:#dce4ec; --navy-50:#f0f4f8;
+  --gold-700:#8a6d1c; --gold-600:#a88420; --gold-500:#c9a227; --gold-400:#d9b84a;
+  --gold-300:#e7ce7c; --gold-100:#f6edd2;
+  --white:#ffffff; --offwhite:#f7f8fa;
+  --n-100:#edeff2; --n-200:#dde1e7; --n-300:#c2c8d0; --n-400:#9aa2ad;
+  --n-500:#6b7480; --n-600:#4a525e; --n-700:#333b45; --n-800:#1e242c; --n-900:#12161b;
+  --ink:#1e242c; --muted:#4a525e; --subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);color:var(--ink);background:var(--n-200);font-size:10.5pt;line-height:1.62;font-feature-settings:"cv11","ss01"}
+.page{background:var(--offwhite);width:210mm;min-height:297mm;margin:10mm auto;padding:22mm 20mm 20mm;position:relative;box-shadow:0 12px 24px rgba(5,11,20,.14);overflow:hidden}
+.page.cover,.page.section-cover{color:var(--offwhite)}
+.cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%);padding:0;display:flex;flex-direction:column;justify-content:space-between}
+.cover .grid-field{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;padding:26mm 20mm;display:flex;flex-direction:column;justify-content:space-between;height:297mm}
+.wordmark{font-weight:800;letter-spacing:.34em;font-size:20pt;color:var(--offwhite)}
+.wordmark .z{color:var(--gold-400)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:4mm}
+.cover-mid .kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:40pt;line-height:1.04;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:150mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:130mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.08em}
+.rhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);padding-bottom:5mm;margin-bottom:9mm;border-bottom:1px solid var(--n-200)}
+.rhead .l{color:var(--navy-700);font-weight:600}
+.rfoot{position:absolute;left:20mm;right:20mm;bottom:12mm;display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);padding-top:4mm;border-top:1px solid var(--n-200)}
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%);padding:0}
+.sc-inner{position:relative;height:297mm;padding:40mm 20mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:30pt;line-height:1.08;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm;border:0;padding:0}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:135mm;line-height:1.55}
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+h2.h{font-size:21pt;line-height:1.14;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13.5pt;line-height:1.25;letter-spacing:-.01em;font-weight:700;color:var(--navy-800);margin:9mm 0 3mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:6mm 0 1.5mm;letter-spacing:.01em}
+p{margin:0 0 3.2mm;max-width:165mm}
+.lead{font-size:12pt;line-height:1.55;color:var(--muted);margin-bottom:6mm}
+strong{font-weight:600;color:var(--navy-900)}
+em{font-style:italic}
+a{color:var(--navy-700);text-decoration:none}
+ul,ol{margin:0 0 4mm;padding-left:5.5mm}
+li{margin-bottom:1.8mm}
+li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.8mm}
+.section-open{border-top:2px solid var(--gold-500);padding-top:5mm;margin-bottom:6mm}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);border-radius:8px;padding:5mm 6mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}
+.quote{font-family:var(--serif);font-size:15pt;line-height:1.4;color:var(--navy-800);border-left:2px solid var(--gold-500);padding:1mm 0 1mm 6mm;margin:6mm 0;font-style:italic;max-width:150mm}
+.principle{display:flex;gap:5mm;padding:4mm 0;border-bottom:1px solid var(--n-200)}
+.principle:last-child{border-bottom:0}
+.principle .idx{font-family:var(--mono);font-size:10pt;font-weight:600;color:var(--gold-600);flex:0 0 12mm;padding-top:.5mm}
+.principle .body h4{margin:0 0 1mm}
+.principle .body p{margin:0;color:var(--muted);font-size:10pt}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:5mm 5.5mm;box-shadow:0 1px 2px rgba(5,11,20,.05)}
+.card h4{margin-top:0}
+.card p{font-size:9.7pt;color:var(--muted);margin-bottom:0}
+.flow{counter-reset:step;margin:5mm 0}
+.flow .step{display:flex;gap:5mm;padding:3.5mm 0;border-bottom:1px dashed var(--n-200)}
+.flow .step:last-child{border-bottom:0}
+.flow .step .n{flex:0 0 8mm;height:8mm;border-radius:50%;background:var(--navy-900);color:var(--gold-300);font-family:var(--mono);font-size:9pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+.flow .step .c h4{margin:0 0 1mm}
+.flow .step .c p{margin:0;font-size:9.7pt;color:var(--muted)}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:4mm;margin:5mm 0}
+.kpi{background:var(--navy-900);border-radius:10px;padding:5mm;color:var(--offwhite)}
+.kpi .v{font-size:18pt;font-weight:700;color:var(--gold-400);letter-spacing:-.02em}
+.kpi .l{font-size:8pt;color:var(--navy-200);margin-top:1.5mm;line-height:1.35}
+table.data{width:100%;border-collapse:collapse;margin:5mm 0;font-size:9.7pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.6mm 4mm 2.6mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:38%}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4.5mm 5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}
+.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4{color:#1e7a5a;margin-top:0}.dontbox h4{color:#a53b3b;margin-top:0}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.5pt;color:var(--n-700)}
+.meta-strip{font-family:var(--mono);font-size:8pt;letter-spacing:.1em;color:var(--subtle);text-transform:uppercase}
+.template{background:var(--navy-900);border-radius:10px;padding:5mm 6mm;margin:5mm 0;color:var(--navy-100);font-size:9.5pt;line-height:1.55}
+.template .tlabel{font-family:var(--mono);font-size:7.5pt;letter-spacing:.16em;text-transform:uppercase;color:var(--gold-400);margin-bottom:3mm;display:block}
+.template p{color:var(--navy-100);max-width:none;margin-bottom:2.4mm}
+.template .field{color:var(--gold-300)}
+.toc h2.h{margin-bottom:7mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:6mm 0 2mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.6mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.toc-row .d{flex:1;border-bottom:1px dotted var(--n-300);transform:translateY(-2px)}
+.toc-row .pg{font-family:var(--mono);font-size:9pt;color:var(--subtle)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 9mm}
+@page{size:A4;margin:0}
+@media print{
+  body{background:var(--white)}
+  .page{margin:0;box-shadow:none;width:auto;min-height:auto;padding:20mm 20mm 22mm;page-break-after:always;break-after:page}
+  .page:last-child{page-break-after:auto}
+  .cover,.section-cover{padding:0}
+  .cover-inner,.sc-inner{height:auto;min-height:257mm}
+  .rfoot{position:static;margin-top:10mm}
+  h3,h4{break-after:avoid}
+  .card,.callout,.quote,.principle,.kpi,.flow .step,.dobox,.dontbox,.template{break-inside:avoid}
+  a{color:var(--navy-700)}
+}
+.nobreak{break-inside:avoid}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <div class="wordmark">AY<span class="z">Z</span>ENITH</div>
+      <div class="cover-tag">Global Trade · Absolute Trust</div>
+    </div>
+    <div class="cover-mid">
+      <div class="kicker">Internal Sales Manual — Document 02</div>
+      <h1>The AYZENITH <span class="accent">Sales Playbook</span></h1>
+      <p class="cover-sub">How we win partnerships worth keeping — a disciplined, honest approach to B2B sales that puts long-term relationships ahead of short-term transactions.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Document<strong>Sales Playbook v1.0</strong></div>
+        <div>Classification<strong>Internal · Confidential</strong></div>
+        <div>Owner<strong>Partnerships Team</strong></div>
+        <div>Origin<strong>Istanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOC -->
+<section class="page toc">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Contents</span></div>
+  <div class="eyebrow">Contents</div>
+  <h2 class="h">What this playbook contains</h2>
+  <p class="lead">This is how AYZENITH approaches B2B sales. It is a manual for winning the right partnerships in the right way — never through pressure, always through clarity, reliability and patience.</p>
+
+  <div class="toc-part">Part I — Who We Sell To</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">Ideal Customer Profile</span><span class="d"></span><span class="pg">04</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Customer Qualification</span><span class="d"></span><span class="pg">05</span></div>
+
+  <div class="toc-part">Part II — The Funnel &amp; Outreach</div>
+  <div class="toc-row"><span class="num">03</span><span class="t">The Sales Funnel</span><span class="d"></span><span class="pg">06</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Prospecting Strategy</span><span class="d"></span><span class="pg">07</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">LinkedIn Outreach</span><span class="d"></span><span class="pg">08</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">Email Outreach</span><span class="d"></span><span class="pg">09</span></div>
+
+  <div class="toc-part">Part III — Winning the Partnership</div>
+  <div class="toc-row"><span class="num">07</span><span class="t">Discovery Meetings</span><span class="d"></span><span class="pg">10</span></div>
+  <div class="toc-row"><span class="num">08</span><span class="t">Proposal Structure</span><span class="d"></span><span class="pg">11</span></div>
+  <div class="toc-row"><span class="num">09</span><span class="t">Negotiation Principles</span><span class="d"></span><span class="pg">12</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">Objection Handling</span><span class="d"></span><span class="pg">13</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Follow-up Process</span><span class="d"></span><span class="pg">14</span></div>
+  <div class="toc-row"><span class="num">12</span><span class="t">Closing Strategy</span><span class="d"></span><span class="pg">15</span></div>
+
+  <div class="toc-part">Part IV — After the Yes</div>
+  <div class="toc-row"><span class="num">13</span><span class="t">Relationship Building</span><span class="d"></span><span class="pg">16</span></div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Long-Term Account Management</span><span class="d"></span><span class="pg">17</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Sales KPIs</span><span class="d"></span><span class="pg">18</span></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>02</span></div>
+</section>
+
+<!-- PHILOSOPHY / PART I DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part I</div>
+    <h2>Who We Sell To</h2>
+    <p class="sc-desc">We do not sell to everyone, and we do not try to. The quality of our book depends first on the quality of the partners we choose to pursue.</p>
+    <div class="quote" style="color:var(--navy-100);border-color:var(--gold-500);margin-top:10mm">The best partnerships begin with a conversation, not a transaction.</div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part I — Who We Sell To</span></div>
+
+  <div class="section-open"><div class="eyebrow">01 · Ideal Customer Profile</div></div>
+  <h2 class="h">The partners we are built to serve</h2>
+  <p class="lead">Our ideal customer is a serious business that wants to source or move products across borders, and values a reliable partner more than the lowest possible price.</p>
+  <p>AYZENITH creates the most value for buyers who feel the exact problem we exist to solve: real opportunity abroad, but unacceptable exposure to distance, opacity and risk. The strongest fits share a recognisable profile.</p>
+  <div class="grid2">
+    <div class="card"><h4>Retail &amp; wholesale buyers</h4><p>Chains, distributors and wholesalers who need dependable stock, consistent quality and no supply surprises across a full cycle.</p></div>
+    <div class="card"><h4>E-commerce &amp; marketplace sellers</h4><p>Operators scaling volume who need reliable sourcing and fulfilment, and want to move up the value chain toward private label.</p></div>
+    <div class="card"><h4>Corporate &amp; procurement buyers</h4><p>Organisations that require documentation, compliance and a single accountable partner rather than a chain of brokers.</p></div>
+    <div class="card"><h4>Brand builders</h4><p>Businesses ready to develop own-brand products on proven demand — owning the margin instead of renting it.</p></div>
+  </div>
+  <h4>What makes a strong fit</h4>
+  <ul class="tight">
+    <li>Values reliability and accountability over the cheapest quote.</li>
+    <li>Operates at a volume and category we can genuinely serve well.</li>
+    <li>Thinks in relationships and repeat business, not one-off deals.</li>
+    <li>Operates legitimately and expects to work within proper frameworks.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">Focus before breadth</div><p style="margin:0">We concentrate on categories we understand well enough to guarantee. A buyer in a category we cannot yet serve properly is not a poor prospect — they are simply an early one. We say so honestly.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>04</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part I — Who We Sell To</span></div>
+
+  <div class="section-open"><div class="eyebrow">02 · Customer Qualification</div></div>
+  <h2 class="h">Qualifying honestly, early</h2>
+  <p class="lead">Qualification protects both sides. We would rather decline a poor fit early than disappoint a partner we should never have taken on. Our name is on every outcome.</p>
+  <p>We qualify against five dimensions. The goal is not to filter people out; it is to understand quickly whether AYZENITH is the right partner for what they are trying to do.</p>
+  <table class="data">
+    <tr><th>Dimension</th><th>What we are listening for</th></tr>
+    <tr><td>Need</td><td>A real sourcing, distribution, private-label or partnership need — not idle price-checking.</td></tr>
+    <tr><td>Category fit</td><td>A category we can serve to our standard today, or a credible path to one.</td></tr>
+    <tr><td>Scale</td><td>Volume and ambition that justify a genuine partnership, now or over time.</td></tr>
+    <tr><td>Values</td><td>A buyer who weighs reliability and accountability, not price alone.</td></tr>
+    <tr><td>Legitimacy</td><td>A business that operates properly and expects to work within legal and regulatory frameworks.</td></tr>
+  </table>
+  <div class="dodont">
+    <div class="dobox"><h4>Qualify in when</h4><ul class="tight">
+      <li>The buyer describes a recurring need we can own end to end.</li>
+      <li>They care how problems are handled, not only what things cost.</li>
+      <li>The category matches our sourcing depth.</li>
+    </ul></div>
+    <div class="dontbox"><h4>Decline or defer when</h4><ul class="tight">
+      <li>The only question is who is cheapest.</li>
+      <li>The category is one we cannot yet guarantee.</li>
+      <li>The request sits outside proper legal or regulatory frameworks.</li>
+    </ul></div>
+  </div>
+  <div class="callout"><div class="eyebrow">The standard</div><p style="margin:0">A declined inquiry is still a brand impression. We decline with respect and clarity, and where we can, we point the buyer somewhere useful. Reputation compounds in both directions.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>05</span></div>
+</section>
+
+<!-- PART II DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part II</div>
+    <h2>The Funnel &amp; Outreach</h2>
+    <p class="sc-desc">How opportunities enter the business and how we reach the people we want to work with — with restraint, relevance and respect for their time.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part II — The Funnel &amp; Outreach</span></div>
+
+  <div class="section-open"><div class="eyebrow">03 · The Sales Funnel</div></div>
+  <h2 class="h">How a partnership takes shape</h2>
+  <p class="lead">Our funnel is deliberately narrow and deep. We would rather carry fewer, better opportunities through with care than push volume we cannot serve.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Identify</h4><p>Find businesses that match the Ideal Customer Profile — through inbound inquiries, referrals, and considered outbound outreach.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Engage</h4><p>Open a relevant, low-pressure conversation. The aim is a first conversation, never an immediate sale.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Qualify</h4><p>Confirm fit against the five dimensions. Move forward together, or part on good terms.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Discover</h4><p>Understand the need in depth — category, scale, constraints and the real objective behind the request.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Propose &amp; align</h4><p>Present a clear proposal; work through questions honestly toward a durable agreement.</p></div></div>
+    <div class="step"><div class="n">6</div><div class="c"><h4>Commit</h4><p>Close cleanly and hand to operations with full context, so the first order proves the promise.</p></div></div>
+    <div class="step"><div class="n">7</div><div class="c"><h4>Grow</h4><p>Turn a first order into a lasting account (Part IV). The funnel does not end at the close; it deepens.</p></div></div>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>06</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part II — The Funnel &amp; Outreach</span></div>
+
+  <div class="section-open"><div class="eyebrow">04 · Prospecting Strategy</div></div>
+  <h2 class="h">Finding the right partners</h2>
+  <p class="lead">We prospect for fit, not for volume. A smaller number of well-chosen, well-researched approaches will always outperform mass outreach — and it protects the brand.</p>
+  <h4>Where good prospects come from</h4>
+  <ul class="tight">
+    <li><strong>Referrals</strong> — the highest-quality source. A satisfied partner's introduction carries our reliability with it.</li>
+    <li><strong>Inbound inquiries</strong> — buyers who found us and already understand the positioning. We reply within two business days.</li>
+    <li><strong>Considered outbound</strong> — specific businesses in our categories that would genuinely benefit from what we do.</li>
+    <li><strong>Trade networks &amp; fairs</strong> — sector events where serious buyers and suppliers gather (see Brand Book, Trade Fair Identity).</li>
+  </ul>
+  <h4>How we prepare before reaching out</h4>
+  <p>Every approach begins with research. We learn the prospect's category, scale, likely sourcing pain and a specific, credible reason AYZENITH is relevant to them. If we cannot articulate that reason in one honest sentence, we are not ready to reach out.</p>
+  <div class="callout"><div class="eyebrow">The prospecting test</div><p style="margin:0">Before any outreach: <em>would this message be useful to the recipient even if they never reply?</em> If not, we refine it until it is. We earn attention; we do not demand it.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>07</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part II — The Funnel &amp; Outreach</span></div>
+
+  <div class="section-open"><div class="eyebrow">05 · LinkedIn Outreach</div></div>
+  <h2 class="h">Professional, patient, relevant</h2>
+  <p class="lead">LinkedIn is a place to build professional standing, not to pitch. We show up as a credible institution and open conversations we would be glad to have in person.</p>
+  <h4>How we operate</h4>
+  <ul class="tight">
+    <li>Connect with a short, specific, genuine note — never a copy-paste pitch.</li>
+    <li>Lead with relevance to <em>their</em> business, not a description of ours.</li>
+    <li>Give the relationship room; a first message aims for a conversation, not a contract.</li>
+    <li>Support our words with a professional presence (see Brand Book, Social Media Identity).</li>
+  </ul>
+  <div class="template">
+    <span class="tlabel">Connection note — example</span>
+    <p>Hello <span class="field">[First name]</span> — I lead partnerships at AYZENITH, a Türkiye-based sourcing and trade group. I follow work in <span class="field">[category]</span> and thought it would be worth connecting. No agenda; happy to be a useful contact if cross-border sourcing ever becomes relevant for <span class="field">[Company]</span>.</p>
+  </div>
+  <div class="template">
+    <span class="tlabel">First message after connecting — example</span>
+    <p>Thanks for connecting, <span class="field">[First name]</span>. I won't pitch you — I only wanted to open the door. We help businesses in <span class="field">[category]</span> source and move products across borders with one accountable partner for quality, logistics and delivery. If that's ever useful, I'm glad to share how we work. If not, it's good to be connected regardless.</p>
+  </div>
+  <div class="callout"><div class="eyebrow">Tone</div><p style="margin:0">Calm and confident. We never chase, never flatter, never manufacture urgency. A partner worth keeping is worth waiting for.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>08</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part II — The Funnel &amp; Outreach</span></div>
+
+  <div class="section-open"><div class="eyebrow">06 · Email Outreach</div></div>
+  <h2 class="h">Clear, specific, easy to say yes to</h2>
+  <p class="lead">A good outreach email respects the reader's time: it is short, it is relevant, and it asks for one small, reasonable next step.</p>
+  <h4>Structure of a strong email</h4>
+  <ol class="tight">
+    <li><strong>Relevant opening</strong> — a specific, true reason we are writing to <em>them</em>.</li>
+    <li><strong>What we do, in one line</strong> — the value, not the mechanics.</li>
+    <li><strong>Why it may matter to them</strong> — tied to their category or situation.</li>
+    <li><strong>One clear, low-commitment ask</strong> — usually a short conversation.</li>
+  </ol>
+  <div class="template">
+    <span class="tlabel">Cold email — example</span>
+    <p><strong style="color:#fff">Subject:</strong> Sourcing <span class="field">[category]</span> across borders — one accountable partner</p>
+    <p>Hello <span class="field">[First name]</span>,</p>
+    <p>I lead partnerships at AYZENITH, a Türkiye-based B2B sourcing and trade group. We help businesses like <span class="field">[Company]</span> source and move <span class="field">[category]</span> internationally — handling vetting, quality control, customs and delivery as one accountable relationship, so you gain access without carrying the risk.</p>
+    <p>If reliable cross-border supply is something you're working on this year, I'd welcome a short conversation to understand your needs and tell you honestly whether we're the right fit. Would a 20-minute call in the next week or two be useful?</p>
+    <p>Either way, thank you for your time.<br>— <span class="field">[Name]</span>, AYZENITH · info@ayzenith.com</p>
+  </div>
+  <div class="dodont">
+    <div class="dobox"><h4>Do</h4><ul class="tight"><li>Keep it under 150 words.</li><li>Make the first line specific to them.</li><li>Offer an easy, respectful next step.</li></ul></div>
+    <div class="dontbox"><h4>Don't</h4><ul class="tight"><li>Use false urgency or "limited spots".</li><li>Send generic blasts at scale.</li><li>Over-claim results or scale.</li></ul></div>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>09</span></div>
+</section>
+
+<!-- PART III DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part III</div>
+    <h2>Winning the Partnership</h2>
+    <p class="sc-desc">From the first real conversation to a signed agreement — conducted with candour, structure and respect. We win by being the clearest and most reliable option, not the loudest.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">07 · Discovery Meetings</div></div>
+  <h2 class="h">Understand before you propose</h2>
+  <p class="lead">The discovery meeting is the most important conversation in the sale. Our job is to understand the partner's world well enough to tell them honestly how — or whether — we can help.</p>
+  <p>We listen more than we speak. A good discovery leaves the prospect feeling understood, not sold to. We aim to leave every discovery meeting able to answer four questions.</p>
+  <div class="grid2">
+    <div class="card"><h4>What are they really trying to do?</h4><p>The business objective behind the request — growth, reliability, margin, a new market.</p></div>
+    <div class="card"><h4>What is the pressure?</h4><p>The pain that makes this urgent — supplier failure, quality issues, complexity, risk.</p></div>
+    <div class="card"><h4>What does success look like?</h4><p>How they will measure whether a partner solved the problem.</p></div>
+    <div class="card"><h4>Can we serve this properly?</h4><p>Whether AYZENITH can genuinely own this outcome — and the honest answer if not.</p></div>
+  </div>
+  <h4>Questions we ask</h4>
+  <ul class="tight">
+    <li>What are you sourcing or moving today, and where does it get difficult?</li>
+    <li>What has gone wrong with previous suppliers or partners?</li>
+    <li>What volumes and categories matter most over the next year?</li>
+    <li>If this worked exactly as you hoped, what would change for your business?</li>
+  </ul>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>10</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">08 · Proposal Structure</div></div>
+  <h2 class="h">A proposal that states what we own</h2>
+  <p class="lead">A strong AYZENITH proposal removes ambiguity. It tells the partner exactly what we will do, to what standard, and where our responsibility begins and ends.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Understanding</h4><p>A short restatement of the partner's objective and constraints — proof we listened.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Scope</h4><p>The specific capabilities we will provide: sourcing, distribution, private label, or partnership.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Standards</h4><p>The disciplines behind the work — vetting, pre-shipment inspection, compliance, tracked logistics.</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>Responsibilities</h4><p>What AYZENITH owns and what the partner owns. No silent assumptions.</p></div></div>
+    <div class="step"><div class="n">5</div><div class="c"><h4>Terms</h4><p>Transparent commercial terms, structured for a relationship that holds across a full cycle.</p></div></div>
+    <div class="step"><div class="n">6</div><div class="c"><h4>Next steps</h4><p>A clear, low-friction path to a first order.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Governing rule</div><p style="margin:0">We never promise in a proposal what operations cannot deliver. A proposal is the first physical form of our promise — it must be exactly true.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>11</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">09 · Negotiation Principles</div></div>
+  <h2 class="h">Negotiate toward a durable agreement</h2>
+  <p class="lead">We negotiate to build a relationship that both sides want to keep — not to extract the maximum from a single deal. A cornered partner is not a lasting one.</p>
+  <div class="principle"><div class="idx">01</div><div class="body"><h4>Anchor on value, not price</h4><p>We compete on reliability. We explain what accountability and de-risking are worth before we discuss cost.</p></div></div>
+  <div class="principle"><div class="idx">02</div><div class="body"><h4>Be transparent</h4><p>Clear terms build trust faster than clever ones. We do not win through confusion.</p></div></div>
+  <div class="principle"><div class="idx">03</div><div class="body"><h4>Protect the relationship</h4><p>We would rather hold a fair position than win an unfair one that damages the partnership later.</p></div></div>
+  <div class="principle"><div class="idx">04</div><div class="body"><h4>Know our floor</h4><p>We understand the terms below which the work cannot be done to our standard — and we hold them calmly.</p></div></div>
+  <div class="principle"><div class="idx">05</div><div class="body"><h4>Walk away well</h4><p>If terms cannot support the standard our name requires, we decline with respect. A good "no" protects the brand.</p></div></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>12</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">10 · Objection Handling</div></div>
+  <h2 class="h">Meeting concerns with candour</h2>
+  <p class="lead">An objection is a request for reassurance, not a rejection. We answer honestly — and if a concern is legitimate, we acknowledge it rather than argue.</p>
+  <table class="data">
+    <tr><th>What we hear</th><th>How we respond</th></tr>
+    <tr><td>"Another supplier is cheaper."</td><td>Acknowledge it, then explain what the price does not include: vetting, quality control, accountability when something goes wrong. We compete on reliability, and we let the buyer weigh it.</td></tr>
+    <tr><td>"We already have suppliers."</td><td>Good — we are not asking them to replace what works. We ask where it gets difficult, and offer to be the accountable partner for that part, or a dependable second source.</td></tr>
+    <tr><td>"How do we know we can trust you?"</td><td>A fair question. We describe exactly how we operate, start with a controlled first order, and let performance earn the relationship.</td></tr>
+    <tr><td>"You're a young company."</td><td>We are early, and we treat it as an advantage: partners who build with us now build at the founding, with direct access and full attention.</td></tr>
+    <tr><td>"We're not ready yet."</td><td>Then there is no pressure. We stay in touch as a useful contact and are ready when the need is real.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Rule</div><p style="margin:0">We never handle an objection by overstating a capability. If we cannot answer a concern truthfully in our favour, the honest answer is the right one.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>13</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">11 · Follow-up Process</div></div>
+  <h2 class="h">Persistence without pressure</h2>
+  <p class="lead">Most partnerships are not won in the first conversation. We follow up consistently and respectfully — adding value each time, never simply "checking in".</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div class="c"><h4>Same-day summary</h4><p>After every meeting, a short note restating what we heard and the agreed next step.</p></div></div>
+    <div class="step"><div class="n">2</div><div class="c"><h4>Value-added follow-ups</h4><p>Each subsequent contact brings something useful — an answer, an option, a relevant insight — not just a reminder.</p></div></div>
+    <div class="step"><div class="n">3</div><div class="c"><h4>Respectful cadence</h4><p>Spaced, professional, never daily. We make it easy to re-engage and easy to say "not now".</p></div></div>
+    <div class="step"><div class="n">4</div><div class="c"><h4>The graceful pause</h4><p>If the timing is wrong, we say we will stay in touch — and we do, without pestering.</p></div></div>
+  </div>
+  <div class="template">
+    <span class="tlabel">Follow-up after a quiet period — example</span>
+    <p>Hello <span class="field">[First name]</span> — no pressure at all, just keeping the door open. If <span class="field">[category]</span> sourcing has moved up your priorities, I'm glad to pick up where we left off. If the timing still isn't right, that's completely fine — I'll remain a useful contact whenever it is.</p>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part III — Winning the Partnership</span></div>
+
+  <div class="section-open"><div class="eyebrow">12 · Closing Strategy</div></div>
+  <h2 class="h">Closing as a natural conclusion</h2>
+  <p class="lead">When we have qualified well, understood deeply and proposed honestly, closing is not a manoeuvre — it is the natural next step. We make it easy, clear and pressure-free.</p>
+  <h4>How we close</h4>
+  <ul class="tight">
+    <li><strong>Confirm alignment</strong> — restate what we have agreed and check nothing is unresolved.</li>
+    <li><strong>Remove friction</strong> — make the first step small, concrete and easy to take.</li>
+    <li><strong>Propose a first order</strong> — a controlled, well-scoped first engagement that lets performance earn the future.</li>
+    <li><strong>Set expectations</strong> — exactly what happens next, and by when, once they say yes.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">What we never do</div><p style="margin:0">No artificial deadlines, no discount pressure, no "sign today" tactics. If a partner needs time, time is part of the relationship. Trust closed under pressure does not last.</p></div>
+  <div class="quote">A first order is a promise we get to keep. That is how the real selling begins.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>15</span></div>
+</section>
+
+<!-- PART IV DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part IV</div>
+    <h2>After the Yes</h2>
+    <p class="sc-desc">The sale is the beginning, not the end. Our most important selling happens after the first order — in how we deliver, how we handle problems, and how we grow the relationship over years.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part IV — After the Yes</span></div>
+
+  <div class="section-open"><div class="eyebrow">13 · Relationship Building</div></div>
+  <h2 class="h">Turning a buyer into a partner</h2>
+  <p class="lead">Every promise kept compounds. The first flawless delivery does more for the relationship than any pitch — and it is where trust becomes real.</p>
+  <p>Relationship building is deliberate work, not a by-product. We stay close to partners between orders, understand how their business is changing, and look for ways to be more useful before we are asked. We are present when things go wrong, and we communicate the way this company communicates: precise, calm and honest.</p>
+  <div class="grid2">
+    <div class="card"><h4>Be reliable, visibly</h4><p>On time, in full, defect-free — consistently. Reliability is the relationship.</p></div>
+    <div class="card"><h4>Stay in touch with purpose</h4><p>Regular, useful contact between orders — not only when we want something.</p></div>
+    <div class="card"><h4>Own problems fully</h4><p>When something goes wrong, we are the partner still standing there. That is when loyalty is earned.</p></div>
+    <div class="card"><h4>Look ahead for them</h4><p>Anticipate needs, surface options, and help partners grow into new categories.</p></div>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>16</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part IV — After the Yes</span></div>
+
+  <div class="section-open"><div class="eyebrow">14 · Long-Term Account Management</div></div>
+  <h2 class="h">Growing accounts the right way</h2>
+  <p class="lead">A well-served account grows on its own momentum — from a first order into more categories, larger volumes, private label and exclusive supply. Our job is to earn each step.</p>
+  <table class="data">
+    <tr><th>Account stage</th><th>Our focus</th><th>What unlocks growth</th></tr>
+    <tr><td>New account</td><td>Deliver the first orders flawlessly; set the standard.</td><td>Consistency and honest communication.</td></tr>
+    <tr><td>Established account</td><td>Deepen categories and volume; forecast together.</td><td>Reliability under pressure; proactive service.</td></tr>
+    <tr><td>Strategic account</td><td>Private label, exclusive supply, joint planning.</td><td>Proven trust and aligned long-term goals.</td></tr>
+    <tr><td>Partner-of-record</td><td>Co-development; AYZENITH as the default partner.</td><td>Years of kept promises.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Discipline</div><p style="margin:0">We never grow an account faster than we can serve it. Expanding a relationship into a category we cannot yet guarantee risks the trust the whole account is built on. Responsible growth applies to accounts, not just to the company.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>17</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Sales Playbook</span><span>Part IV — After the Yes</span></div>
+
+  <div class="section-open"><div class="eyebrow">15 · Sales KPIs</div></div>
+  <h2 class="h">What we measure — and why</h2>
+  <p class="lead">We measure the health of relationships, not just the volume of transactions. Our metrics are chosen to reward long-term partnership over short-term pressure.</p>
+  <div class="kpi-row">
+    <div class="kpi"><div class="v">Fit</div><div class="l">Share of new partners matching the Ideal Customer Profile</div></div>
+    <div class="kpi"><div class="v">Repeat</div><div class="l">Proportion of revenue from returning partners</div></div>
+    <div class="kpi"><div class="v">Retention</div><div class="l">Partners retained year over year</div></div>
+    <div class="kpi"><div class="v">Growth</div><div class="l">Expansion within existing accounts</div></div>
+  </div>
+  <h4>The metrics we watch</h4>
+  <table class="data">
+    <tr><th>KPI</th><th>What it tells us</th></tr>
+    <tr><td>Qualified inquiry response time</td><td>Whether we honour our two-business-day standard.</td></tr>
+    <tr><td>Discovery-to-proposal rate</td><td>How well we qualify and understand before proposing.</td></tr>
+    <tr><td>First-order success rate</td><td>Whether operations delivered on what sales promised.</td></tr>
+    <tr><td>Repeat &amp; expansion revenue</td><td>The truest measure — partners choosing us again.</td></tr>
+    <tr><td>Partner retention</td><td>Whether relationships last, which is the whole strategy.</td></tr>
+    <tr><td>Referral rate</td><td>Whether partners trust us enough to introduce us.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">What we refuse to optimise for</div><p style="margin:0">We do not chase vanity volume, one-off wins, or metrics that reward pressure over patience. A number that improves at the cost of a relationship is a number moving the wrong way.</p></div>
+  <div class="quote">We compete on reliability, not price — and reliability is the only metric that compounds.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential · Sales Playbook v1.0</span><span>18</span></div>
+</section>
+
+</body>
+</html>

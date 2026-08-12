@@ -20,16 +20,22 @@ function localizedUrl(locale: string, path: string): string {
 
 type BuildMetadataArgs = {
   title?: string;
+  /** Complete <title>, used verbatim with no brand suffix (localized homepage). */
+  fullTitle?: string;
   description?: string;
   /** Site-relative path, e.g. "/" or "/about". */
   path?: string;
+  /** OG/Twitter card image — absolute URL or site-relative path. */
+  image?: string;
   noIndex?: boolean;
 };
 
 export async function buildMetadata({
   title,
+  fullTitle,
   description = siteConfig.description,
   path = "/",
+  image,
   noIndex = false,
 }: BuildMetadataArgs = {}): Promise<Metadata> {
   const locale = (await getLocale()) as Locale;
@@ -40,9 +46,15 @@ export async function buildMetadata({
   for (const l of routing.locales) languages[l] = localizedUrl(l, path);
   languages["x-default"] = localizedUrl(routing.defaultLocale, path);
 
-  const resolvedTitle = title
-    ? `${title} · ${siteConfig.name}`
-    : `${siteConfig.name} — ${siteConfig.tagline}`;
+  const resolvedTitle =
+    fullTitle ??
+    (title
+      ? `${title} · ${siteConfig.name}`
+      : `${siteConfig.name} — ${siteConfig.tagline}`);
+
+  const ogImages = image
+    ? [{ url: image.startsWith("http") ? image : `${siteConfig.url}${image}` }]
+    : undefined;
 
   return {
     title: resolvedTitle,
@@ -71,11 +83,13 @@ export async function buildMetadata({
       description,
       url,
       locale: ogLocales[locale],
+      images: ogImages,
     },
     twitter: {
       card: "summary_large_image",
       title: resolvedTitle,
       description,
+      images: ogImages,
     },
     verification: env.googleSiteVerification
       ? { google: env.googleSiteVerification }
@@ -145,5 +159,46 @@ export function structuredData() {
         publisher: { "@id": orgId },
       },
     ],
+  } as const;
+}
+
+/**
+ * Per-product JSON-LD (schema.org/Product). No price is published — AYZENITH is
+ * a showcase, not a store — so no Offer is emitted: the graph stays valid and
+ * honest while still giving search engines a rich product entity. Injected once
+ * per product detail page with already-localized strings.
+ */
+export function productStructuredData(input: {
+  name: string;
+  description: string;
+  category: string;
+  image?: string | null;
+  url: string;
+  specs?: ReadonlyArray<{ label: string; value: string }>;
+}) {
+  const image = input.image
+    ? input.image.startsWith("http")
+      ? input.image
+      : `${siteConfig.url}${input.image}`
+    : `${siteConfig.url}/opengraph-image`;
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: input.name,
+    description: input.description,
+    category: input.category,
+    image,
+    url: input.url,
+    brand: { "@type": "Organization", name: siteConfig.name },
+    ...(input.specs && input.specs.length > 0
+      ? {
+          additionalProperty: input.specs.map((s) => ({
+            "@type": "PropertyValue",
+            name: s.label,
+            value: s.value,
+          })),
+        }
+      : {}),
   } as const;
 }

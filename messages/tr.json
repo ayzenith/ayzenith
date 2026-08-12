@@ -1,6 +1,7 @@
 {
   "metadata": {
-    "homeDescription": "AYZENITH; küresel bir B2B ticaret, tedarik ve yatırım grubudur. Ürünleri sınırların ötesinde tedarik eder, taşır ve arkasında dururuz — böylece hırslı işletmeler riski üstlenmeden dünyaya açılır."
+    "homeDescription": "AYZENITH; küresel bir B2B ticaret, tedarik ve yatırım grubudur. Ürünleri sınırların ötesinde tedarik eder, taşır ve arkasında dururuz — böylece hırslı işletmeler riski üstlenmeden dünyaya açılır.",
+    "homeTitle": "AYZENITH — Küresel B2B Tedarik, Ticaret ve Lojistik"
   },
   "nav": {
     "services": "Hizmetler",
@@ -30,14 +31,31 @@
     "hero": {
       "eyebrow": "Şirket",
       "title": "On yıllara dayanacak, güvenilir bir ortak.",
-      "subtitle": "AYZENITH; bağımsız bir ticaret, tedarik ve yatırım grubudur. Küresel ticareti güvenilir kılmak — ve bu güveni kalıcı bir işe dönüştürmek için varız."
+      "subtitle": "AYZENITH; farklı pazarlardan ürün ve tedarik ihtiyaçlarını karşılayan, B2B ticaret, dağıtım ve tedarik süreçlerini uçtan uca yöneten bağımsız bir ticaret, tedarik ve yatırım grubudur."
     },
     "purpose": {
       "overline": "Neden varız",
       "title": "Küresel ticaret hâlâ mesafe, belirsizlik ve risk üzerine kurulu. Biz kuralları değiştirmek için yola çıktık.",
-      "body1": "AYZENITH, hırslı işletmelere tek bir ortak sunar; ürünleri her yerde tedarik eden, taşıyan ve arkasında duran — eski sistemin hiç sunmadığı şeffaflık ve standartlarla.",
+      "body1": "AYZENITH, hırslı işletmelere tek bir ortak sunar: ürünleri uluslararası pazarlardan tedarik eden, ticaretini ve lojistiğini yürüten ve teslimatın arkasında duran — eski sistemin hiç sunmadığı şeffaflık ve standartlarla.",
       "body2": "Payını alıp kaybolan bir aracı değiliz. Sorumluluğu üstlenen ve kalıcı olan bir kurumuz — yalnızca bir şirket değil, yeni nesil küresel ticaretin altyapısını inşa ediyoruz.",
       "imageAlt": "AYZENITH küresel ticaret operasyonları"
+    },
+    "mission": {
+      "overline": "Misyonumuz",
+      "title": "Bugün ne yapıyoruz.",
+      "body": "AYZENITH, işletmelerin uluslararası tedarik ve ticaret ihtiyaçlarını tek bir sorumlu ortak üzerinden karşılar. Uluslararası ürün tedariki, B2B ticaret, dağıtım ile toptan ve kurumsal tedariki; ayrıca özel marka (OEM) süreçlerini uçtan uca yönetiriz.",
+      "model": "Bir müşteri başka bir ülkeden ürün tedarik etmek istediğinde işimiz yalnızca ürünü bulup satmak değildir. Doğru tedarikçinin araştırılmasından kalite kontrolüne, ticari sürecin kurgulanmasından lojistik ve teslimata kadar tüm zincirin sorumluluğunu üstleniriz — tedarik, ticaret, dağıtım, iş birliği ve operasyonu tek bir bütün olarak yürütürüz.",
+      "fieldsLabel": "Çalıştığımız alanlar",
+      "fields": {
+        "electronics": "Tüketici elektroniği",
+        "smartDevices": "Akıllı cihazlar",
+        "mobileAccessories": "Mobil aksesuarlar",
+        "homeKitchen": "Ev & mutfak",
+        "textile": "Tekstil",
+        "medical": "Medikal ürünler",
+        "dental": "Dental implant sistemleri"
+      },
+      "health": "Sağlık alanında klinik ya da hasta tedavisi vermeyiz; yalnızca uygun profesyonel ve kurumsal partnerlerle koordinasyon ve ticari iş birlikleri yürütürüz."
     },
     "principles": {
       "overline": "Neyin arkasında duruyoruz",
@@ -81,6 +99,11 @@
         "compliance": "Düzenlemeye tabi kategorilere yalnızca tam yasal çerçeveler içinde girilir."
       },
       "imageAlt": "AYZENITH hesap verebilirlik ve standartlar"
+    },
+    "vision": {
+      "overline": "Vizyonumuz",
+      "title": "Nereye gidiyoruz.",
+      "body": "Ticaretle başlıyoruz; zamanla yeni kategorilere giriyor, özel markalar geliştiriyor ve ileride kendi markalarımızı kuruyoruz. Amacımız, farklı pazarlarda sorumlu biçimde büyüyen; on yıllara dayanacak, kalıcı ve uluslararası bir şirketler grubu inşa etmek."
     },
     "longview": {
       "overline": "Uzun vade",
@@ -177,10 +200,22 @@
     "title": "Ölçülebilir güvenilirlik.",
     "intro": "Ciddi alıcıların taahhütten önce doğruladığı varlık ve standartlar.",
     "stats": {
-      "reach": { "value": "3", "label": "Aktif tedarikte kıta" },
-      "categories": { "value": "24/7", "label": "Sınır ötesi operasyon" },
-      "accountability": { "value": "1", "label": "Uçtan uca hesap verebilir ortak" },
-      "standard": { "value": "100%", "label": "Sevkiyat öncesi kalite denetimi" }
+      "reach": {
+        "value": "3",
+        "label": "Aktif tedarikte kıta"
+      },
+      "categories": {
+        "value": "24/7",
+        "label": "Sınır ötesi operasyon"
+      },
+      "accountability": {
+        "value": "Tek",
+        "label": "Uçtan uca hesap verebilir ortak"
+      },
+      "standard": {
+        "value": "100%",
+        "label": "Sevkiyat öncesi kalite denetimi"
+      }
     },
     "note": "Yukarıdaki her değer, AYZENITH'in bugün nasıl çalıştığını yansıtır. Ortaklıklar ve vaka çalışmaları olgunlaştıkça bu kayıt büyür — her zaman dürüstçe, asla abartılmadan."
   },
@@ -408,6 +443,38 @@
         "title": "Pazar Yeri Kanalları",
         "description": "Seçili ürünler, işlemsel alıcılar için güvenilir pazar yerlerinde sunulur; B2B ilişkileri ise işimizin özü olmayı sürdürür."
       }
+    },
+    "showcase": {
+      "overline": "Vitrin",
+      "title": "Tedarik edip taşıdıklarımızdan bir seçki.",
+      "body": "AYZENITH'in tedarik ettiği ürünlerden özenle seçilmiş bir kesit — her biri aynı tedarik ve kalite disiplinine bağlı. Bir fiyat listesi değil; yetkinliğe açılan bir pencere."
+    },
+    "card": {
+      "viewDetails": "Detayları gör",
+      "badges": {
+        "new": "Yeni",
+        "bestseller": "Çok Satan",
+        "featured": "Öne Çıkan"
+      },
+      "availability": {
+        "in-stock": "Stokta",
+        "limited": "Sınırlı stok",
+        "coming-soon": "Yakında"
+      }
+    },
+    "detail": {
+      "breadcrumbProducts": "Ürünler",
+      "overview": "Genel Bakış",
+      "specifications": "Teknik Özellikler",
+      "features": "Özellikler",
+      "useCases": "Uygun Kullanım Alanları",
+      "downloads": "İndirilebilir Belgeler",
+      "availableOn": "Şuralarda Satışta",
+      "buyOn": "Satın al:",
+      "wholesaleTitle": "Toptan & B2B",
+      "wholesaleBody": "Hacimli alım, özel marka veya distribütörlük mü? AYZENITH ile doğrudan çalışın.",
+      "wholesaleCta": "Toptan Ortaklık Talep Et",
+      "related": "İlgili ürünler"
     }
   },
   "contactPage": {

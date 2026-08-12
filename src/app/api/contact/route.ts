@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { contactSchema } from "@/lib/validation/contact";
 import { deliverInquiry } from "@/lib/contact/delivery";
+import { saveContactMessage } from "@/server/contact";
 
 /**
  * POST /api/contact — receives, filters, validates and delivers inquiries.
@@ -46,7 +47,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "validation_failed" }, { status: 422 });
   }
 
-  // 3 — Deliver via the configured provider (acknowledge-only until wired).
+  // 3 — Persist to the CMS inbox (best-effort; never blocks the submission).
+  await saveContactMessage(result.data);
+
+  // 4 — Deliver via the configured provider (acknowledge-only until wired). The
+  // message is already safe in the inbox, so a delivery failure no longer loses
+  // the inquiry — but we still surface it so the client can retry email/CRM.
   const delivery = await deliverInquiry(result.data);
   if (!delivery.ok) {
     return NextResponse.json({ ok: false, error: "delivery_failed" }, { status: 502 });

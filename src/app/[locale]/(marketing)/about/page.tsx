@@ -34,6 +34,15 @@ const principles = [
   "permanence",
 ] as const;
 const standardsPoints = ["vetting", "quality", "redundancy", "compliance"] as const;
+const missionFields = [
+  "electronics",
+  "smartDevices",
+  "mobileAccessories",
+  "homeKitchen",
+  "textile",
+  "medical",
+  "dental",
+] as const;
 
 export default async function AboutPage() {
   const t = await getTranslations("about");
@@ -75,8 +84,45 @@ export default async function AboutPage() {
         </Container>
       </Section>
 
+      {/* Mission — what we do today */}
+      <Section labelledBy="mission-heading" className="bg-surface/40">
+        <Container>
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <Reveal>
+              <div>
+                <p className="eyebrow text-accent">{t("mission.overline")}</p>
+                <h2
+                  id="mission-heading"
+                  className="mt-4 text-balance font-sans text-h3 font-semibold text-foreground"
+                >
+                  {t("mission.title")}
+                </h2>
+              </div>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <div>
+                <p className="text-body-lg text-muted">{t("mission.body")}</p>
+                <p className="mt-4 text-body text-muted">{t("mission.model")}</p>
+                <p className="eyebrow mt-8 text-accent">{t("mission.fieldsLabel")}</p>
+                <ul className="mt-4 flex flex-wrap gap-2">
+                  {missionFields.map((key) => (
+                    <li
+                      key={key}
+                      className="rounded-pill border border-border bg-surface/60 px-4 py-1.5 text-caption text-foreground"
+                    >
+                      {t(`mission.fields.${key}`)}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-6 text-caption text-muted">{t("mission.health")}</p>
+              </div>
+            </Reveal>
+          </div>
+        </Container>
+      </Section>
+
       {/* Principles */}
-      <Section labelledBy="principles-heading" className="bg-surface/40">
+      <Section labelledBy="principles-heading">
         <Container>
           <Reveal>
             <SectionHeader
@@ -104,7 +150,7 @@ export default async function AboutPage() {
       </Section>
 
       {/* Standards & accountability */}
-      <Section labelledBy="standards-heading">
+      <Section labelledBy="standards-heading" className="bg-surface/40">
         <Container>
           <div className="grid gap-12 lg:grid-cols-2 lg:items-center lg:gap-16">
             <Reveal className="lg:order-2">
@@ -140,6 +186,28 @@ export default async function AboutPage() {
                   ))}
                 </ul>
               </div>
+            </Reveal>
+          </div>
+        </Container>
+      </Section>
+
+      {/* Vision — where we are going */}
+      <Section labelledBy="vision-heading">
+        <Container>
+          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+            <Reveal>
+              <div>
+                <p className="eyebrow text-accent">{t("vision.overline")}</p>
+                <h2
+                  id="vision-heading"
+                  className="mt-4 text-balance font-sans text-h3 font-semibold text-foreground"
+                >
+                  {t("vision.title")}
+                </h2>
+              </div>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <p className="text-body-lg text-muted">{t("vision.body")}</p>
             </Reveal>
           </div>
         </Container>

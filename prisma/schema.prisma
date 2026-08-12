@@ -1,0 +1,381 @@
+// AYZENITH — Enterprise CMS data model.
+//
+// The schema is the single source of truth for the CMS. It is built up batch by
+// batch; this first batch establishes the authentication + auditing core. Later
+// batches add Product, Media, Content, Blog, Category, Service, SiteSetting and
+// Revision models — each as an additive migration, so the UI layer never has to
+// be rewritten (the "repository pattern" boundary lives in src/server/*).
+//
+// Target: Supabase Postgres. `url` is the pooled (pgBouncer) connection used at
+// runtime; `directUrl` is the direct, non-pooled connection migrations need
+// (pgBouncer can't run the DDL migrations issue).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+/// Access levels. There is NO public registration — users are created only by a
+/// Super Admin from inside the CMS.
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+/// Publication state for a product.
+///   DRAFT     — work in progress, never public
+///   PUBLISHED — live on the public site
+///   HIDDEN    — kept in the CMS but pulled from the public site (soft delete)
+enum ProductStatus {
+  DRAFT
+  PUBLISHED
+  HIDDEN
+}
+
+/// A catalogue product. This is the DB source of truth that replaces the former
+/// hardcoded `productData` array — the public site reads it through the
+/// repository in src/server/products.ts, so anything an editor publishes here
+/// appears on the site immediately.
+///
+/// Localized / structured fields (shortDescription, description, features,
+/// useCases, specs, marketplaces, gallery, downloads) are stored as JSON so the
+/// exact `Product` shape the UI already expects is preserved without a wide,
+/// brittle relational spread. The repository is the only place that reads/writes
+/// these shapes, keeping them typed at the boundary.
+model Product {
+  id           String        @id @default(cuid())
+  slug         String        @unique
+  name         String
+  categoryKey  String
+  status       ProductStatus @default(DRAFT)
+  featured     Boolean       @default(false)
+  availability String        @default("in-stock")
+  badge        String? // "new" | "bestseller" | "featured" | null
+  image        String? // primary image path/URL, or null → on-brand placeholder
+  sortOrder    Int           @default(0)
+
+  gallery          Json @default("[]") // string[]
+  shortDescription Json // Localized<string>  { en, tr, de }
+  description      Json // Localized<string>
+  features         Json @default("{}") // Localized<string[]>
+  useCases         Json @default("{}") // Localized<string[]>
+  specs            Json @default("[]") // ProductSpec[]
+  marketplaces     Json @default("{}") // Partial<Record<MarketplaceId, string>>
+  downloads        Json @default("[]") // ProductDownload[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([sortOrder])
+}
+
+/// A CMS operator. Passwords are stored only as bcrypt hashes.
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  name         String
+  passwordHash String
+  role         Role      @default(EDITOR)
+  active       Boolean   @default(true)
+  lastLoginAt  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  activityLogs ActivityLog[]
+  mediaAssets  MediaAsset[]
+
+  @@index([role])
+}
+
+/// A per-string content override for the public site's copy. `key` is the
+/// next-intl message dot-path (e.g. "hero.title"); en/tr/de hold the overridden
+/// text for each language (null = keep the compiled default from messages/*.json).
+/// These are merged over the base catalog in src/i18n/request.ts, so editing one
+/// here updates every place that string appears — with zero component changes.
+model ContentOverride {
+  key       String   @id
+  en        String?
+  tr        String?
+  de        String?
+  updatedAt DateTime @updatedAt
+}
+
+/// Per-image overrides for the semantic media registry (src/config/assets.ts).
+/// `key` is an AssetKey (e.g. "about.operations"); `url` points at a Media
+/// Library asset. Resolved in the <Media> component, so setting one here swaps
+/// the on-brand placeholder for real photography with zero component changes.
+/// No row = the compiled placeholder/default is used.
+model AssetOverride {
+  key       String   @id
+  url       String
+  updatedAt DateTime @updatedAt
+}
+
+/// Editable site-wide settings — a single row (id = "site"). Every field is
+/// nullable; a null falls back to the compiled default in src/config/site.ts /
+/// env, so an empty table means "use the current defaults" and nothing changes
+/// until the owner overrides a value in the CMS. Kept deliberately small and
+/// content-only (no design), so editing it never affects the site's appearance.
+model SiteSetting {
+  id              String   @id @default("site")
+  companyEmail    String?
+  companyPhone    String?
+  companyLocation String?
+  hoursShort      String?
+  hoursLong       String?
+  linkedin        String?
+  instagram       String?
+  x               String?
+  youtube         String?
+  facebook        String?
+  ga4Id           String?
+  clarityId       String?
+  updatedAt       DateTime @updatedAt
+}
+
+/// Triage state for an inbound contact/partnership inquiry.
+enum ContactStatus {
+  NEW
+  READ
+  ARCHIVED
+}
+
+/// A submission from the public contact form. Persisted here so the owner has a
+/// durable inbox in the CMS regardless of whether email delivery is configured.
+/// The public form/route contract is unchanged — this is purely additive.
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String
+  company   String
+  email     String
+  region    String
+  interest  String
+  message   String
+  status    ContactStatus @default(NEW)
+  notes     String? // internal triage notes (never shown publicly)
+  createdAt DateTime      @default(now())
+
+  @@index([status])
+  @@index([createdAt])
+}
+
+/// An uploaded image in the Media Library. The binary lives in Supabase Storage
+/// (public "media" bucket); this row is the searchable metadata + display name.
+/// `path` is the immutable storage key; `name` is the editable label. Deleting a
+/// row also removes the object from storage (handled in the repository).
+model MediaAsset {
+  id           String   @id @default(cuid())
+  path         String   @unique // storage object key, e.g. "uploads/clx….webp"
+  url          String // public URL for <Image src>
+  name         String // editable display name (rename never touches storage)
+  mime         String
+  size         Int // bytes
+  width        Int?
+  height       Int?
+  uploadedById String?
+  uploadedBy   User?    @relation(fields: [uploadedById], references: [id], onDelete: SetNull)
+  createdAt    DateTime @default(now())
+
+  @@index([createdAt])
+}
+
+/// Append-only audit trail. Powers the dashboard "Recent Activity" widget and
+/// the per-user activity logs. `userId` is nullable + SetNull so history
+/// survives a user being deleted.
+model ActivityLog {
+  id       String  @id @default(cuid())
+  userId   String?
+  user     User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action   String // machine key, e.g. "user.login", "product.create"
+  entity   String? // e.g. "product", "blogPost"
+  entityId String?
+  summary  String? // human-readable, e.g. "Signed in"
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([userId])
+}
+
+// ============================================================================
+// AYZENITH RADAR — internal market-intelligence system.
+//
+// A self-contained decision-support tool living beside the CMS. It turns a
+// (category + market) input into a DETERMINISTIC opportunity score computed
+// purely in code from official trade data (UN Comtrade / Eurostat / WITS).
+// The AI layer only ever *explains* sourced data — it never invents a score,
+// a trade figure, or an HS code. Every numeric claim carries a citation, and
+// every analysis is frozen as an immutable snapshot so change-over-time is
+// comparable. Strict layering: DATA → SCORING → SNAPSHOT → AI → UI, enforced
+// by the repository boundary in src/server/radar/*.
+// ============================================================================
+
+/// Whether an HS mapping has been verified against an official source or still
+/// needs a human to confirm it. Unverified codes are NEVER used in analysis.
+enum RadarHsVerification {
+  VERIFIED // confirmed against an official HS/Comtrade source
+  NEEDS_REVIEW // AI-suggested or uncertain — excluded from scoring until confirmed
+}
+
+/// The decision band a final score falls into. Thresholds are configurable in
+/// RadarSetting; INSUFFICIENT_DATA is a first-class outcome (the system is
+/// allowed to say "I don't know" rather than fabricate a score).
+enum RadarDecision {
+  WORTH_RESEARCHING // default band ≥ 80
+  MONITOR // 60–79
+  NOT_PRIORITY // 0–59
+  INSUFFICIENT_DATA // critical data (import volume) missing → no score produced
+}
+
+/// Curated category → HS-6 mapping. This is the human-owned bridge between the
+/// owner's commercial vocabulary ("Tüketici Elektroniği") and the HS-6 codes
+/// the trade APIs actually speak. Codes are verified against official sources,
+/// never AI-generated. A single HS-6 code MAY belong to multiple categories
+/// (composite key on categoryKey+hs6 allows the overlap on purpose), so e.g.
+/// "851830 Headphones" can sit under both Consumer Electronics and Mobile
+/// Accessories. Editable in Admin → Radar → HS Eşlemeleri.
+model RadarHsMapping {
+  id           String              @id @default(cuid())
+  categoryKey  String // e.g. "consumer-electronics"
+  hs6          String // 6-digit HS code, e.g. "851830"
+  productGroup String // plain-language product group this code represents
+  verification RadarHsVerification @default(NEEDS_REVIEW)
+  source       String? // where the code was verified (e.g. "UN Comtrade HS 2022")
+  verifiedAt   DateTime? // when a human confirmed it
+  note         String?
+  sortOrder    Int                 @default(0)
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  @@unique([categoryKey, hs6])
+  @@index([categoryKey])
+  @@index([hs6])
+}
+
+/// Raw API response cache. Comtrade in particular is rate-limited, so identical
+/// queries must never be re-fetched while fresh. `key` is a deterministic hash
+/// of (provider + normalized query). `payload` holds the raw provider response
+/// verbatim (so citations can always point back to exactly what was fetched);
+/// `expiresAt` is derived from the configurable cache TTL. A miss or an expired
+/// row triggers a real fetch; a provider outage is surfaced, never masked.
+model RadarRawCache {
+  key       String   @id // hash(provider + query)
+  provider  String // "comtrade" | "eurostat" | "wits"
+  query     Json // normalized query params, for transparency/citations
+  payload   Json // raw provider response
+  fetchedAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([provider])
+  @@index([expiresAt])
+}
+
+/// An immutable analysis result. Once written it is NEVER updated — a re-run
+/// produces a new row. It freezes EVERYTHING needed to reproduce and compare:
+/// the input, the resolved HS codes, every raw datum used, the five criterion
+/// scores, the final score + decision, the exact weights in force at that time
+/// (so changing weights later never rewrites history), the data-confidence, and
+/// the AI interpretation text. Sub-category (HS-6) breakdown scores are stored
+/// too. `watchId` links snapshots produced by a tracked market.
+model RadarSnapshot {
+  id           String        @id @default(cuid())
+  categoryKey  String
+  geoScope     String // "country" | "region"
+  countryCode  String // ISO code, or the region key when geoScope = region
+  countryLabel String // display label at time of analysis
+  supplyMarket String        @default("TR")
+  tradeModel   String        @default("B2B")
+
+  // V1.1 — analysis scope. "category" analyses the whole verified HS set for a
+  // category (the original behaviour); "product" analyses ONE confirmed HS-6.
+  // Additive + backward compatible: existing snapshots default to "category" and
+  // keep productName/hsCode null — their frozen scores are never recomputed.
+  analysisType String        @default("category") // "category" | "product"
+  productName  String? // natural-language product name (product scope only)
+  hsCode       String? // the single HS-6 analysed (product scope only)
+
+  resolvedHs   Json // [{ hs6, productGroup }] actually used
+  criteria     Json // [{ key, score, weight, rawInputs, explanation }]
+  finalScore   Int? // null when decision = INSUFFICIENT_DATA
+  decision     RadarDecision
+  weightsUsed  Json // { demand, growth, supplyAdvantage, entry, competition }
+  confidence   Int // 0–100, share of criteria backed by real data
+  measuredCriteria Int // how many of the 5 criteria had data
+  subCategories Json     @default("[]") // [{ hs6, productGroup, score, trendPct }]
+  aiSummary    String? // AI interpretation (sourced-data-only); null until generated
+
+  watchId   String?
+  watch     RadarWatch?     @relation(fields: [watchId], references: [id], onDelete: SetNull)
+  citations RadarCitation[]
+
+  createdAt DateTime @default(now())
+
+  @@index([categoryKey, countryCode])
+  @@index([watchId])
+  @@index([createdAt])
+}
+
+/// A source record for one numeric datum used in a snapshot. This is the spine
+/// of the "no unsourced number is ever shown as verified" rule: every 🟢 figure
+/// in the UI maps to one of these. It stores the provider, the exact query, the
+/// raw value + unit, the source URL and when it was fetched — enough to click
+/// through and audit.
+model RadarCitation {
+  id         String   @id @default(cuid())
+  snapshotId String
+  snapshot   RadarSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  provider  String // "comtrade" | "eurostat" | "wits"
+  label     String // human label, e.g. "Almanya elektronik ithalatı 2024"
+  query     Json // exact query used
+  rawValue  String // raw value as returned (kept as string to avoid precision loss)
+  unit      String? // "USD" | "%" | ...
+  sourceUrl String? // deep link back to the source when available
+  fetchedAt DateTime
+
+  @@index([snapshotId])
+}
+
+/// A tracked market. When active, the system re-fetches on a schedule (weekly)
+/// and on demand ("Şimdi Yenile"), producing a fresh snapshot each time and
+/// comparing it to the previous one. `lastScore`/`lastSnapshotId` cache the most
+/// recent result for the dashboard; the full history lives in RadarSnapshot.
+model RadarWatch {
+  id             String   @id @default(cuid())
+  categoryKey    String
+  countryCode    String
+  label          String // display label, e.g. "Almanya · Tüketici Elektroniği"
+  active         Boolean  @default(true)
+  lastScore      Int?
+  lastSnapshotId String?
+  lastRefreshedAt DateTime?
+  createdAt      DateTime @default(now())
+
+  snapshots RadarSnapshot[]
+
+  @@unique([categoryKey, countryCode])
+  @@index([active])
+}
+
+/// Single-row (id = "radar") configuration for the scoring engine and pipeline.
+/// Every knob the owner is allowed to turn lives here; all fields are nullable
+/// and fall back to the compiled defaults in src/config/radar.ts, so an empty
+/// table means "use the defaults". Weights/thresholds changes affect only FUTURE
+/// analyses — existing snapshots keep the weights they were frozen with.
+model RadarSetting {
+  id                   String   @id @default("radar")
+  weights              Json? // { demand, growth, supplyAdvantage, entry, competition } summing to 100
+  thresholds           Json? // { worth: 80, monitor: 60 }
+  certificationBurden  Json? // { categoryKey: "low"|"medium"|"high"|"very-high" }
+  regions              Json? // { "europe": ["DE","NL",...] }
+  cacheTtlDays         Int? // how long raw data stays fresh (default 30)
+  alertThreshold       Int? // score delta that raises a watch alert (default 5)
+  updatedAt            DateTime @updatedAt
+}

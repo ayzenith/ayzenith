@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Operasyon Sistemi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#050b14;--navy-900:#0a1a2f;--navy-800:#0d2137;--navy-700:#123252;--navy-600:#1b4068;
+  --navy-500:#2c5282;--navy-400:#4a6e96;--navy-300:#7c97b5;--navy-200:#b4c4d6;--navy-100:#dce4ec;--navy-50:#f0f4f8;
+  --gold-700:#8a6d1c;--gold-600:#a88420;--gold-500:#c9a227;--gold-400:#d9b84a;--gold-300:#e7ce7c;--gold-100:#f6edd2;
+  --white:#fff;--offwhite:#f7f8fa;--n-100:#edeff2;--n-200:#dde1e7;--n-300:#c2c8d0;--n-400:#9aa2ad;
+  --n-500:#6b7480;--n-600:#4a525e;--n-700:#333b45;--n-800:#1e242c;--n-900:#12161b;
+  --ink:#1e242c;--muted:#4a525e;--subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);color:var(--ink);background:#c9ced6;font-size:10.5pt;line-height:1.6;font-feature-settings:"cv11","ss01"}
+.doc{width:210mm;margin:0 auto;background:var(--offwhite);box-shadow:0 14px 34px rgba(5,11,20,.2)}
+/* Full-page sheets (cover + dividers) */
+.sheet{width:210mm;height:297mm;position:relative;overflow:hidden;color:var(--offwhite)}
+.grid-field{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;height:100%;padding:26mm 22mm;display:flex;flex-direction:column;justify-content:space-between}
+.wordmark{font-weight:800;letter-spacing:.34em;font-size:20pt;color:var(--offwhite)}
+.wordmark .z{color:var(--gold-400)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:4mm}
+.kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:39pt;line-height:1.05;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:155mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:140mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.1em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.06em}
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%)}
+.sc-inner{position:relative;height:100%;padding:0 22mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:29pt;line-height:1.1;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:140mm;line-height:1.55}
+.sc-quote{font-family:var(--serif);font-style:italic;font-size:15pt;line-height:1.4;color:var(--navy-100);border-left:2px solid var(--gold-500);padding-left:6mm;margin-top:12mm;max-width:135mm}
+/* Flowing content */
+.content{padding:16mm 20mm 18mm}
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+.section-open{border-top:2px solid var(--gold-500);padding-top:4mm;margin:10mm 0 5mm}
+.section-open:first-child{margin-top:0}
+h2.h{font-size:20pt;line-height:1.16;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13pt;line-height:1.3;font-weight:700;color:var(--navy-800);margin:7mm 0 2.5mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:5mm 0 1.5mm}
+p{margin:0 0 3mm}
+.lead{font-size:11.5pt;line-height:1.55;color:var(--muted);margin-bottom:5mm}
+strong{font-weight:600;color:var(--navy-900)}em{font-style:italic}
+ul,ol{margin:0 0 3.5mm;padding-left:5.5mm}
+li{margin-bottom:1.5mm}li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.6mm}
+.toc h2.h{margin-bottom:6mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:6mm 0 1.5mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.5mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 8mm}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);border-radius:8px;padding:4.5mm 5.5mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}
+.callout p{margin:0}
+.quote{font-family:var(--serif);font-size:14.5pt;line-height:1.4;color:var(--navy-800);border-left:2px solid var(--gold-500);padding-left:6mm;margin:5mm 0;font-style:italic}
+.principle{display:flex;gap:5mm;padding:3.5mm 0;border-bottom:1px solid var(--n-200)}
+.principle:last-child{border-bottom:0}
+.principle .idx{font-family:var(--mono);font-size:10pt;font-weight:600;color:var(--gold-600);flex:0 0 11mm;padding-top:.5mm}
+.principle h4{margin:0 0 1mm}
+.principle p{margin:0;color:var(--muted);font-size:10pt}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:4.5mm 5mm}
+.card h4{margin-top:0}
+.card p{font-size:9.6pt;color:var(--muted);margin-bottom:0}
+.flow .step{display:flex;gap:4.5mm;padding:3mm 0;border-bottom:1px dashed var(--n-200)}
+.flow .step:last-child{border-bottom:0}
+.flow .n{flex:0 0 7.5mm;height:7.5mm;border-radius:50%;background:var(--navy-900);color:var(--gold-300);font-family:var(--mono);font-size:9pt;font-weight:600;display:flex;align-items:center;justify-content:center}
+.flow .step h4{margin:0 0 .8mm}
+.flow .step p{margin:0;font-size:9.6pt;color:var(--muted)}
+table.data{width:100%;border-collapse:collapse;margin:4.5mm 0;font-size:9.6pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.4mm 4mm 2.4mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:34%}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:4.5mm;margin:4.5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4mm 4.5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4,.dontbox h4{margin-top:0}.dobox h4{color:#1e7a5a}.dontbox h4{color:#a53b3b}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.4pt;color:var(--n-700)}
+.meta-strip{font-family:var(--mono);font-size:8pt;letter-spacing:.08em;color:var(--subtle);text-transform:uppercase}
+.endmark{margin-top:8mm;padding-top:4mm;border-top:1px solid var(--n-200);font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);text-align:center}
+@media print{
+  @page{size:A4;margin:16mm 15mm}
+  @page cover{margin:0}
+  body{background:#fff}
+  .doc{width:auto;box-shadow:none;background:#fff}
+  .sheet{width:auto;height:296mm;page:cover}
+  .cover{break-after:page}
+  .section-cover{break-before:page;break-after:page}
+  .content{padding:0}
+  h2.h,h3,h4,.section-open{break-after:avoid}
+  .card,.callout,.quote,.principle,.flow .step,.dobox,.dontbox{break-inside:avoid}
+  tr{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="doc">
+
+<!-- KAPAK -->
+<section class="sheet cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <div class="wordmark">AY<span class="z">Z</span>ENITH</div>
+      <div class="cover-tag">Küresel Ticaret · Mutlak Güven</div>
+    </div>
+    <div>
+      <div class="kicker">İç İşleyiş El Kitabı — Belge 01</div>
+      <h1>AYZENITH <span class="accent">Operasyon Sistemi</span></h1>
+      <p class="cover-sub">Nasıl karar veriyoruz, nasıl çalışıyoruz ve adımızın taşıdığı sözü nasıl tutuyoruz — AYZENITH çatısı altında çalışan herkes için iç standart.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Belge<strong>Operasyon Sistemi v1.0</strong></div>
+        <div>Sınıflandırma<strong>Şirket İçi · Gizli</strong></div>
+        <div>Sahip<strong>Kurucu Ofisi</strong></div>
+        <div>Köken<strong>İstanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- İÇİNDEKİLER -->
+<section class="content toc">
+  <div class="eyebrow">İçindekiler</div>
+  <h2 class="h">Bu el kitabı neleri kapsar</h2>
+  <p class="lead">Bu belge AYZENITH'in bir kurum olarak nasıl işlediğini tanımlar. Yıllarca geçerli kalacak şekilde ve şirkete katılan herkesin nasıl düşündüğümüzü ve davrandığımızı ilk okuyacağı kaynak olarak yazılmıştır.</p>
+  <div class="toc-part">Bölüm I — Temeller</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">Şirketin Amacı</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Vizyon</span></div>
+  <div class="toc-row"><span class="num">03</span><span class="t">Misyon</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Temel Söz</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">İşleyiş Felsefesi</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">Karar İlkeleri</span></div>
+  <div class="toc-part">Bölüm II — Değer Nasıl Akar</div>
+  <div class="toc-row"><span class="num">07</span><span class="t">Müşteri Yolculuğu</span></div>
+  <div class="toc-row"><span class="num">08</span><span class="t">Tedarikçi Yolculuğu</span></div>
+  <div class="toc-part">Bölüm III — Temel İş Akışları</div>
+  <div class="toc-row"><span class="num">09</span><span class="t">Satış İş Akışı</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">Satın Alma İş Akışı</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Ortaklık İş Akışı</span></div>
+  <div class="toc-part">Bölüm IV — İşleyiş Standartları</div>
+  <div class="toc-row"><span class="num">12</span><span class="t">İç İletişim Standartları</span></div>
+  <div class="toc-row"><span class="num">13</span><span class="t">Kalite Standartları</span></div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Problem Çözme İlkeleri</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Risk Bilinci</span></div>
+  <div class="toc-part">Bölüm V — Uzun Vade</div>
+  <div class="toc-row"><span class="num">16</span><span class="t">Uzun Vadeli Düşünme</span></div>
+  <div class="toc-row"><span class="num">17</span><span class="t">Beş Yıllık Operasyonel Yön</span></div>
+</section>
+
+<!-- BÖLÜM I AYRAÇ -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm I</div>
+    <h2>Temeller</h2>
+    <p class="sc-desc">Şirketin neden var olduğu, nereye gittiği ve her kararın sınandığı değişmez ilkeler. Bunlar pazarlara ya da çeyreklere göre değişmez.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">01 · Şirketin Amacı</div></div>
+  <h2 class="h">AYZENITH neden var</h2>
+  <p class="lead">Küresel ticaret hâlâ mesafe, belirsizlik ve risk üzerine kuruludur. AYZENITH bu şartları değiştirmek için kuruldu.</p>
+  <p>Dünyanın öbür ucundan tedarik yapmak; göremediğiniz ortaklara, ulaşamadığınız pazarlarda, kaybetmeyi göze alamayacağınız bir sermayeyle güvenmek demektir. Çoğu işletme için bu, hırslarının tavanıdır: fırsat gerçektir ama maruz kalınan risk kabul edilemez. Amacımız bu riski ortadan kaldırmaktır — hırslı işletmelere, ürünleri her yerde tedarik edebilen, taşıyabilen ve arkasında durabilen tek bir ortak sunmak; hem de eski sistemin hiç sunmadığı şeffaflık ve standartlarla.</p>
+  <p>Biz bir komisyon alıp ortadan kaybolan bir aracı değiliz. Sorumluluğu üstlenen ve kalıcı olan bir kurumuz. Bu ayrım, şirketin bütünüdür. Bu el kitabındaki her şey onu korumak için vardır.</p>
+  <div class="quote">Mesafe asla risk anlamına gelmemeli. Sınırlar asla şüphe anlamına gelmemeli.</div>
+
+  <div class="section-open"><div class="eyebrow">02 · Vizyon</div></div>
+  <h2 class="h">Nereye gidiyoruz</h2>
+  <p>AYZENITH, yeni nesil küresel ticaretin altyapısını kuruyor. Ticaretle başlıyoruz ve bileşik olarak büyüyoruz — özel markaya, yeni sektörlere, kendi markalarımıza ve on yıllar sürecek bir holdinge doğru. Erken bir aşamadayız ve bunu bir kısıt değil, bir fırsat olarak görüyoruz: bugün bizimle inşa eden ortaklar, temelin atıldığı anda inşa etmiş olur.</p>
+  <p>Vizyon, büyüklüğün kendisi için değildir. Amaç, <strong>ölçeğin sadelik gibi hissettirdiği</strong> bir şirkettir — bir ortağın tek bir ilişki üzerinden kategoriler ve sınırlar arasında büyüyebildiği, ve bizim onun adına soğurduğumuz karmaşıklığı hiç hissetmediği bir yapı.</p>
+
+  <div class="section-open"><div class="eyebrow">03 · Misyon</div></div>
+  <h2 class="h">Somut olarak ne yapıyoruz</h2>
+  <p>Misyonumuz üretimi, lojistiği ve pazarları tek bir hesap verebilir ortaklıkta birleştirmektir — böylece bir işletme, küresel riski taşımadan küresel tedariğe erişebilir. Pratikte bu, dört yetkinlik boyunca uçtan uca sorumluluk almak demektir:</p>
+  <div class="grid2">
+    <div class="card"><h4>Küresel Tedarik &amp; Ticaret</h4><p>Kategoriler boyunca denetlenmiş tedarikçiler ve OEM ortakları — ithalat, ihracat ve uluslararası tedarik, tek bir hesap verebilir ilişki altında.</p></div>
+    <div class="card"><h4>Dağıtım &amp; Lojistik</h4><p>Perakende, toptan, e-ticaret ve kurumsal alıcılara güvenilir ürün akışı — zamanında, eksiksiz, kusursuz.</p></div>
+    <div class="card"><h4>Özel Marka Geliştirme</h4><p>Kanıtlanmış talep, kontrollü kalite ve güvenilir garanti üzerine kurulu kendi markalı ürünler — kiralanan değil, sahip olunan değer.</p></div>
+    <div class="card"><h4>Üretim Ortaklıkları</h4><p>İşlemsel tedarikten münhasır haklara ve birlikte geliştirilen üretime uzanan derin tedarikçi ilişkileri.</p></div>
+  </div>
+  <p>Sertifikalı medikal ve diş tedariği ya da sağlık koordinasyonu gibi düzenlemeye tabi kategorilerde faaliyet gösterdiğimizde misyon değişmez ama disiplin daha katıdır: yalnızca her pazarın yasal ve düzenleyici çerçeveleri içinde, lisanslı kanallar aracılığıyla hareket ederiz ve asla olmadığımız bir sağlayıcı gibi görünmeyiz.</p>
+
+  <div class="section-open"><div class="eyebrow">04 · Temel Söz</div></div>
+  <h2 class="h">Adımızın taşıdığı söz</h2>
+  <div class="callout"><div class="eyebrow">Sabit — değiştirilmez</div><p style="font-size:12.5pt;color:var(--navy-900);font-weight:600">Global Trade. Absolute Trust. — Küresel Ticaret. Mutlak Güven.</p></div>
+  <p>Bu bir slogan değil, karşısında ölçülebileceğimiz bir taahhüttür. <strong>Mutlak Güven</strong>; tedarik, kalite, lojistik ve teslimat için tek bir hesap verebilir ortak demektir — sonucu kim uygulamış olursa olsun, adımız sonucun üzerindedir. Fiyatta değil, güvenilirlikte rekabet ettiğimiz; tutulan her sözün bir sonraki ilişkiye eklenerek biriktiği anlamına gelir. Bir şey ters gittiğinde, hâlâ orada olan ortak biziz. Bundan sonraki tüm operasyon sistemi, bu sözü sipariş üstüne sipariş gerçek kılmak için vardır.</p>
+
+  <div class="section-open"><div class="eyebrow">05 · İşleyiş Felsefesi</div></div>
+  <h2 class="h">İşe nasıl bakıyoruz</h2>
+  <p class="lead">Biz aracı değil, kurumuz. Aşağıdakilerin hepsi bu tek duruştan doğar.</p>
+  <p>İsimsiz aracılarla dolu bir kategoride, çoğu ortak bir şey ters gittiği anda ortadan kaybolur. AYZENITH'i bunun tam tersi olmak için kurduk: normalde parçalı olanı birleştiren, başkalarının aktardığı sürtünmeyi soğuran ve işlemden çok sonra bile hesap verebilir kalan bir kurum. Felsefemiz, günlük davranışı şekillendiren üç işleyiş taahhüdüne dayanır.</p>
+  <h4>Birleştir</h4>
+  <p>Tedarik, üretim, lojistik ve dağıtım tek bir hesap verebilir çatı altında olmalı — on iki ilişki yerine bir ilişki. İçeride bu, bir ortağı kopuk işlevler arasında elden ele geçirmemek demektir. İlişkiye sahip olan kişi, zincirin tamamındaki sonuca da sahiptir.</p>
+  <h4>Riski Azalt</h4>
+  <p>Denetlenmiş ortaklar, kalite kontrolü, şeffaf koşullar ve gerçek hesap verebilirlik. Bir ortağın korktuğu riskleri — tedarikçi başarısızlığı, kalite değişkenliği, gümrük ve uyum riski — soğurmak için varız, onları aktarmak için değil. Bir şeyin riskini azaltıp azaltamayacağımızdan emin değilsek, taahhüt vermeden önce bunu söyleriz.</p>
+  <h4>Erişim Sağla</h4>
+  <p>Tek başına açması zor kapıları açarız: küresel tedarikçi ağları, yeni pazarlar, ölçekte güvenilir tedarik. Erişim, özenle koruduğumuz ilişkilerle kazanılır; bir tedarikçinin güvenini tek bir anlaşma için asla harcamayız.</p>
+  <div class="callout"><div class="eyebrow">İç sınama</div><p>Her önemli karardan önce şunu sorun: <em>bu, ortak için birleştiriyor mu, riski azaltıyor mu ya da erişimi genişletiyor mu — ve sonucun arkasında durabilmek için adımızı güvende tutuyor mu?</em> Bunların hiçbirini yapmıyorsa, o AYZENITH işi değildir.</p></div>
+
+  <div class="section-open"><div class="eyebrow">06 · Karar İlkeleri</div></div>
+  <h2 class="h">Her kararın arkasındaki ilkeler</h2>
+  <p class="lead">Bunlar kalıcıdır. Verdiğimiz her seçim — hangi tedarikçinin onaylanacağından hangi pazara gireceğimize kadar — bunlara göre sınanır.</p>
+  <div class="principle"><div class="idx">01</div><div><h4>Genişlikten önce odak</h4><p>Bir kategoriyi derinlemesine kazanmadan bir sonrakini eklemeyiz. Çok sektörlü grup, aşama aşama hak edilir — asla yalnızca hırsla peşine düşülmez.</p></div></div>
+  <div class="principle"><div class="idx">02</div><div><h4>Ürün, güvenin kendisidir</h4><p>Fiyatta değil, güvenilirlikte rekabet ederiz. Tutulan her söz birikir; hiçbiri tek bir anlaşma için bozmaya değmez.</p></div></div>
+  <div class="principle"><div class="idx">03</div><div><h4>Sonuca sahip çıkarız</h4><p>Tedarik, kalite, lojistik ve teslimat boyunca tek bir hesap verebilir ortak. Kim uygulamış olursa olsun, adımız sonucun üzerindedir.</p></div></div>
+  <div class="principle"><div class="idx">04</div><div><h4>Kalıcılık için kurulu</h4><p>Her karar bir çeyreğe göre değil, on yıla göre sınanır. Herhangi bir bireyi aşacak şekilde tasarlanmış bir kurum inşa ederiz.</p></div></div>
+  <div class="principle"><div class="idx">05</div><div><h4>Uluslararası standart</h4><p>Her pazarı aynı standarda tutarız — ciddi bir ortağın dünyanın her yerinde beklemesi gereken özen, şeffaflık ve profesyonellik.</p></div></div>
+  <div class="principle"><div class="idx">06</div><div><h4>Sorumlu büyüme</h4><p>Yalnızca gereği gibi hizmet verebileceğimiz yerde büyürüz. Bir kategoriye ya da pazara girmek; onun kurallarını, risklerini ve sorumluluklarını tam olarak kabul etmek demektir.</p></div></div>
+  <div class="callout"><div class="eyebrow">Bunları nasıl kullanmalı</div><p>İki ilke çelişiyor gibi göründüğünde, genellikle önce gelen belirleyicidir: genişlikten önce odak, tek bir anlaşmadan önce güven, bir çeyrekten önce kalıcılık. Bir karar bu ilkelerle bağdaştırılamıyorsa, sessizce alınmaz — üst mercie taşınır.</p></div>
+</section>
+
+<!-- BÖLÜM II AYRAÇ -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm II</div>
+    <h2>Değer Nasıl Akar</h2>
+    <p class="sc-desc">Şirketin üzerine kurulduğu iki ilişki — hizmet ettiğimiz müşteri ve güvendiğimiz tedarikçi — işlem olarak değil, birer yolculuk olarak tanımlanır.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">07 · Müşteri Yolculuğu</div></div>
+  <h2 class="h">İlk sorudan kalıcı ortaklığa</h2>
+  <p class="lead">Bir müşteri bizden bir sevkiyat satın almaz; bir ilişkiye girer. Yolculuk, güvenin erken kazanılıp yıllar içinde biriktirilmesi için tasarlanmıştır.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Başvuru &amp; niteleme</h4><p>Ciddi bir başvuru ortaklık ekibine ulaşır. Nitelikli başvurulara iki iş günü içinde yanıt veririz ve dürüstçe niteleriz — amaç, gereği gibi hizmet verebileceğimiz bir ortaklık, bir logo değil.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Keşif görüşmesi</h4><p>Bir teklifle değil, bir sohbetle başlarız. Kategoriyi, ölçeği, baskıları ve gerçek hedefi öğreniriz; oraya ulaşmalarına nasıl yardımcı olabileceğimizi dürüstçe söyleriz.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Teklif &amp; koşullar</h4><p>Yapılandırılmış bir teklif: kapsam, standartlar, sorumluluklar ve şeffaf koşullar. Neyi üstlendiğimizi ve neyi üstlenmediğimizi belirtiriz; mallar hareket ettiğinde belirsizlik olmaz.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>İlk uygulama</h4><p>İlk sipariş, sürecin tamamından geçirilir (Bölüm III). Bilinçli olarak fazlasıyla özenle yürütülür: ilk teslimat, ilişkinin ölçüleceği standardı belirler.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Hesabın büyümesi</h4><p>Güvenilirlik; daha çok kategori, daha büyük hacim, özel marka ve münhasır tedarik olarak birikir. İlişki alıcıdan ortağa, ortaktan birlikte inşa edene doğru derinleşir.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Tutulacak standart</div><p>Her aşama, müşterinin sessizce sorduğu tek soruyu yanıtlar: <em>işimin bu kısmı için endişelenmeyi bırakabilir miyim?</em> Görevimiz cevabı evet yapmak ve evet tutmaktır.</p></div>
+
+  <div class="section-open"><div class="eyebrow">08 · Tedarikçi Yolculuğu</div></div>
+  <h2 class="h">Denetlenmiş kaynaktan stratejik ortağa</h2>
+  <p class="lead">Erişimimiz ancak tedarikçilerimiz kadar iyidir ve güvenilirliğimiz onların güvenilirliğiyle başlar. Tedarikçi ilişkilerini değiştirilebilir kalemler olarak değil, uzun vadeli varlıklar olarak görürüz.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Belirleme</h4><p>Garanti edebilecek kadar iyi anladığımız bir kategoride gerçek yetkinliğe sahip üreticiler ve yetkili tedarikçiler ararız.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Çok faktörlü denetim</h4><p>Her tedarikçi yalnızca fiyata göre değil; kalite, kapasite, güvenilirlik ve uyum açısından değerlendirilir. Güvenilmez teslimatla düşük fiyat, denetimimizden geçemez.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Kontrollü ilk siparişler</h4><p>Erken siparişler sevkiyat öncesi muayene ve yakın gözetimle yürütülür. Bir tedarikçiye itibarı vaatler değil, performans kazandırır.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Tercihli statü</h4><p>Güvenilir tedarikçiler tercihli koşullar, daha büyük tahsisler ve gerçek bir ilişki kazanır. Önemli hiçbir şey tek bir kaynağa bağlı kalmasın diye yedeklilik kurarız.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Stratejik ortaklık</h4><p>En güçlü ilişkiler münhasır dağıtıma ve birlikte geliştirilen üretime ilerler — fabrika sahibi olmadan yetkinlik.</p></div></div>
+  </div>
+  <p>Talepkâr ama adiliz. Düzgün öderiz, net iletişim kurarız ve bir puan marj uğruna iyi bir tedarikçiyi ilişkiye zarar verecek şekilde sıkıştırmayız. AYZENITH'e güvenen bir tedarikçi, savunma hattımızın parçasıdır.</p>
+</section>
+
+<!-- BÖLÜM III AYRAÇ -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm III</div>
+    <h2>Temel İş Akışları</h2>
+    <p class="sc-desc">Sözün arkasındaki disiplinli diziler. AYZENITH adını taşıyan hiçbir şey şansa bırakılmaz; her iş akışı bir doğaçlama değil, tekrarlanabilir bir standarttır.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">09 · Satış İş Akışı</div></div>
+  <h2 class="h">Bir ortaklık nasıl kazanılır</h2>
+  <p class="lead">Satış iş akışı, kısa vadeli işlemlerden çok uzun vadeli ortaklıkları önceler. Tamamı Satış El Kitabı'nda (Belge 02) ele alınır; işleyiş özeti aşağıdadır.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Nitele</h4><p>Başvurunun İdeal Müşteri Profili'ne ve gereği gibi hizmet verebileceğimiz bir kategoriye uyduğunu doğrula. Uymuyorsa dürüstçe reddet.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Keşfet</h4><p>Bir şey önermeden önce ihtiyacı, kategoriyi, ölçeği ve kısıtları anla. Sunmaktan çok dinle.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Öner</h4><p>Net, yapılandırılmış bir teklif — kapsam, standartlar, sorumluluklar ve şeffaf koşullar.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Uzlaş</h4><p>Soruları ve itirazları samimiyetle karşıla; köşeye sıkıştırılmış değil, kalıcı bir anlaşmaya doğru müzakere et.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Bağla &amp; operasyona devret</h4><p>Temiz bir şekilde kapat, sonra ilk siparişin kusursuz olması için satın alma ve lojistik akışına tam bağlamla aktar.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Taviz verilmez</div><p>Kazanmak için asla fazla vaatte bulunmayız. Satışta verilen bir söz, operasyonda bir yükümlülüğe dönüşür — ve adımız onun üzerindedir. Teslim edemeyeceksek, söylemeyiz.</p></div>
+
+  <div class="section-open"><div class="eyebrow">10 · Satın Alma İş Akışı</div></div>
+  <h2 class="h">Bir sipariş nasıl yürütülür</h2>
+  <p class="lead">Her sipariş disiplinli bir diziden geçer — sözün arkasındaki sistem. Bu, AYZENITH'in operasyonel kalbidir.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Denetle</h4><p>Tedarikçiler kalite, kapasite, güvenilirlik ve uyum açısından nitelenir — bir ortağın siparişini emanet etmeden önce güven, doğrulanır.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Tedarik Et</h4><p>Doğru ürün, tam olarak tanımlanmış ve güvenilir koşullarda güvence altına alınmış. Belirsizlik satın almadan sonra değil, önce giderilir.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Kalite Kontrol</h4><p>Sevkiyat öncesi muayene bizim sorumluluğumuzdur — güvenilirlik bize aittir, sonradan tedarikçiye yıkılmaz.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Lojistik</h4><p>Gümrük, uyum ve navlun uçtan uca yönetilir, her aşamada izlenir. Zincirde sessiz boşluk olmaz.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Teslim Et</h4><p>Zamanında, eksiksiz, kusursuz — sözün fiziksel hale gelmesi, sipariş üstüne sipariş.</p></div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Burada uygulanan standartlar</div><p>Çok faktörlü tedarikçi denetimi; bize ait sevkiyat öncesi kalite muayenesi; önemli hiçbir şeyde tek kaynağa bağımlılık olmaması; düzenlemeye tabi kategorilere yalnızca tam yasal çerçeveler içinde girilmesi. Bu dördü isteğe bağlı adımlar değildir — tamamlanmış bir siparişin tanımıdır.</p></div>
+
+  <div class="section-open"><div class="eyebrow">11 · Ortaklık İş Akışı</div></div>
+  <h2 class="h">İlişkiler zaman içinde nasıl derinleşir</h2>
+  <p class="lead">En değerli sonuçlar tek siparişler değil, birikerek büyüyen ortaklıklardır. Bu iş akışı, işlemsel bir ilişkinin stratejik bir ilişkiye nasıl dönüştüğünü yönetir — hem müşteri hem tedarikçi tarafında.</p>
+  <table class="data">
+    <tr><th>Aşama</th><th>Neye benzer</th><th>Bir sonrakini ne kazandırır</th></tr>
+    <tr><td>İşlemsel</td><td>Ayrık siparişler, standart koşullar, teslimatla kanıtlanmış.</td><td>Tutarlı, kusursuz uygulama ve dürüst iletişim.</td></tr>
+    <tr><td>Tercihli</td><td>Tekrar eden hacim, öncelikli işlem, paylaşılan tahmin.</td><td>Baskı altında güvenilirlik ve karşılıklı şeffaflık.</td></tr>
+    <tr><td>Özel marka / münhasır</td><td>Kendi markası geliştirme ya da münhasır dağıtım hakları.</td><td>Kanıtlanmış talep, kontrollü kalite, hizalı çıkarlar.</td></tr>
+    <tr><td>Birlikte geliştirme</td><td>Ortak tanımlanan ürünler; derin operasyonel bütünleşme.</td><td>Zamanla kanıtlanmış güven ve paylaşılan uzun vade.</td></tr>
+  </table>
+  <p>Ortaklık kararları bilinçli olarak alınır ve belgelenir. Münhasırlığı gelişigüzel vermeyiz ve yıllarca onurlandıracak standartlara, kapasiteye ve güvene sahip olmadan birlikte geliştirmeye girmeyiz. Ortaklık, daha uzun ufuklu bir sözdür — ve aynı kural geçerlidir: arkasında duramıyorsak, girmeyiz.</p>
+  <div class="quote">Bugün bizimle inşa eden ortaklar, temelin atıldığı anda inşa etmiş olur.</div>
+</section>
+
+<!-- BÖLÜM IV AYRAÇ -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm IV</div>
+    <h2>İşleyiş Standartları</h2>
+    <p class="sc-desc">Sözü tekrarlanabilir kılan günlük disiplinler — nasıl iletişim kurduğumuz, kaliteyi nasıl tanımladığımız, sorunları nasıl çözdüğümüz ve riske karşı nasıl uyanık kaldığımız.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">12 · İç İletişim Standartları</div></div>
+  <h2 class="h">Şirket içinde nasıl iletişim kuruyoruz</h2>
+  <p class="lead">Ortaklara güvenilirlik, aramızdaki netlikle başlar. Nasıl algılanmak istiyorsak öyle iletişim kurarız: kesin, sakin ve dürüst.</p>
+  <div class="dodont">
+    <div class="dobox"><h4>Yaparız</h4><ul class="tight">
+      <li>Durumu, olguları ve öneriyi bu sırayla belirtiriz.</li>
+      <li>Sorunları henüz küçük ve çözülebilirken erkenden dile getiririz.</li>
+      <li>Bir meslektaşın ikinci bir görüşmeye gerek kalmadan hareket edebileceği kadar net yazarız.</li>
+      <li>Sorumluluğu açıkça teyit ederiz: kim, neyi, ne zamana kadar yapıyor.</li>
+      <li>Bir ortağı ya da siparişi etkileyen kararların yazılı kaydını tutarız.</li>
+    </ul></div>
+    <div class="dontbox"><h4>Yapmayız</h4><ul class="tight">
+      <li>Kötü haberi saklamaz, belirsizliğe yumuşatmaz ya da kendiliğinden çözülmesini beklemeyiz.</li>
+      <li>Zor bir konuşmadan kaçmak için içeride fazla vaatte bulunmayız.</li>
+      <li>Ortağa verilen bir taahhüdün yalnızca birinin hafızasında yaşamasına izin vermeyiz.</li>
+      <li>Netliğin yerine ses ya da aciliyet koymayız.</li>
+      <li>Nedeni anlamadan suç atmayız.</li>
+    </ul></div>
+  </div>
+  <p>Bir ortağı, siparişi ya da tedarikçiyi ilgilendiren iç mesajlar kaydın parçası sayılır. Standart basittir: <strong>bir mesaj belirsizliği azaltmalı, asla artırmamalıdır.</strong></p>
+
+  <div class="section-open"><div class="eyebrow">13 · Kalite Standartları</div></div>
+  <h2 class="h">AYZENITH'te "kalite" ne demek</h2>
+  <p class="lead">Güvenilirlik bir slogan değil, bir disiplindir. Tedarik, kalite ve uyum boyunca açıkça belirtilmiş standartlara — istenmeden önce beyan edilerek — kendimizi tabi tutarız.</p>
+  <div class="grid2">
+    <div class="card"><h4>Tedarikçi denetimi</h4><p>Herhangi bir tedarikçi bir ortağın siparişini taşımadan önce çok faktörlü değerlendirme — kalite, kapasite, güvenilirlik, uyum.</p></div>
+    <div class="card"><h4>Sevkiyat öncesi muayene</h4><p>Kalite, mallar hareket etmeden önce muayene edilir ve bize aittir. Kusurları ortağın kapısında keşfetmeyiz.</p></div>
+    <div class="card"><h4>Tek kaynağa bağımlılık yok</h4><p>Önemli hiçbir şey tek bir tedarikçiye bağlı değildir. Yedeklilik krizde doğaçlanmaz, baştan tasarlanır.</p></div>
+    <div class="card"><h4>Düzenlemeye tabi kategoriler</h4><p>Yalnızca tam yasal çerçeveler içinde, lisanslı kanallarla, kategorinin gerektirdiği izlenebilirlik ve belgelerle girilir.</p></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Ölçülebilir standart</div><p>İşleyiş ölçütümüz <strong>%100 sevkiyat öncesi kalite muayenesi</strong> ve <strong>zamanında, eksiksiz, kusursuz</strong> teslimattır. Bir rakam AYZENITH'i tanımladığında, bugün nasıl çalıştığımızı yansıtır — dürüstçe belirtilir, asla şişirilmez. Sicilimiz büyüdükçe, aynı şekilde raporlarız.</p></div>
+
+  <div class="section-open"><div class="eyebrow">14 · Problem Çözme İlkeleri</div></div>
+  <h2 class="h">Bir şey ters gittiğinde nasıl yanıt veririz</h2>
+  <p class="lead">Çoğu ortağın bir şey ters gittiği anda kaybolduğu bir kategoride, sorunlara verdiğimiz yanıt markanın <em>ta kendisidir</em>. Güvenin ya kanıtlandığı ya da kaybedildiği yer burasıdır.</p>
+  <div class="flow">
+    <div class="step"><div class="n">1</div><div><h4>Önce sahip çık</h4><p>Ortağa karşı sorumluluğu derhal üstleniriz. Adımız sonucun üzerindedir; tedarikçiye, taşıyıcıya ya da pazara yıkmayız.</p></div></div>
+    <div class="step"><div class="n">2</div><div><h4>Etkiyi sınırla</h4><p>Rahatça teşhis koymadan önce ortağın konumunu istikrara kavuştur. Teslimatı, ilişkiyi ve ortağın kendi taahhütlerini koru.</p></div></div>
+    <div class="step"><div class="n">3</div><div><h4>Dürüstçe teşhis et</h4><p>Erkenden suç atmadan gerçek nedeni bul. Kusurdan önce olgular.</p></div></div>
+    <div class="step"><div class="n">4</div><div><h4>Çöz ve ilet</h4><p>Düzelt, ortağa ne olduğunu ve neyi değiştirdiğimizi açıkça söyle ve sürtünmeyi aktarmak yerine soğur.</p></div></div>
+    <div class="step"><div class="n">5</div><div><h4>Tekrarı önle</h4><p>Aynı başarısızlık yinelenemesin diye standardı güncelle. Bir kez çözülen bir sorun asla ikinci kez çözülmemeli.</p></div></div>
+  </div>
+  <div class="quote">Tutulan her söz birikir; hiçbiri tek bir anlaşma için bozmaya değmez.</div>
+
+  <div class="section-open"><div class="eyebrow">15 · Risk Bilinci</div></div>
+  <h2 class="h">Ortaklarımız adına yönettiğimiz riskler</h2>
+  <p class="lead">Riski soğurmak için ödeme alırız; bu da onu zincirdeki herkesten daha iyi anlamamız gerektiği anlamına gelir. Farkındalık tek seferlik bir inceleme değil, kalıcı bir işleyiş duruşudur.</p>
+  <table class="data">
+    <tr><th>Risk alanı</th><th>Nasıl yönetiriz</th></tr>
+    <tr><td>Tedarikçi başarısızlığı</td><td>Çok faktörlü denetim, performans geçmişi ve tasarımla kurulmuş yedeklilik — kritik hiçbir şeyde tek kaynağa bağımlılık yok.</td></tr>
+    <tr><td>Kalite değişkenliği</td><td>Baştan kesin tanımlama ve mallar hareket etmeden önce bize ait sevkiyat öncesi muayene.</td></tr>
+    <tr><td>Gümrük &amp; uyum</td><td>Her pazarın yasal ve düzenleyici çerçeveleri içinde uçtan uca yönetim; düzenlemeye tabi mallar yalnızca lisanslı kanallarla.</td></tr>
+    <tr><td>Lojistik aksaması</td><td>Her aşamada izlenen navlun, alternatif güzergâh planı ve zaman çizelgeleri tehdit altındayken erken iletişim.</td></tr>
+    <tr><td>Finansal &amp; karşı taraf</td><td>Şeffaf koşullar, disiplinli risk maruziyeti ve hem müşteriler hem tedarikçiler üzerinde durum tespiti.</td></tr>
+    <tr><td>İtibar</td><td>Gereği gibi hizmet veremeyeceğimiz işi reddederiz ve bir yetkinliği, rakamı ya da iddiayı asla abartmayız.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Duruş</div><p>Sorumlu büyüme; bir kategoriye ya da pazara yalnızca onun kurallarını, risklerini ve sorumluluklarını <em>tam olarak</em> kabul edebildiğimizde girmek demektir. Kabul edemediğimizde, dürüst cevap "henüz değil"dir.</p></div>
+</section>
+
+<!-- BÖLÜM V AYRAÇ -->
+<section class="sheet section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Bölüm V</div>
+    <h2>Uzun Vade</h2>
+    <p class="sc-desc">On yıllar boyunca nasıl düşündüğümüz ve önümüzdeki beş yılın operasyonel yönü — çerçevelenip unutulmak için değil, tekrar tekrar bakılmak için yazıldı.</p>
+  </div>
+</section>
+
+<section class="content">
+  <div class="section-open"><div class="eyebrow">16 · Uzun Vadeli Düşünme</div></div>
+  <h2 class="h">Kalıcılık için kurulu</h2>
+  <p class="lead">Her karar bir çeyreğe göre değil, on yıla göre sınanır. Herhangi bir bireyi — kurucuları dahil — aşacak şekilde tasarlanmış bir kurum inşa ediyoruz.</p>
+  <p>Uzun vadeli düşünme bir duygu değil, tutarlı biçimde yaptığımız bir dizi ödünleşimdir. Kârlı çıkış yerine kalıcı ilişkiyi seçeriz. Yalnızca girebileceğimiz kategori yerine garanti edebileceğimiz kategoriyi seçeriz. Etkileyici olan yerine dürüst olan rakamı seçeriz, çünkü bir itibar ancak hiç harcanmazsa birikir. Ve hızlı, kırılgan büyüme yerine yavaş, hak edilmiş büyümeyi kabul ederiz — çünkü bir kurum, bir yıl içinde ne iddia ettiğiyle değil, on yıl sonra hâlâ ne olduğuyla değerlendirilir.</p>
+  <p>Bu duruş aynı zamanda avantajımızdır. Ortaklar, tedarikçiler ve gelecekteki ekip üyeleri, AYZENITH'in gelecek yıl da bu yılki gibi davranacağına güvenebilir. Bu tutarlılık, gerçek ürünümüz olan güvenin üzerine kurulduğu temeldir.</p>
+  <div class="quote">Ölçek, sadelik gibi hissettirmeli. İnşa ettiğimiz şirket budur.</div>
+
+  <div class="section-open"><div class="eyebrow">17 · Beş Yıllık Operasyonel Yön</div></div>
+  <h2 class="h">Operasyon bundan sonra nereye gidiyor</h2>
+  <p class="lead">Tahmin değil, yön. Bu aşamalar nasıl bileşik büyümeyi planladığımızı anlatır — her biri, "genişlikten önce odak" ilkesine uygun olarak, ancak bir öncekisi gerçekten hak edildiğinde başlar.</p>
+  <table class="data">
+    <tr><th>Ufuk</th><th>Operasyonel odak</th></tr>
+    <tr><td>Temel<br><span class="meta-strip">1–2. Yıl</span></td><td>Çekirdek tedarik ve dağıtım kategorilerini derinlemesine kazan. İşleyiş dizisini — denetle, tedarik et, kontrol et, sevk et, teslim et — güvenilirlik tartışılmaz olana dek kanıtla. İlk tercihli tedarikçi kadrosunu ve referans ortaklıkları kur.</td></tr>
+    <tr><td>Pekiştirme<br><span class="meta-strip">2–3. Yıl</span></td><td>Hesapları tekrar eden hacme ve tercihli koşullara derinleştir. Talebin kanıtlandığı yerde özel markayı devreye al. Operasyon ölçeklenirken kalite, uyum ve iletişim standartlarını resmileştir.</td></tr>
+    <tr><td>Genişleme<br><span class="meta-strip">3–4. Yıl</span></td><td>Garanti edebileceğimiz komşu kategorileri ekle ve yeni pazarlara tek bir uluslararası standartla gir. Seçili tedarikçileri münhasır ve birlikte geliştirilen üretime taşı.</td></tr>
+    <tr><td>Kurum<br><span class="meta-strip">4–5. Yıl</span></td><td>Ticareti kendi markalarımıza ve yapılandırılmış bir gruba dönüştür. Parçaları tek bir standardı, tek bir itibarı ve tek bir hesap verebilir adı paylaşan çok kategorili bir kurum olarak faaliyet göster.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Hepsini yöneten disiplin</div><p>Yalnızca gereği gibi hizmet verebileceğimiz yerde büyürüz. Her ufuk, aceleye getirilecek bir kilometre taşı değil, hak edilecek bir taahhüttür. Başarının ölçüsü, aşamalar arasında ne kadar hızlı geçtiğimiz değil; sözün — <strong>Küresel Ticaret. Mutlak Güven.</strong> — her aşamada gerçek kalmasıdır.</p></div>
+  <div class="endmark">AYZENITH · Operasyon Sistemi v1.0 · Şirket İçi / Gizli</div>
+</section>
+
+</div>
+</body>
+</html>

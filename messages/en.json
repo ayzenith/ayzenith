@@ -1,6 +1,7 @@
 {
   "metadata": {
-    "homeDescription": "AYZENITH is a global B2B commerce, sourcing and investment group. We source, move and stand behind products across borders — so ambitious businesses can grow globally without carrying the risk."
+    "homeDescription": "AYZENITH is a global B2B commerce, sourcing and investment group. We source, move and stand behind products across borders — so ambitious businesses can grow globally without carrying the risk.",
+    "homeTitle": "AYZENITH — Global Trade. Absolute Trust."
   },
   "nav": {
     "services": "Services",
@@ -30,14 +31,31 @@
     "hero": {
       "eyebrow": "Company",
       "title": "A trusted partner, built to last decades.",
-      "subtitle": "AYZENITH is an independent commerce, sourcing and investment group. We exist to make global trade trustworthy — and to compound that trust into a business that endures."
+      "subtitle": "AYZENITH is an independent commerce, sourcing and investment group that meets businesses' product and supply needs across markets — managing B2B trade, distribution and sourcing end to end."
     },
     "purpose": {
       "overline": "Why we exist",
       "title": "Global trade still runs on distance, opacity and risk. We were built to change the terms.",
-      "body1": "AYZENITH gives ambitious businesses a single partner who can source, move and stand behind products anywhere — with the transparency and standards the old system never offered.",
+      "body1": "AYZENITH gives ambitious businesses a single partner to source products from international markets, run the trade and logistics, and stand behind the delivery — with the transparency and standards the old system never offered.",
       "body2": "We are not a broker that takes a margin and disappears. We are an institution that takes responsibility and remains — building not just a company, but the infrastructure for a new generation of global commerce.",
       "imageAlt": "AYZENITH global trade operations"
+    },
+    "mission": {
+      "overline": "Our Mission",
+      "title": "What we do today.",
+      "body": "AYZENITH meets businesses' international sourcing and trade needs through a single accountable partner. We manage international product sourcing, B2B trade, distribution, wholesale and corporate supply, and private-label (OEM) production end to end.",
+      "model": "When a client needs to source products from another country, our job is not simply to find a product and sell it. We take responsibility for the whole chain — from identifying the right suppliers and quality control to structuring the commercial process, logistics and delivery — running sourcing, trade, distribution, partnership and operations as one.",
+      "fieldsLabel": "Fields we work in",
+      "fields": {
+        "electronics": "Consumer electronics",
+        "smartDevices": "Smart devices",
+        "mobileAccessories": "Mobile accessories",
+        "homeKitchen": "Home & kitchen",
+        "textile": "Textiles",
+        "medical": "Medical products",
+        "dental": "Dental implant systems"
+      },
+      "health": "In healthcare we provide no clinical or patient treatment; we work only through coordination and commercial partnerships with qualified professional and institutional partners."
     },
     "principles": {
       "overline": "What we stand for",
@@ -81,6 +99,11 @@
         "compliance": "Regulated categories entered only within full legal frameworks."
       },
       "imageAlt": "AYZENITH accountability and standards"
+    },
+    "vision": {
+      "overline": "Our Vision",
+      "title": "Where we are going.",
+      "body": "We begin in trade, then move into new categories, develop private-label lines and, in time, build brands of our own. Our aim is a lasting international group of companies — one that grows responsibly across markets and is built to endure for decades."
     },
     "longview": {
       "overline": "The long view",
@@ -177,10 +200,22 @@
     "title": "Reliability, made measurable.",
     "intro": "Presence and standards that serious buyers verify before they commit.",
     "stats": {
-      "reach": { "value": "3", "label": "Continents in active sourcing" },
-      "categories": { "value": "24/7", "label": "Cross-border operations" },
-      "accountability": { "value": "1", "label": "Accountable partner, end to end" },
-      "standard": { "value": "100%", "label": "Pre-shipment quality inspection" }
+      "reach": {
+        "value": "3",
+        "label": "Continents in active sourcing"
+      },
+      "categories": {
+        "value": "24/7",
+        "label": "Cross-border operations"
+      },
+      "accountability": {
+        "value": "One",
+        "label": "Accountable partner, end to end"
+      },
+      "standard": {
+        "value": "100%",
+        "label": "Pre-shipment quality inspection"
+      }
     },
     "note": "Every figure above reflects how AYZENITH operates today. As partnerships and case studies mature, this record grows — always stated honestly, never inflated."
   },
@@ -408,6 +443,38 @@
         "title": "Marketplace Channels",
         "description": "Selected products are available through trusted marketplaces for transactional buyers, while B2B relationships remain the core of what we do."
       }
+    },
+    "showcase": {
+      "overline": "Showcase",
+      "title": "A selection of what we source and move.",
+      "body": "A curated look at products AYZENITH supplies — each held to the same sourcing and quality discipline. Not a price list: a window into capability."
+    },
+    "card": {
+      "viewDetails": "View details",
+      "badges": {
+        "new": "New",
+        "bestseller": "Bestseller",
+        "featured": "Featured"
+      },
+      "availability": {
+        "in-stock": "In stock",
+        "limited": "Limited stock",
+        "coming-soon": "Coming soon"
+      }
+    },
+    "detail": {
+      "breadcrumbProducts": "Products",
+      "overview": "Overview",
+      "specifications": "Specifications",
+      "features": "Features",
+      "useCases": "Compatible use cases",
+      "downloads": "Downloads",
+      "availableOn": "Available on",
+      "buyOn": "Buy on",
+      "wholesaleTitle": "Wholesale & B2B",
+      "wholesaleBody": "Buying at volume, for private label, or as a distributor? Partner with AYZENITH directly.",
+      "wholesaleCta": "Request Wholesale Partnership",
+      "related": "Related products"
     }
   },
   "contactPage": {

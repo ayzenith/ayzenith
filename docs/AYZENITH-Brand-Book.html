@@ -1,0 +1,631 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AYZENITH — Brand Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy-950:#050b14; --navy-900:#0a1a2f; --navy-800:#0d2137; --navy-700:#123252;
+  --navy-600:#1b4068; --navy-500:#2c5282; --navy-400:#4a6e96; --navy-300:#7c97b5;
+  --navy-200:#b4c4d6; --navy-100:#dce4ec; --navy-50:#f0f4f8;
+  --gold-700:#8a6d1c; --gold-600:#a88420; --gold-500:#c9a227; --gold-400:#d9b84a;
+  --gold-300:#e7ce7c; --gold-100:#f6edd2;
+  --white:#ffffff; --offwhite:#f7f8fa;
+  --n-100:#edeff2; --n-200:#dde1e7; --n-300:#c2c8d0; --n-400:#9aa2ad;
+  --n-500:#6b7480; --n-600:#4a525e; --n-700:#333b45; --n-800:#1e242c; --n-900:#12161b;
+  --ink:#1e242c; --muted:#4a525e; --subtle:#6b7480;
+  --sans:'Inter',system-ui,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+  --serif:'Newsreader',Georgia,'Times New Roman',serif;
+  --mono:'IBM Plex Mono','SFMono-Regular',Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+body{font-family:var(--sans);color:var(--ink);background:var(--n-200);font-size:10.5pt;line-height:1.62;font-feature-settings:"cv11","ss01"}
+.page{background:var(--offwhite);width:210mm;min-height:297mm;margin:10mm auto;padding:22mm 20mm 20mm;position:relative;box-shadow:0 12px 24px rgba(5,11,20,.14);overflow:hidden}
+.page.cover,.page.section-cover{color:var(--offwhite)}
+.cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 55%,#0d2137 100%);padding:0;display:flex;flex-direction:column;justify-content:space-between}
+.cover .grid-field,.section-cover .grid-field{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:44px 44px;-webkit-mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%);mask-image:radial-gradient(120% 90% at 25% 0%,#000 10%,transparent 80%)}
+.cover .glow{position:absolute;inset:0;background:radial-gradient(50% 50% at 75% 18%,rgba(201,162,39,.12),transparent 70%)}
+.cover-inner{position:relative;padding:26mm 20mm;display:flex;flex-direction:column;justify-content:space-between;height:297mm}
+.wordmark{font-weight:800;letter-spacing:.34em;font-size:20pt;color:var(--offwhite)}
+.wordmark .z{color:var(--gold-400)}
+.cover-tag{font-family:var(--mono);font-size:8.5pt;letter-spacing:.22em;text-transform:uppercase;color:var(--gold-300);margin-top:4mm}
+.cover-mid .kicker{font-family:var(--mono);font-size:9pt;letter-spacing:.24em;text-transform:uppercase;color:var(--navy-200);margin-bottom:8mm}
+.cover h1{font-size:40pt;line-height:1.04;letter-spacing:-.02em;font-weight:700;color:var(--white);max-width:150mm}
+.cover h1 .accent{color:var(--gold-400)}
+.cover-sub{margin-top:9mm;font-size:12pt;line-height:1.5;color:var(--navy-200);max-width:130mm}
+.cover-rule{height:1px;margin:10mm 0;background:linear-gradient(to right,transparent,rgba(201,162,39,.5),transparent)}
+.cover-meta{display:flex;justify-content:space-between;gap:8mm;font-family:var(--mono);font-size:8pt;letter-spacing:.12em;text-transform:uppercase;color:var(--navy-300)}
+.cover-meta strong{display:block;color:var(--navy-100);font-weight:500;margin-top:2mm;letter-spacing:.08em}
+.cover-logo{height:26mm;width:auto;margin-bottom:2mm;filter:brightness(0) invert(1) brightness(.97)}
+.rhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--mono);font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--subtle);padding-bottom:5mm;margin-bottom:9mm;border-bottom:1px solid var(--n-200)}
+.rhead .l{color:var(--navy-700);font-weight:600}
+.rfoot{position:absolute;left:20mm;right:20mm;bottom:12mm;display:flex;justify-content:space-between;font-family:var(--mono);font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);padding-top:4mm;border-top:1px solid var(--n-200)}
+.section-cover{background:linear-gradient(160deg,#081422 0%,#0a1a2f 60%,#0d2137 100%);padding:0}
+.sc-inner{position:relative;height:297mm;padding:40mm 20mm;display:flex;flex-direction:column;justify-content:center}
+.sc-num{font-family:var(--mono);font-size:11pt;letter-spacing:.3em;color:var(--gold-400);margin-bottom:8mm}
+.section-cover h2{font-size:30pt;line-height:1.08;letter-spacing:-.015em;color:var(--white);font-weight:700;max-width:150mm;border:0;padding:0}
+.sc-desc{margin-top:8mm;font-size:11.5pt;color:var(--navy-200);max-width:135mm;line-height:1.55}
+.eyebrow{font-family:var(--mono);font-size:8pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)}
+h2.h{font-size:21pt;line-height:1.14;letter-spacing:-.015em;font-weight:700;color:var(--navy-900);margin:0 0 4mm}
+h3{font-size:13.5pt;line-height:1.25;letter-spacing:-.01em;font-weight:700;color:var(--navy-800);margin:9mm 0 3mm}
+h4{font-size:10.5pt;font-weight:700;color:var(--navy-800);margin:6mm 0 1.5mm;letter-spacing:.01em}
+p{margin:0 0 3.2mm;max-width:165mm}
+.lead{font-size:12pt;line-height:1.55;color:var(--muted);margin-bottom:6mm}
+strong{font-weight:600;color:var(--navy-900)}
+em{font-style:italic}
+ul,ol{margin:0 0 4mm;padding-left:5.5mm}
+li{margin-bottom:1.8mm}
+li::marker{color:var(--gold-600)}
+.tight li{margin-bottom:.8mm}
+.section-open{border-top:2px solid var(--gold-500);padding-top:5mm;margin-bottom:6mm}
+.callout{background:var(--navy-50);border:1px solid var(--navy-100);border-left:3px solid var(--gold-500);border-radius:8px;padding:5mm 6mm;margin:5mm 0}
+.callout .eyebrow{margin-bottom:2mm}
+.quote{font-family:var(--serif);font-size:15pt;line-height:1.4;color:var(--navy-800);border-left:2px solid var(--gold-500);padding:1mm 0 1mm 6mm;margin:6mm 0;font-style:italic;max-width:150mm}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4mm;margin:5mm 0}
+.card{background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:5mm 5.5mm;box-shadow:0 1px 2px rgba(5,11,20,.05)}
+.card h4{margin-top:0}
+.card p{font-size:9.7pt;color:var(--muted);margin-bottom:0}
+table.data{width:100%;border-collapse:collapse;margin:5mm 0;font-size:9.7pt}
+table.data th{text-align:left;font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);border-bottom:1.5px solid var(--navy-200);padding:0 4mm 2mm 0;font-weight:600}
+table.data td{padding:2.6mm 4mm 2.6mm 0;border-bottom:1px solid var(--n-200);vertical-align:top;color:var(--muted)}
+table.data td:first-child{color:var(--navy-900);font-weight:600;width:32%}
+table.data td code,code{font-family:var(--mono);font-size:8.6pt;color:var(--navy-700);background:var(--navy-50);padding:.4mm 1.4mm;border-radius:3px}
+.dodont{display:grid;grid-template-columns:1fr 1fr;gap:5mm;margin:5mm 0}
+.dobox,.dontbox{border-radius:10px;padding:4.5mm 5mm}
+.dobox{background:#f0f6f2;border:1px solid #cfe4d8}
+.dontbox{background:#f9f0f0;border:1px solid #e8d2d2}
+.dobox h4{color:#1e7a5a;margin-top:0}.dontbox h4{color:#a53b3b;margin-top:0}
+.dobox li::marker{color:#1e7a5a}.dontbox li::marker{color:#a53b3b}
+.dobox li,.dontbox li{font-size:9.5pt;color:var(--n-700)}
+.meta-strip{font-family:var(--mono);font-size:8pt;letter-spacing:.1em;color:var(--subtle);text-transform:uppercase}
+/* Brand-book components */
+.logobox{border-radius:12px;padding:12mm;display:flex;align-items:center;justify-content:center;min-height:52mm}
+.logobox.light{background:var(--white);border:1px solid var(--n-200)}
+.logobox.dark{background:var(--navy-950);border:1px solid var(--navy-800);position:relative;overflow:hidden}
+.logobox.dark .gf{position:absolute;inset:0;opacity:.5;background-image:linear-gradient(rgba(180,196,214,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(180,196,214,.05) 1px,transparent 1px);background-size:30px 30px}
+.logo-img{height:30mm;width:auto;position:relative}
+.logo-img.rev{filter:brightness(0) invert(1) brightness(.97)}
+.boxcap{font-family:var(--mono);font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:var(--subtle);margin-top:2mm;text-align:center}
+.tile-row{display:flex;gap:5mm;margin:5mm 0;flex-wrap:wrap}
+.tile{width:26mm}
+.tile .sq{width:26mm;height:26mm;border-radius:6px;overflow:hidden;background:var(--navy-950);display:flex;align-items:center;justify-content:center;border:1px solid var(--navy-800)}
+.tile .sq.round{border-radius:50%}
+.tile .sq img{width:150%;height:auto;filter:brightness(0) invert(1) brightness(.97);object-fit:cover;object-position:center 34%}
+.tile .cap{font-family:var(--mono);font-size:7pt;letter-spacing:.08em;text-transform:uppercase;color:var(--subtle);margin-top:2mm;text-align:center}
+.safe{position:relative;background:var(--white);border:1px solid var(--n-200);border-radius:10px;padding:14mm;display:flex;align-items:center;justify-content:center;min-height:48mm}
+.safe .frame{position:absolute;inset:8mm;border:1px dashed var(--gold-500);border-radius:4px}
+.swatchgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:3mm;margin:4mm 0}
+.swatch{border-radius:7px;overflow:hidden;border:1px solid var(--n-200)}
+.swatch .chip{height:20mm}
+.swatch .meta{padding:2mm 2.5mm;background:var(--white)}
+.swatch .nm{font-size:8pt;font-weight:600;color:var(--navy-900)}
+.swatch .hx{font-family:var(--mono);font-size:7pt;color:var(--subtle);letter-spacing:.02em}
+.typerow{border-bottom:1px solid var(--n-200);padding:3.5mm 0;display:flex;align-items:baseline;gap:6mm}
+.typerow .lbl{flex:0 0 34mm;font-family:var(--mono);font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;color:var(--subtle);padding-top:1mm}
+.typerow .spec{color:var(--navy-900);line-height:1.1}
+.tok-demos{display:flex;gap:5mm;flex-wrap:wrap;margin:5mm 0}
+.rdemo{text-align:center}
+.rdemo .b{width:24mm;height:16mm;background:var(--navy-100);border:1px solid var(--navy-200)}
+.rdemo .cap{font-family:var(--mono);font-size:7pt;color:var(--subtle);margin-top:1.5mm;letter-spacing:.04em}
+.sdemo{width:30mm;height:20mm;background:var(--white);border-radius:8px}
+.traitgrid{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin:5mm 0}
+.trait{border:1px solid var(--n-200);border-radius:9px;padding:4mm 4.5mm;background:var(--white)}
+.trait .t{font-weight:700;color:var(--navy-900);font-size:10.5pt}
+.trait .t .g{color:var(--gold-600)}
+.trait p{font-size:9.3pt;color:var(--muted);margin:1mm 0 0}
+.toc h2.h{margin-bottom:6mm}
+.toc-part{font-family:var(--mono);font-size:8pt;letter-spacing:.18em;text-transform:uppercase;color:var(--gold-600);margin:5mm 0 1.5mm}
+.toc-row{display:flex;align-items:baseline;gap:3mm;padding:1.3mm 0;border-bottom:1px solid var(--n-200)}
+.toc-row .t{color:var(--navy-900);font-weight:500}
+.toc-row .d{flex:1;border-bottom:1px dotted var(--n-300);transform:translateY(-2px)}
+.toc-row .pg{font-family:var(--mono);font-size:9pt;color:var(--subtle)}
+.toc-row .num{font-family:var(--mono);font-size:8.5pt;color:var(--gold-600);flex:0 0 9mm}
+@page{size:A4;margin:0}
+@media print{
+  body{background:var(--white)}
+  .page{margin:0;box-shadow:none;width:auto;min-height:auto;padding:20mm 20mm 22mm;page-break-after:always;break-after:page}
+  .page:last-child{page-break-after:auto}
+  .cover,.section-cover{padding:0}
+  .cover-inner,.sc-inner{height:auto;min-height:257mm}
+  .rfoot{position:static;margin-top:10mm}
+  h3,h4{break-after:avoid}
+  .card,.callout,.quote,.logobox,.safe,.trait,.swatch,.tile,.dobox,.dontbox{break-inside:avoid}
+}
+.nobreak{break-inside:avoid}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<section class="page cover">
+  <div class="grid-field"></div><div class="glow"></div>
+  <div class="cover-inner">
+    <div>
+      <img class="cover-logo" src="assets/ayzenith-logo.png" alt="AYZENITH">
+      <div class="cover-tag">Global Trade · Absolute Trust</div>
+    </div>
+    <div class="cover-mid">
+      <div class="kicker">Brand &amp; Identity Manual — Document 03</div>
+      <h1>The AYZENITH <span class="accent">Brand Book</span></h1>
+      <p class="cover-sub">The complete visual and communication identity of AYZENITH — documented, refined and made repeatable, so the brand stays recognisable for years and across every surface.</p>
+      <div class="cover-rule"></div>
+      <div class="cover-meta">
+        <div>Document<strong>Brand Book v1.0</strong></div>
+        <div>Classification<strong>Internal · Confidential</strong></div>
+        <div>Basis<strong>Enterprise Design Manual</strong></div>
+        <div>Origin<strong>Istanbul, Türkiye</strong></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TOC -->
+<section class="page toc">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Contents</span></div>
+  <div class="eyebrow">Contents</div>
+  <h2 class="h">What this brand book contains</h2>
+  <p class="lead">This manual documents the existing AYZENITH identity — it does not redesign it. Where a refinement would raise professionalism while preserving recognition, it is offered as an optional recommendation, clearly marked.</p>
+
+  <div class="toc-part">Part A — Foundation</div>
+  <div class="toc-row"><span class="num">01</span><span class="t">Brand Philosophy</span><span class="d"></span><span class="pg">04</span></div>
+  <div class="toc-row"><span class="num">02</span><span class="t">Brand Personality</span><span class="d"></span><span class="pg">05</span></div>
+  <div class="toc-part">Part B — Core Identity</div>
+  <div class="toc-row"><span class="num">03</span><span class="t">Logo System</span><span class="d"></span><span class="pg">07</span></div>
+  <div class="toc-row"><span class="num">04</span><span class="t">Logo Usage</span><span class="d"></span><span class="pg">08</span></div>
+  <div class="toc-row"><span class="num">05</span><span class="t">Typography</span><span class="d"></span><span class="pg">09</span></div>
+  <div class="toc-row"><span class="num">06</span><span class="t">Color System</span><span class="d"></span><span class="pg">10</span></div>
+  <div class="toc-row"><span class="num">07</span><span class="t">Layout System</span><span class="d"></span><span class="pg">11</span></div>
+  <div class="toc-part">Part C — Expression</div>
+  <div class="toc-row"><span class="num">08</span><span class="t">Photography Direction</span><span class="d"></span><span class="pg">13</span></div>
+  <div class="toc-row"><span class="num">09</span><span class="t">Illustration Style</span><span class="d"></span><span class="pg">14</span></div>
+  <div class="toc-row"><span class="num">10</span><span class="t">Iconography</span><span class="d"></span><span class="pg">14</span></div>
+  <div class="toc-row"><span class="num">11</span><span class="t">Motion Principles</span><span class="d"></span><span class="pg">15</span></div>
+  <div class="toc-part">Part D — Voice</div>
+  <div class="toc-row"><span class="num">12</span><span class="t">Tone of Voice</span><span class="d"></span><span class="pg">16</span></div>
+  <div class="toc-row"><span class="num">13</span><span class="t">Writing Style</span><span class="d"></span><span class="pg">17</span></div>
+  <div class="toc-part">Part E — Applications</div>
+  <div class="toc-row"><span class="num">14</span><span class="t">Corporate Applications</span><span class="d"></span><span class="pg">18</span></div>
+  <div class="toc-row"><span class="num">15</span><span class="t">Social Media Identity</span><span class="d"></span><span class="pg">19</span></div>
+  <div class="toc-row"><span class="num">16</span><span class="t">Trade Fair Identity</span><span class="d"></span><span class="pg">20</span></div>
+  <div class="toc-row"><span class="num">17</span><span class="t">Future Brand Evolution</span><span class="d"></span><span class="pg">21</span></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>02</span></div>
+</section>
+
+<!-- PART A DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part A</div>
+    <h2>Foundation</h2>
+    <p class="sc-desc">What the brand stands for and how it should feel. The identity that follows is the visible expression of these ideas — and must always serve them.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part A — Foundation</span></div>
+  <div class="section-open"><div class="eyebrow">01 · Brand Philosophy</div></div>
+  <h2 class="h">What AYZENITH is</h2>
+  <p class="lead">AYZENITH is an independent, Türkiye-based global B2B commerce, sourcing and investment group — built to be trusted across sectors and across decades.</p>
+  <table class="data">
+    <tr><td>Purpose</td><td>Global trade still runs on distance, opacity and risk. We exist to change the terms — giving ambitious businesses a single partner who can source, move and stand behind products anywhere.</td></tr>
+    <tr><td>Mission</td><td>To connect manufacturing, logistics and markets into one accountable partnership — so a business can access global supply without carrying global risk.</td></tr>
+    <tr><td>Vision</td><td>To build the infrastructure for a new generation of global commerce: beginning in trade and compounding into private label, new sectors and a holding built to last decades.</td></tr>
+    <tr><td>Brand Promise</td><td><strong>Global Trade. Absolute Trust.</strong> One accountable partner for sourcing, quality, logistics and delivery. Our name is on the result.</td></tr>
+    <tr><td>Positioning</td><td>The institution, not the intermediary. In a category of anonymous middlemen, AYZENITH is the partner that consolidates, de-risks and remains.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Why it matters to the brand</div><p style="margin:0">Every visual and verbal choice in this book exists to make one feeling credible: that AYZENITH can be trusted. The identity is restrained, precise and permanent because <em>trust is the product</em>.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>04</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part A — Foundation</span></div>
+  <div class="section-open"><div class="eyebrow">02 · Brand Personality</div></div>
+  <h2 class="h">How the brand should feel</h2>
+  <p class="lead">If AYZENITH were a person, they would be the composed professional others rely on in difficult moments — never the loudest in the room, always the most dependable.</p>
+  <div class="traitgrid">
+    <div class="trait"><div class="t"><span class="g">Strategic</span></div><p>We think in decades and systems, not deals. The brand reads as considered, never impulsive.</p></div>
+    <div class="trait"><div class="t"><span class="g">Reliable</span></div><p>Consistency is the personality. Everything is where it should be, done to the same standard, every time.</p></div>
+    <div class="trait"><div class="t"><span class="g">International</span></div><p>At home across borders. The brand holds one standard everywhere and speaks to the world, not one market.</p></div>
+    <div class="trait"><div class="t"><span class="g">Modern</span></div><p>Contemporary and precise, without chasing trends. Clean geometry, generous space, current craft.</p></div>
+    <div class="trait"><div class="t"><span class="g">Precise</span></div><p>Exact language, exact spacing, exact figures. Nothing approximate, nothing inflated.</p></div>
+    <div class="trait"><div class="t"><span class="g">Confident</span></div><p>Assured without volume. The brand states its position plainly and does not oversell.</p></div>
+    <div class="trait"><div class="t"><span class="g">Professional</span></div><p>Institutional in bearing. Every surface looks like the work of a serious organisation.</p></div>
+    <div class="trait"><div class="t"><span class="g">Calm</span></div><p>Composed under pressure. Weighted motion, quiet colour, unhurried tone — the feeling of control.</p></div>
+  </div>
+  <div class="callout"><div class="eyebrow">The one-line test</div><p style="margin:0">If a design or a sentence feels loud, rushed or boastful, it is off-brand — regardless of how impressive it seems. When in doubt, choose the calmer, more precise option.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>05</span></div>
+</section>
+
+<!-- PART B DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part B</div>
+    <h2>Core Identity</h2>
+    <p class="sc-desc">The fixed system: the logo, type, colour and layout that make AYZENITH instantly recognisable. These are documented from the approved website and Enterprise Design Manual, and are not to be redesigned.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part B — Core Identity</span></div>
+  <div class="section-open"><div class="eyebrow">03 · Logo System</div></div>
+  <h2 class="h">The mark and how it is built</h2>
+  <p class="lead">The AYZENITH logo is a triangular <strong>A·Y·Z monogram</strong> — a zenith, a peak — set above the <strong>AYZENITH wordmark</strong>. Its single signature detail is the gold three-bar "E": the one point of gold, the mark's "zenith".</p>
+  <div class="grid2">
+    <div><div class="logobox light"><img class="logo-img" src="assets/ayzenith-logo.png" alt="AYZENITH primary logo"></div><div class="boxcap">Primary — full colour on light</div></div>
+    <div><div class="logobox dark"><div class="gf"></div><img class="logo-img rev" src="assets/ayzenith-logo.png" alt="AYZENITH reversed logo"></div><div class="boxcap">Reversed — off-white on dark</div></div>
+  </div>
+  <h4>The system</h4>
+  <table class="data">
+    <tr><td>Primary logo</td><td>Full lockup — monogram above wordmark, navy artwork with the gold "E". Default for light surfaces, documents and print.</td></tr>
+    <tr><td>Secondary logo</td><td>Reversed monochrome for dark surfaces (off-white, not pure white). Used on the navy website, footer and dark applications.</td></tr>
+    <tr><td>Horizontal lockup</td><td><em>Recommended addition.</em> Monogram left, wordmark right — for navbars, letterhead and wide, short spaces.</td></tr>
+    <tr><td>Vertical lockup</td><td>The primary stacked form (monogram over wordmark) — for covers, posters and square-ish spaces.</td></tr>
+    <tr><td>Monogram</td><td>The triangular A·Y·Z mark alone — for avatars, app icons and small or square placements where the wordmark would be illegible.</td></tr>
+  </table>
+  <div class="tile-row">
+    <div class="tile"><div class="sq round"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">Social avatar</div></div>
+    <div class="tile"><div class="sq"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">App icon</div></div>
+    <div class="tile"><div class="sq" style="width:16mm;height:16mm"><img src="assets/ayzenith-logo.png" alt=""></div><div class="cap">Favicon</div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Optional recommendation</div><p style="margin:0">Produce a dedicated <strong>reversed export that keeps the gold "E"</strong> (rather than rendering the whole mark one colour), and a standalone <strong>monogram file</strong> and <strong>horizontal lockup</strong> as vector (SVG). This preserves recognition at small sizes and on dark surfaces, and is a documentation improvement — not a redesign.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>07</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part B — Core Identity</span></div>
+  <div class="section-open"><div class="eyebrow">04 · Logo Usage</div></div>
+  <h2 class="h">Protecting the mark</h2>
+  <p class="lead">The logo is the most valuable asset in this book. These rules keep it legible, consistent and unmistakably AYZENITH wherever it appears.</p>
+  <div class="grid2">
+    <div><div class="safe"><div class="frame"></div><img class="logo-img" src="assets/ayzenith-logo.png" alt="AYZENITH clear space"></div><div class="boxcap">Clear space — keep clear on all sides</div></div>
+    <div>
+      <h4 style="margin-top:0">Safe area</h4>
+      <p>Maintain clear space around the logo of at least the height of the monogram's base on every side. Keep other elements, text and edges outside this zone.</p>
+      <h4>Minimum size</h4>
+      <p>Never render the mark below <strong>28&nbsp;px</strong> (≈ 7&nbsp;mm) in height — the legibility floor for the monogram. Below this, use the monogram alone.</p>
+    </div>
+  </div>
+  <h4>Background rules</h4>
+  <ul class="tight">
+    <li>Full-colour logo on white, off-white and light neutral backgrounds.</li>
+    <li>Reversed (off-white) logo on navy and dark photographic backgrounds.</li>
+    <li>On photography, place the mark on a calm, low-detail area with sufficient contrast — add a subtle navy scrim if needed.</li>
+  </ul>
+  <div class="dodont">
+    <div class="dobox"><h4>Do</h4><ul class="tight">
+      <li>Preserve the original proportions and clear space.</li>
+      <li>Use approved colourways only: full-colour or reversed.</li>
+      <li>Give the mark room to breathe.</li>
+    </ul></div>
+    <div class="dontbox"><h4>Don't</h4><ul class="tight">
+      <li>Stretch, rotate, or distort the mark.</li>
+      <li>Recolour it, add effects, or place it on low-contrast backgrounds.</li>
+      <li>Rebuild or re-space the wordmark, or separate the "E" bars.</li>
+    </ul></div>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>08</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part B — Core Identity</span></div>
+  <div class="section-open"><div class="eyebrow">05 · Typography</div></div>
+  <h2 class="h">The type system</h2>
+  <p class="lead">Type carries most of the brand's voice. AYZENITH uses three families: <strong>Inter</strong> for interface and body, <strong>Newsreader</strong> for rare editorial emphasis, and <strong>IBM&nbsp;Plex&nbsp;Mono</strong> for labels and data.</p>
+  <div class="typerow"><div class="lbl">Display · Inter 700</div><div class="spec" style="font-size:30pt;font-weight:700;letter-spacing:-.02em">The world is your market.</div></div>
+  <div class="typerow"><div class="lbl">Heading · Inter 700</div><div class="spec" style="font-size:19pt;font-weight:700;letter-spacing:-.015em">One partner, factory to market.</div></div>
+  <div class="typerow"><div class="lbl">Body · Inter 400</div><div class="spec" style="font-size:11pt;font-weight:400;color:var(--muted);max-width:120mm;line-height:1.5">Reliable product flow to retail, wholesale and e-commerce buyers — on time, in full, defect-free.</div></div>
+  <div class="typerow"><div class="lbl">Caption · Inter 500</div><div class="spec" style="font-size:9pt;font-weight:500;color:var(--subtle)">Continents in active sourcing</div></div>
+  <div class="typerow"><div class="lbl">Button · Inter 600</div><div class="spec"><span style="display:inline-block;background:var(--gold-500);color:var(--navy-950);font-size:9.5pt;font-weight:600;padding:2.2mm 5mm;border-radius:8px">Start a Partnership</span></div></div>
+  <div class="typerow"><div class="lbl">Eyebrow · Mono 600</div><div class="spec" style="font-family:var(--mono);font-size:8.5pt;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold-600)">What we do</div></div>
+  <div class="typerow" style="border-bottom:0"><div class="lbl">Quote · Newsreader</div><div class="spec" style="font-family:var(--serif);font-style:italic;font-size:15pt;color:var(--navy-800)">Scale should feel like simplicity.</div></div>
+  <h4>Scale &amp; rules</h4>
+  <p>The type scale follows a Major Third ratio (1.250), fluid at display sizes. Headlines use tight tracking (<code>-0.02em</code>) and generous line-height for calm authority; body copy holds a comfortable measure of ~65–75 characters. Numbers in data use tabular figures so columns align.</p>
+  <div class="callout"><div class="eyebrow">Fallbacks</div><p style="margin:0">Where the brand fonts are unavailable (email, some documents), fall back to <strong>system sans-serif</strong> for Inter, <strong>Georgia</strong> for Newsreader, and a standard monospace for Plex Mono. The hierarchy matters more than the exact face.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>09</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part B — Core Identity</span></div>
+  <div class="section-open"><div class="eyebrow">06 · Color System</div></div>
+  <h2 class="h">Navy, gold and clarity</h2>
+  <p class="lead">The palette is built on two brand colours — <strong>Navy</strong> (depth and trust) and <strong>Gold</strong> (value, the zenith) — supported by a disciplined neutral range. The marketing surface is dark-first; navy is the brand's soul.</p>
+  <h4>Navy — primary (depth)</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#050b14"></div><div class="meta"><div class="nm">Navy 950</div><div class="hx">#050B14</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0a1a2f"></div><div class="meta"><div class="nm">Navy 900</div><div class="hx">#0A1A2F</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#0d2137"></div><div class="meta"><div class="nm">Navy 800</div><div class="hx">#0D2137</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#123252"></div><div class="meta"><div class="nm">Navy 700</div><div class="hx">#123252</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#2c5282"></div><div class="meta"><div class="nm">Navy 500</div><div class="hx">#2C5282</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#b4c4d6"></div><div class="meta"><div class="nm">Navy 200</div><div class="hx">#B4C4D6</div></div></div>
+  </div>
+  <h4>Gold — secondary (value / zenith)</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#8a6d1c"></div><div class="meta"><div class="nm">Gold 700</div><div class="hx">#8A6D1C</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#a88420"></div><div class="meta"><div class="nm">Gold 600</div><div class="hx">#A88420</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#c9a227"></div><div class="meta"><div class="nm">Gold 500 ★</div><div class="hx">#C9A227</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#d9b84a"></div><div class="meta"><div class="nm">Gold 400</div><div class="hx">#D9B84A</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#e7ce7c"></div><div class="meta"><div class="nm">Gold 300</div><div class="hx">#E7CE7C</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f6edd2"></div><div class="meta"><div class="nm">Gold 100</div><div class="hx">#F6EDD2</div></div></div>
+  </div>
+  <h4>Neutral — structure &amp; clarity</h4>
+  <div class="swatchgrid">
+    <div class="swatch"><div class="chip" style="background:#ffffff;box-shadow:inset 0 0 0 1px #dde1e7"></div><div class="meta"><div class="nm">White</div><div class="hx">#FFFFFF</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#f7f8fa"></div><div class="meta"><div class="nm">Off-white</div><div class="hx">#F7F8FA</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#dde1e7"></div><div class="meta"><div class="nm">Neutral 200</div><div class="hx">#DDE1E7</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#9aa2ad"></div><div class="meta"><div class="nm">Neutral 400</div><div class="hx">#9AA2AD</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#4a525e"></div><div class="meta"><div class="nm">Neutral 600</div><div class="hx">#4A525E</div></div></div>
+    <div class="swatch"><div class="chip" style="background:#1e242c"></div><div class="meta"><div class="nm">Neutral 800</div><div class="hx">#1E242C</div></div></div>
+  </div>
+  <div class="grid2" style="margin-top:5mm">
+    <div class="card"><h4>Gold usage principles</h4><p>Gold is precious — used sparingly, it stays valuable. Reserve it for the primary call-to-action, the logo "E", small accents and rare display emphasis. Gold as body text or large fills fails contrast and cheapens the mark. One gold moment per view is usually enough.</p></div>
+    <div class="card"><h4>Accent &amp; background rules</h4><p>On <strong>dark</strong> surfaces the accent is gold; on <strong>light</strong> surfaces the accent is navy (gold on light fails contrast), while the CTA stays gold everywhere. Backgrounds alternate navy and light in a calm rhythm. Elevation is navy-tinted, never pure black.</p></div>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>10</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part B — Core Identity</span></div>
+  <div class="section-open"><div class="eyebrow">07 · Layout System</div></div>
+  <h2 class="h">Space, grid and structure</h2>
+  <p class="lead">Layout is where the brand's calm and precision are felt. Generous space is not empty — it is the confidence to let each element stand alone.</p>
+  <table class="data">
+    <tr><th>System</th><th>Standard</th></tr>
+    <tr><td>Spacing</td><td>An 8-point grid governs all spacing. Rhythm is geometric, not arbitrary; whitespace is used generously.</td></tr>
+    <tr><td>Grid</td><td>A 12-column responsive grid with consistent gutters. Content aligns to the grid; nothing floats without reason.</td></tr>
+    <tr><td>Containers</td><td>Site content max-width <code>1200px</code>; wide/dashboard layouts <code>1440px</code>. Body measure held to ~65–75 characters for readability.</td></tr>
+    <tr><td>Section rhythm</td><td>Major sections separated by large, fluid vertical space, alternating light and navy surfaces for cadence.</td></tr>
+  </table>
+  <h4>Radius</h4>
+  <div class="tok-demos">
+    <div class="rdemo"><div class="b" style="border-radius:2px"></div><div class="cap">sm · 4px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:5px"></div><div class="cap">md · 8px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:7px"></div><div class="cap">lg · 12px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:12px"></div><div class="cap">xl · 20px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:19px"></div><div class="cap">2xl · 32px</div></div>
+    <div class="rdemo"><div class="b" style="border-radius:999px"></div><div class="cap">pill</div></div>
+  </div>
+  <h4>Elevation</h4>
+  <div class="tok-demos">
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 1px 2px rgba(5,11,20,.06),0 1px 3px rgba(5,11,20,.08)"></div><div class="cap">sm</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 4px 8px rgba(5,11,20,.08),0 2px 4px rgba(5,11,20,.06)"></div><div class="cap">md</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 12px 24px rgba(5,11,20,.10),0 4px 8px rgba(5,11,20,.06)"></div><div class="cap">lg</div></div>
+    <div class="rdemo"><div class="sdemo" style="box-shadow:0 24px 48px rgba(5,11,20,.14),0 8px 16px rgba(5,11,20,.08)"></div><div class="cap">xl</div></div>
+  </div>
+  <div class="callout"><div class="eyebrow">Component rhythm</div><p style="margin:0">Shadows are soft and <strong>navy-tinted, never pure black</strong>. A single faint gold hairline is the system's structural signature — used to separate, never to decorate. Consistent radius and spacing across every component are what make the whole system feel like one hand made it.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>11</span></div>
+</section>
+
+<!-- PART C DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part C</div>
+    <h2>Expression</h2>
+    <p class="sc-desc">How the brand behaves beyond type and colour — the imagery, icons and motion that bring the identity to life without ever competing with the message.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part C — Expression</span></div>
+  <div class="section-open"><div class="eyebrow">08 · Photography Direction</div></div>
+  <h2 class="h">Real work, seen with restraint</h2>
+  <p class="lead">Photography must feel true. AYZENITH shows real global commerce — not generic, smiling stock. The goal is credibility: the sense of a serious operation the viewer can trust.</p>
+  <div class="grid2">
+    <div class="card"><h4>Subjects we show</h4><p>Real business and trade: warehousing, manufacturing floors, logistics and freight, premium product photography, and genuine human interaction in professional settings.</p></div>
+    <div class="card"><h4>Subjects we avoid</h4><p>Clichéd stock — handshake close-ups, glowing globes, arrows over skylines, staged "diverse team high-fiving". Anything that looks bought rather than lived.</p></div>
+  </div>
+  <table class="data">
+    <tr><td>Lighting</td><td>Natural or considered directional light. Deep, controlled shadows over flat brightness — depth reads as substance.</td></tr>
+    <tr><td>Composition</td><td>Confident negative space, strong lines, precise framing. One clear subject; nothing cluttered.</td></tr>
+    <tr><td>Colour &amp; grade</td><td>Cool, slightly desaturated with navy undertones; occasional warm gold highlight. Never oversaturated or heavily filtered.</td></tr>
+    <tr><td>Human interaction</td><td>Real people at real work — focused, professional, unposed. Dignity over enthusiasm.</td></tr>
+    <tr><td>Treatment</td><td>On dark layouts, a subtle navy scrim keeps overlaid type legible and unifies imagery to the palette.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Interim standard</div><p style="margin:0">Until an owned photography library exists, the site uses on-brand navy placeholder surfaces rather than weak stock. <strong>A considered placeholder is preferable to a generic photograph.</strong> Replace placeholders only with imagery that meets this direction.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>13</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part C — Expression</span></div>
+  <div class="section-open"><div class="eyebrow">09 · Illustration Style</div></div>
+  <h2 class="h">Structural, not decorative</h2>
+  <p class="lead">AYZENITH does not use playful or character illustration. Its "illustration" language is abstract and structural — the same geometry that builds the logo.</p>
+  <ul class="tight">
+    <li><strong>Precision grid.</strong> A faint navy line grid, softly masked, evokes structure, engineering and global coordinates. It is the signature background texture.</li>
+    <li><strong>Gold hairline.</strong> A single, soft gold gradient line used to divide and signal — the brand's structural accent, never a flourish.</li>
+    <li><strong>Geometric depth.</strong> Layered navy gradients and a single restrained glint create depth without imagery, echoing the triangular monogram.</li>
+    <li><strong>Restraint.</strong> Graphics support type; they never compete with it. If a decorative element draws the eye first, it is wrong.</li>
+  </ul>
+  <div class="section-open" style="margin-top:8mm"><div class="eyebrow">10 · Iconography</div></div>
+  <h2 class="h">Clear, consistent line icons</h2>
+  <p class="lead">Icons are functional wayfinding, not decoration. AYZENITH uses a single, consistent line-icon set with an even stroke weight.</p>
+  <table class="data">
+    <tr><td>Style</td><td>Outline (line) icons with a consistent ~1.5px stroke, rounded joins, minimal detail.</td></tr>
+    <tr><td>Colour</td><td>Inherit text colour — navy accent on light, gold on dark. Never multicolour.</td></tr>
+    <tr><td>Usage</td><td>To aid comprehension and navigation only. One icon per idea; never purely ornamental.</td></tr>
+    <tr><td>Consistency</td><td>Draw from one library (the site uses a single line set) so every icon feels part of the same family.</td></tr>
+  </table>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>14</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part C — Expression</span></div>
+  <div class="section-open"><div class="eyebrow">11 · Motion Principles</div></div>
+  <h2 class="h">Motion that feels weighted and sure</h2>
+  <p class="lead">Motion should feel like a bank vault door: substantial, smooth and deliberate — never bouncy, playful or fast for its own sake. Elegant, calm, purposeful, never distracting.</p>
+  <div class="grid2">
+    <div class="card"><h4>How it feels</h4><p>Weighted and controlled. Elements ease in and settle; nothing springs, overshoots or bounces. Motion reassures — it signals a system in command of itself.</p></div>
+    <div class="card"><h4>What it does</h4><p>Reveals content calmly on scroll, guides attention between states, and confirms actions. It always serves comprehension, never spectacle.</p></div>
+  </div>
+  <table class="data">
+    <tr><th>Token</th><th>Value &amp; use</th></tr>
+    <tr><td>Duration — fast</td><td><code>200ms</code> · small state changes, hovers.</td></tr>
+    <tr><td>Duration — base</td><td><code>320ms</code> · standard transitions and reveals.</td></tr>
+    <tr><td>Duration — slow</td><td><code>480ms</code> · larger, more deliberate movements.</td></tr>
+    <tr><td>Duration — slower</td><td><code>640ms</code> · rare, emphatic reveals.</td></tr>
+    <tr><td>Easing</td><td>Standard <code>cubic-bezier(0.4, 0, 0.2, 1)</code> and emphasis <code>cubic-bezier(0.2, 0, 0, 1)</code>. No spring, no bounce.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">Accessibility — non-negotiable</div><p style="margin:0">Motion always respects <code>prefers-reduced-motion</code>. For users who request reduced motion, animation is effectively removed. Focus states are never suppressed. Calm also means considerate.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>15</span></div>
+</section>
+
+<!-- PART D DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part D</div>
+    <h2>Voice</h2>
+    <p class="sc-desc">How AYZENITH sounds. The voice is as much a part of the identity as the logo — confident, clear and restrained, the same in every language and on every channel.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part D — Voice</span></div>
+  <div class="section-open"><div class="eyebrow">12 · Tone of Voice</div></div>
+  <h2 class="h">How AYZENITH speaks</h2>
+  <p class="lead">We speak the way we want to be trusted: with confidence, clarity and restraint. We state our position plainly and let it stand — we do not sell it with volume.</p>
+  <div class="dodont">
+    <div class="dobox"><h4>How AYZENITH speaks</h4><ul class="tight">
+      <li>Plainly and precisely — every word earns its place.</li>
+      <li>Confidently, without boasting.</li>
+      <li>Honestly — figures reflect how we operate today, never inflated.</li>
+      <li>Calmly — no urgency, no pressure, no hype.</li>
+      <li>Responsibly — clear about what we do and do not do.</li>
+    </ul></div>
+    <div class="dontbox"><h4>How AYZENITH does not speak</h4><ul class="tight">
+      <li>No "world-class", "leading", "cutting-edge", "best-in-class".</li>
+      <li>No exaggerated claims or invented statistics.</li>
+      <li>No aggressive or high-pressure sales language.</li>
+      <li>No jargon that hides rather than clarifies.</li>
+      <li>No slang, hype or exclamation-driven excitement.</li>
+    </ul></div>
+  </div>
+  <h4>Professional examples</h4>
+  <p><strong>On-brand:</strong> <em>"We reply to qualified inquiries within two business days."</em> · <em>"We compete on reliability, not price."</em> · <em>"Every figure reflects how AYZENITH operates today — stated honestly, never inflated."</em></p>
+  <p><strong>Off-brand:</strong> <em>"We're the world's leading trade partner!"</em> · <em>"Unbeatable prices, act now!"</em> · <em>"A revolutionary, cutting-edge platform."</em></p>
+  <div class="quote">Distance should never mean risk. Borders should never mean doubt.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>16</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part D — Voice</span></div>
+  <div class="section-open"><div class="eyebrow">13 · Writing Style</div></div>
+  <h2 class="h">Writing across channels</h2>
+  <p class="lead">The voice is constant; the register adapts. Below is how the same confident, restrained tone is applied to each surface.</p>
+  <table class="data">
+    <tr><th>Channel</th><th>How we write</th></tr>
+    <tr><td>Website</td><td>Editorial and precise. Short, declarative sentences; a clear eyebrow, a strong headline, one idea per section. Confidence through clarity, not adjectives.</td></tr>
+    <tr><td>Emails</td><td>Direct and respectful. Get to the point quickly, make one clear ask, close courteously. Never pushy, never padded.</td></tr>
+    <tr><td>LinkedIn</td><td>Professional and useful. Share substance, not self-promotion; speak as a credible institution, not a salesperson.</td></tr>
+    <tr><td>Sales documents</td><td>Structured and exact. State scope, standards, responsibilities and terms plainly. Promise only what operations can deliver.</td></tr>
+    <tr><td>Presentations</td><td>Minimal text, strong hierarchy, generous space. The slide supports the speaker; it is not a document to be read aloud.</td></tr>
+  </table>
+  <h4>Universal rules</h4>
+  <ul class="tight">
+    <li>Lead with the point. Respect the reader's time.</li>
+    <li>Prefer the specific to the general, the honest to the impressive.</li>
+    <li>Use tri-lingual consistency: the same meaning and restraint in English, Türkçe and Deutsch.</li>
+    <li>When unsure, cut. Brevity reads as confidence.</li>
+  </ul>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>17</span></div>
+</section>
+
+<!-- PART E DIVIDER -->
+<section class="page section-cover">
+  <div class="grid-field"></div>
+  <div class="sc-inner">
+    <div class="sc-num">Part E</div>
+    <h2>Applications</h2>
+    <p class="sc-desc">The identity in the world — from a business card to a trade-fair stand — and how it should evolve over the next decade while remaining unmistakably AYZENITH.</p>
+  </div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part E — Applications</span></div>
+  <div class="section-open"><div class="eyebrow">14 · Corporate Applications</div></div>
+  <h2 class="h">The brand on paper and in the inbox</h2>
+  <p class="lead">Corporate materials are often the first physical proof of the brand. They should feel like the website: precise, spacious and unmistakably AYZENITH.</p>
+  <table class="data">
+    <tr><td>Business card</td><td>Navy or off-white, generous margins. Monogram or full mark, name and role in Inter, details in mono. Optional gold edge or a single gold hairline. Restraint over ornament.</td></tr>
+    <tr><td>Letterhead</td><td>Logo top-left with full clear space, a faint gold hairline under the header, mono contact strip in the footer. Wide margins; the page should breathe.</td></tr>
+    <tr><td>Email signature</td><td>Plain, single-column: name (Inter 600 navy), role and company, then contact details in a smaller neutral tone. Optional small logo. No banners, quotes or images that break in clients.</td></tr>
+    <tr><td>Presentation template</td><td>Navy and light master slides, large type, one idea per slide, gold used once per slide at most. Mono eyebrows label sections.</td></tr>
+    <tr><td>Proposal template</td><td>Mirrors this manual: cover, clear hierarchy, generous space, navy/gold system. Structured around scope, standards, responsibilities and terms.</td></tr>
+  </table>
+  <div class="template" style="background:var(--white);border:1px solid var(--n-200);color:var(--ink)">
+    <span class="tlabel" style="color:var(--gold-600)">Email signature — reference</span>
+    <p style="color:var(--navy-900);font-weight:600;margin-bottom:1mm">[Full Name]</p>
+    <p style="color:var(--muted);margin-bottom:1mm;font-size:9pt">Partnerships · AYZENITH</p>
+    <p style="color:var(--subtle);font-family:var(--mono);font-size:8pt;margin:0">info@ayzenith.com · +90 541 437 19 07 · ayzenith.com · Istanbul, Türkiye</p>
+  </div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>18</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part E — Applications</span></div>
+  <div class="section-open"><div class="eyebrow">15 · Social Media Identity</div></div>
+  <h2 class="h">A consistent presence</h2>
+  <p class="lead">On social platforms AYZENITH appears as a credible institution, not a marketer. Profiles are consistent, restrained and unmistakably on-brand across every channel.</p>
+  <div class="grid3">
+    <div class="card"><h4>LinkedIn</h4><p>The primary channel. Monogram avatar on navy, a navy/grid banner with the tagline. Content is substance — capability, standards, considered perspective. Professional, never promotional.</p></div>
+    <div class="card"><h4>Instagram</h4><p>A visual record of real operations, product and brand craft — held to the photography direction. Cohesive navy-and-gold grid; quality over frequency.</p></div>
+    <div class="card"><h4>YouTube</h4><p>Considered, well-produced content: capability explainers, partner perspectives, behind-the-operation. Calm pacing and motion that matches the brand.</p></div>
+  </div>
+  <h4>Shared standards</h4>
+  <ul class="tight">
+    <li>Same avatar everywhere: the monogram on navy, correctly cleared and centred.</li>
+    <li>Banner uses the navy field and grid texture with the tagline — no clutter.</li>
+    <li>One voice across channels: confident, clear, restrained; identical bio meaning in all languages.</li>
+    <li>Gold appears as a small accent, never as a dominant fill.</li>
+  </ul>
+  <div class="callout"><div class="eyebrow">Governing idea</div><p style="margin:0">Every post is a brand impression that either builds or spends trust. If a post would not sit comfortably beside the website, it does not belong on an AYZENITH channel.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>19</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part E — Applications</span></div>
+  <div class="section-open"><div class="eyebrow">16 · Trade Fair Identity</div></div>
+  <h2 class="h">How AYZENITH appears at exhibitions</h2>
+  <p class="lead">At international fairs — such as Hostech, IFA, Ambiente and comparable trade events — the stand is a three-dimensional expression of the brand. It should feel like walking into the website.</p>
+  <table class="data">
+    <tr><td>Presence</td><td>Composed and confident, not loud. A calm navy space with precise lighting draws serious buyers more effectively than noise and colour.</td></tr>
+    <tr><td>Materials &amp; colour</td><td>Deep navy surfaces, clean neutral structure, restrained gold accents. Quality materials and finish signal the institution the brand claims to be.</td></tr>
+    <tr><td>The mark</td><td>The monogram and wordmark, well-cleared and well-lit, as the anchor. Reversed (off-white) on navy walls. Never crowded with competing graphics.</td></tr>
+    <tr><td>Messaging</td><td>One clear line — the tagline or core promise — over dense copy. Capability shown through real product and considered visuals, not slogans.</td></tr>
+    <tr><td>Lighting &amp; motion</td><td>Warm, directional light and any screen motion kept weighted and calm, matching the motion principles. Depth and focus over flash.</td></tr>
+    <tr><td>People</td><td>The team is part of the identity: professional, calm, genuinely helpful. The stand exists to begin conversations, not to broadcast.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">The stand test</div><p style="margin:0">A visitor should be able to sense, before reading a word, that AYZENITH is precise, international and reliable. If the stand feels busy or generic, it is working against the brand.</p></div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential</span><span>20</span></div>
+</section>
+
+<section class="page">
+  <div class="rhead"><span class="l">AYZENITH Brand Book</span><span>Part E — Applications</span></div>
+  <div class="section-open"><div class="eyebrow">17 · Future Brand Evolution</div></div>
+  <h2 class="h">Evolving without losing ourselves</h2>
+  <p class="lead">A brand built for permanence should mature, not reinvent. Over the next decade AYZENITH will grow across categories and sectors — and must remain instantly recognisable throughout.</p>
+  <p>The vision compounds trade into private label, new sectors, proprietary brands and a lasting holding. As that happens, the identity should deepen rather than change. The following are the guard-rails for evolution.</p>
+  <div class="grid2">
+    <div class="card"><h4>What must not change</h4><p>The triangular A·Y·Z monogram, the navy-and-gold palette, the gold "E", the restrained and precise personality, and the promise — <em>Global Trade. Absolute Trust.</em> These are the anchors of recognition.</p></div>
+    <div class="card"><h4>What may evolve</h4><p>A refined vector logo system and sub-brand marks for new ventures; an owned photography library; an expanded, documented component and layout system; a maturing motion language — all within the existing identity.</p></div>
+  </div>
+  <h4>A phased path (optional recommendations)</h4>
+  <table class="data">
+    <tr><td>Near term</td><td>Vectorise the logo; produce the monogram, horizontal lockup and a reversed export that keeps the gold "E". Formalise this book as the single source of truth.</td></tr>
+    <tr><td>Mid term</td><td>Build an owned photography library to the photography direction. Extend the design system to new applications (proposals, decks, packaging) without altering the core.</td></tr>
+    <tr><td>Long term</td><td>Introduce a coherent sub-brand architecture for private label and new sectors — each clearly a member of the AYZENITH family, sharing the monogram logic, palette and voice.</td></tr>
+  </table>
+  <div class="callout"><div class="eyebrow">The principle of evolution</div><p style="margin:0">Every future change is tested against one question: <em>does this deepen recognition and trust, or dilute it?</em> We refine the identity; we do not restart it. Built for permanence applies to the brand itself.</p></div>
+  <div class="quote">Scale should feel like simplicity. That is the company — and the brand — we are building.</div>
+  <div class="rfoot"><span>AYZENITH — Internal / Confidential · Brand Book v1.0</span><span>21</span></div>
+</section>
+
+</body>
+</html>

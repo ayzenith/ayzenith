@@ -31,7 +31,7 @@ const contentSecurityPolicy = [
   "object-src 'none'",
   "frame-ancestors 'none'",
   "form-action 'self'",
-  "img-src 'self' data: blob: https://www.google-analytics.com https://www.googletagmanager.com https://*.clarity.ms",
+  "img-src 'self' data: blob: https://ggpjxtlxgmjxnmynuelh.supabase.co https://www.google-analytics.com https://www.googletagmanager.com https://*.clarity.ms",
   scriptSrc,
   "style-src 'self' 'unsafe-inline'",
   "font-src 'self' data:",
@@ -64,7 +64,15 @@ const nextConfig: NextConfig = {
   // trusted asset host is introduced — nothing untrusted ships to users.
   images: {
     formats: ["image/avif", "image/webp"],
-    remotePatterns: [],
+    // Supabase Storage (public "media" bucket) is the trusted host for
+    // CMS-uploaded product/media images.
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "ggpjxtlxgmjxnmynuelh.supabase.co",
+        pathname: "/storage/v1/object/public/**",
+      },
+    ],
   },
   // Ship less JavaScript: pull only what is used from these packages.
   experimental: {

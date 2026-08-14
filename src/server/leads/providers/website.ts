@@ -264,14 +264,14 @@ function numberBefore(text: string, unitTerms: string[]): number | null {
   return null;
 }
 
-async function fetchPage(url: string): Promise<string | null> {
+async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null> {
   try {
     const res = await cachedLeadFetch({
       provider: "website",
       query: { url },
       url,
       parse: (t) => t, // keep raw HTML
-      timeoutMs: 12_000,
+      timeoutMs,
       ttlDays: 30,
     });
     return typeof res.payload === "string" ? res.payload : null;
@@ -280,20 +280,40 @@ async function fetchPage(url: string): Promise<string | null> {
   }
 }
 
+/** The shallow pass fetches MANY more homepages than the old single-pass design,
+ *  so dead/slow hosts dominate its wall time: every unreachable site costs a full
+ *  timeout. A tighter budget there keeps the widened coverage affordable — a
+ *  homepage that cannot answer in 7s is not worth holding the run for, and it
+ *  stays honestly "UNREACHABLE" rather than being called inactive (§V3.3). */
+const SHALLOW_TIMEOUT_MS = 7_000;
+
+/** How deeply to read a site (§V3.3).
+ *  "shallow" — homepage only (1 request). Enough for reachability, product terms,
+ *              role/model signals and social links, i.e. everything qualification
+ *              needs to decide whether a candidate is worth a closer look.
+ *  "full"    — homepage + Impressum/Kontakt/about, which is where legal name,
+ *              decision-makers and contact details live.
+ *  The staged pipeline runs "shallow" over a WIDE set and promotes only the
+ *  promising ones to "full"; because every page is cached per URL, the deep pass
+ *  re-uses the already-fetched homepage and pays only for the sub-pages. */
+export type SiteDepth = "shallow" | "full";
+
 /**
  * Gather website intelligence for a company. Fetches the homepage first; only if
- * it is reachable does it try a couple of high-signal sub-pages. `productTerms`
- * are the local-language terms the caller wants to confirm on the site.
+ * it is reachable (and depth is "full") does it try a couple of high-signal
+ * sub-pages. `productTerms` are the local-language terms the caller wants to
+ * confirm on the site.
  */
 export async function fetchSiteIntel(
   website: string,
   productTerms: string[],
   signals?: ProductSignals,
+  depth: SiteDepth = "full",
 ): Promise<SiteIntel | null> {
   const base = normalizeUrl(website);
   if (!base) return null;
 
-  const home = await fetchPage(base);
+  const home = await fetchPage(base, depth === "shallow" ? SHALLOW_TIMEOUT_MS : 12_000);
   if (home == null) {
     return {
       status: "UNREACHABLE",
@@ -313,11 +333,14 @@ export async function fetchSiteIntel(
 
   const pages: Array<{ url: string; html: string }> = [{ url: base, html: home }];
   // Try a few sub-pages, but stop early once we have an Impressum + contact.
-  for (const path of CANDIDATE_PATHS.slice(1)) {
-    if (pages.length >= 4) break;
-    const url = `${base}/${path}`;
-    const html = await fetchPage(url);
-    if (html) pages.push({ url, html });
+  // Skipped entirely on a shallow read — that is the whole point of the cheap pass.
+  if (depth === "full") {
+    for (const path of CANDIDATE_PATHS.slice(1)) {
+      if (pages.length >= 4) break;
+      const url = `${base}/${path}`;
+      const html = await fetchPage(url);
+      if (html) pages.push({ url, html });
+    }
   }
 
   const emails = new Set<string>();

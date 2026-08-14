@@ -213,6 +213,20 @@ export default async function LeadResultsPage({
         {sum.notRelevant > 0 ? <span>{sum.notRelevant} ilgisiz (gizli)</span> : null}
       </div>
 
+      {/* Verification coverage (§V3.3) — separates "checked and unclear" from
+          "never checked", so a limit of the run never reads as a fact about a firm. */}
+      <div className="mb-6 rounded-lg border border-subtle bg-surface-sunken px-3 py-2 text-caption text-subtle">
+        <b className="font-medium text-foreground">Doğrulama kapsamı:</b>{" "}
+        <b className="font-medium text-[#2f7a48]">{sum.siteChecked}</b> firmanın sitesi okundu
+        {sum.siteUnreachable > 0 ? <> · {sum.siteUnreachable} siteye ulaşılamadı</> : null}
+        {sum.siteNotChecked > 0 ? <> · <b className="font-medium text-[#8a6d1f]">{sum.siteNotChecked}</b> firma bu turda kontrol edilmedi</> : null}
+        {sum.siteNotChecked > 0 ? (
+          <span className="ml-1">
+            — kontrol edilmeyenler için &quot;belirsiz&quot; ifadesi <i>o firma hakkında bir bulgu değil</i>, sadece bu turda sıra gelmediği anlamına gelir.
+          </span>
+        ) : null}
+      </div>
+
       {/* Provider errors / honest limitations (§16/§31) */}
       {search.errors.length > 0 ? (
         <div className="mb-6 rounded-xl border border-[#e5d4a0] bg-[#f8f1dc] p-4">

@@ -107,6 +107,13 @@ export type LeadSummary = {
   withContact: number;
   withSocial: number;
   totalLocations: number;
+  // Verification COVERAGE (§V3.3). The gap this closes: an UNCLEAR product fit
+  // can mean "we read the site and it was inconclusive" OR "we never opened the
+  // site at all", and the screen used to render both identically. Counting how
+  // many firms were actually reached keeps the difference visible.
+  siteChecked: number; // website fetch ran and the site answered
+  siteUnreachable: number; // website known, but it did not answer this run
+  siteNotChecked: number; // never attempted (past the verification cap, or no website)
 };
 
 /** Headline counts for the result screen (§15). Computed from the full set. */
@@ -115,6 +122,7 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
     total: 0, verified: 0, likely: 0, needsReview: 0, unverified: 0, notRelevant: 0,
     modelVerified: 0, modelPossible: 0, notSuitable: 0,
     high: 0, medium: 0, low: 0, withContact: 0, withSocial: 0, totalLocations: 0,
+    siteChecked: 0, siteUnreachable: 0, siteNotChecked: 0,
   };
   for (const c of companies) {
     s.totalLocations += Math.max(1, c.locationCount ?? 1);
@@ -133,6 +141,9 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
     else if (p === "LOW") s.low++;
     if (hasContact(c)) s.withContact++;
     if (c.socialMatchStatus === "VERIFIED") s.withSocial++;
+    if (c.websiteStatus === "ACTIVE") s.siteChecked++;
+    else if (c.websiteStatus === "UNREACHABLE") s.siteUnreachable++;
+    else s.siteNotChecked++;
   }
   return s;
 }

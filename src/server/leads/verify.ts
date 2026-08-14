@@ -1,6 +1,6 @@
 import "server-only";
 
-import { fetchSiteIntel, type SiteIntel, type ProductSignals } from "./providers/website";
+import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } from "./providers/website";
 import type { DedupedCandidate } from "./dedup";
 import type { Classification } from "./classify";
 import {
@@ -232,6 +232,9 @@ export async function verifyCandidate(
     domain?: string;
     searchModel: string;
     productSignals?: ProductSignals;
+    /** How deeply to read the site (§V3.3). Defaults to the full read so every
+     *  existing caller keeps its old behaviour. */
+    depth?: SiteDepth;
   },
 ): Promise<VerifyOutcome> {
   const base: VerifyOutcome = {
@@ -291,7 +294,7 @@ export async function verifyCandidate(
 
   let intel: SiteIntel | null = null;
   try {
-    intel = await fetchSiteIntel(dc.candidate.website, opts.productTerms, opts.productSignals);
+    intel = await fetchSiteIntel(dc.candidate.website, opts.productTerms, opts.productSignals, opts.depth ?? "full");
   } catch {
     intel = null;
   }

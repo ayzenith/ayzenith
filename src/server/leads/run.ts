@@ -43,9 +43,27 @@ export type DiscoverResult = {
   errors: string[];
 };
 
-/** Cap website verifications per run (performance + politeness). The rest stay
- *  "not checked" — honestly, not negatively. Cache makes re-runs cheap. */
-const VERIFY_CAP = 40;
+/** Website verification is STAGED (§V3.3) so the request budget buys the widest
+ *  honest coverage instead of a deep read of an arbitrary few.
+ *
+ *  Stage 1 reads the HOMEPAGE ONLY (1 request) for a wide set — that alone
+ *  settles reachability, product evidence, role/model signals and social links,
+ *  i.e. everything the qualification gate actually reads.
+ *  Stage 2 re-reads only the PROMISING candidates in full (Impressum/Kontakt/
+ *  about) to collect legal name, decision-makers and contact details. Because
+ *  pages are cached per URL, that second pass re-uses the homepage for free and
+ *  pays only for the sub-pages.
+ *
+ *  Old behaviour was a single full read of 40 sites (~160 requests) leaving ~80%
+ *  of a typical 200-firm run never looked at. Staging covers 90 for a comparable
+ *  budget. Everything beyond the caps is still marked "not checked" — honestly,
+ *  never negatively. */
+const SHALLOW_CAP = 80;
+const DEEP_CAP = 35;
+/** The shallow pass is one request per host against MANY different domains, so it
+ *  can run wider without being impolite to anyone; the deep pass hits the same
+ *  host repeatedly and stays at the original, gentler width. */
+const SHALLOW_CONCURRENCY = 12;
 const VERIFY_CONCURRENCY = 8;
 
 /** Bounded-concurrency map (same pattern RADAR uses for its providers). */
@@ -138,27 +156,60 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
     if (dc.branchCount > 1) rank += 1;
     return rank;
   };
-  const verifiable = deduped
+  const ranked = deduped
     .map((dc, i) => i)
     .filter((i) => Boolean(deduped[i]!.candidate.website))
     // Stable: higher rank first, original discovery order within a rank.
-    .sort((a, b) => verifyRank(b) - verifyRank(a) || a - b)
-    .slice(0, VERIFY_CAP);
+    .sort((a, b) => verifyRank(b) - verifyRank(a) || a - b);
+
   const outcomes: (VerifyOutcome | null)[] = new Array(deduped.length).fill(null);
-  await mapLimit(verifiable, VERIFY_CONCURRENCY, async (idx) => {
+
+  const runVerify = async (idx: number, depth: "shallow" | "full") => {
     const dc = deduped[idx]!;
     try {
-      outcomes[idx] = await verifyCandidate(dc, classifications[idx]!, {
+      return await verifyCandidate(dc, classifications[idx]!, {
         productTerms,
         productMatched: matched,
         domain: normalizeDomain(dc.candidate.website),
         searchModel: params.businessModel,
         productSignals,
+        depth,
       });
     } catch {
-      outcomes[idx] = null;
+      return null;
     }
+  };
+
+  // STAGE 1 — cheap homepage read over the widest set we can afford.
+  const shallowList = ranked.slice(0, SHALLOW_CAP);
+  await mapLimit(shallowList, SHALLOW_CONCURRENCY, async (idx) => {
+    outcomes[idx] = await runVerify(idx, "shallow");
   });
+
+  // STAGE 2 — full read for candidates a deeper look could still change. The
+  // HIGH gate needs a contact route, and contacts live on Impressum/Kontakt, so
+  // anything with real product OR model evidence earns the second pass.
+  const deepList = shallowList
+    .filter((idx) => {
+      const o = outcomes[idx];
+      if (!o || o.websiteStatus !== "ACTIVE") return false;
+      return o.productFit === "VERIFIED" || o.productFit === "LIKELY" || o.modelFit === "VERIFIED";
+    })
+    .sort((a, b) => {
+      // Strongest evidence first, so a tight DEEP_CAP spends itself well.
+      const weight = (i: number) => {
+        const o = outcomes[i]!;
+        return (o.productFit === "VERIFIED" ? 2 : o.productFit === "LIKELY" ? 1 : 0) + (o.modelFit === "VERIFIED" ? 2 : 0);
+      };
+      return weight(b) - weight(a) || a - b;
+    })
+    .slice(0, DEEP_CAP);
+  await mapLimit(deepList, VERIFY_CONCURRENCY, async (idx) => {
+    const full = await runVerify(idx, "full");
+    // Never let a failed deep read discard what the shallow pass already proved.
+    if (full) outcomes[idx] = full;
+  });
+
   const verifiedCount = outcomes.filter((o) => o?.verified).length;
 
   // 5. SCORE + build drafts.

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cachedLeadFetch } from "../cache";
-import { MAJOR_CITIES, CITY_EXPANSION_CAP, MAX_DISCOVERY_QUERIES } from "@/config/leads";
+import { MAJOR_CITIES, CITY_EXPANSION_CAP, MAX_DISCOVERY_QUERIES, B2B_NAME_TERMS } from "@/config/leads";
 import { type LeadCandidate } from "./types";
 
 /**
@@ -146,14 +146,29 @@ function buildGroups(shops: string[], nameTerms: string[], model: string): Query
   }
 
   if (model !== "B2C") {
-    // Light B2B signal: OSM `shop=wholesale`/`trade`. (An `office=company` name
-    // regex over a whole city is far too heavy for the public instance — it
-    // reliably times out — so it is intentionally omitted; free-source B2B
-    // discovery stays a known limitation, surfaced honestly rather than faked.)
+    // Light B2B signal: OSM `shop=wholesale`/`trade`.
     groups.push({
       key: "b2b",
       label: "Toptan / B2B (Großhandel, wholesale)",
       clauses: [`nwr["shop"~"^(wholesale|trade)$"](area.a);`],
+    });
+
+    // §V3.3 — the importers/distributors that have NO shopfront. A pure
+    // wholesaler is mapped as an `office`, never as a `shop`, so every earlier
+    // B2B group was structurally blind to exactly the firms this module exists
+    // to find. We match offices whose NAME states the commercial role
+    // ("… Großhandel GmbH", "… Import", "… Vertrieb").
+    //
+    // This clause was dropped once for being too heavy — but back then it was
+    // unioned INTO another query, so its timeout took that query down with it.
+    // Each group is now its own request with its own status, so if the public
+    // instance refuses this one the run degrades to PARTIAL and says so, while
+    // the shop groups still return. That is an honest trade we can afford.
+    const roleTerms = B2B_NAME_TERMS.map(reEsc).join("|");
+    groups.push({
+      key: "b2bname",
+      label: "İsimde ticari rol (Großhandel, Import, Vertrieb…)",
+      clauses: [`nwr["office"]["name"~"(${roleTerms})",i](area.a);`],
     });
   }
 

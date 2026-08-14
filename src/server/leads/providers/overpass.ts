@@ -1,7 +1,7 @@
 import "server-only";
 
 import { cachedLeadFetch } from "../cache";
-import { MAJOR_CITIES, CITY_EXPANSION_CAP, MAX_DISCOVERY_QUERIES, B2B_NAME_TERMS } from "@/config/leads";
+import { MAJOR_CITIES, CITY_EXPANSION_CAP, MAX_DISCOVERY_QUERIES } from "@/config/leads";
 import { type LeadCandidate } from "./types";
 
 /**
@@ -16,8 +16,9 @@ import { type LeadCandidate } from "./types";
  *     (lingerie|clothes|fashion|boutique …)
  *   • name-match group — shops whose NAME contains a local-language product term
  *     (Dessous, Lingerie, Damenwäsche …)
- *   • B2B group        — wholesalers/importers/distributors (shop=wholesale +
- *     office=company whose name states it), only for the B2B model
+ *   • B2B group        — wholesalers marked as such in OSM (shop=wholesale|trade),
+ *     only for the B2B model. Shopfront-less importers/distributors are NOT
+ *     reachable this way; see the measured evidence in buildGroups.
  *
  * RELIABILITY (from the earlier fix, kept): city expansion when no city is given,
  * resilient fetch (retry + mirror + 429 backoff), server-timeout `remark`
@@ -153,23 +154,23 @@ function buildGroups(shops: string[], nameTerms: string[], model: string): Query
       clauses: [`nwr["shop"~"^(wholesale|trade)$"](area.a);`],
     });
 
-    // §V3.3 — the importers/distributors that have NO shopfront. A pure
-    // wholesaler is mapped as an `office`, never as a `shop`, so every earlier
-    // B2B group was structurally blind to exactly the firms this module exists
-    // to find. We match offices whose NAME states the commercial role
-    // ("… Großhandel GmbH", "… Import", "… Vertrieb").
+    // NOT ADDED — an office-name group for shopfront-less importers/distributors.
+    // Tried and measured against live Overpass (Berlin, §V3.3); it cannot work,
+    // and the numbers are recorded here so it is not attempted a third time:
     //
-    // This clause was dropped once for being too heavy — but back then it was
-    // unioned INTO another query, so its timeout took that query down with it.
-    // Each group is now its own request with its own status, so if the public
-    // instance refuses this one the run degrades to PARTIAL and says so, while
-    // the shop groups still return. That is an honest trade we can afford.
-    const roleTerms = B2B_NAME_TERMS.map(reEsc).join("|");
-    groups.push({
-      key: "b2bname",
-      label: "İsimde ticari rol (Großhandel, Import, Vertrieb…)",
-      clauses: [`nwr["office"]["name"~"(${roleTerms})",i](area.a);`],
-    });
+    //   nwr["office"]["name"~"(Großhandel|Import|Vertrieb…)"]  → TIMES OUT (~73s,
+    //     0 results). The regex must be evaluated over every office in the area.
+    //   nwr["office"="company"]["name"~"(same terms)"]         → fast (9s) but
+    //     returns 0: the indexed lookup works, the DATA simply is not there.
+    //   nwr["office"="company"] in Berlin                      → 1445 records,
+    //     none of whose names contain a commercial-role word. OSM names offices
+    //     after the COMPANY ("Siemens AG"), not after what it does.
+    //
+    // So a pure wholesaler is genuinely not discoverable from OSM tags: telling
+    // those 1445 offices apart would mean fetching 1445 websites. This is the
+    // free-source ceiling, stated honestly rather than papered over with a query
+    // that costs time and finds nothing. Reaching these firms needs a different
+    // free source (public business registers/directories), not a better query.
   }
 
   return groups;

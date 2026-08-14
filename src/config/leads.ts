@@ -392,12 +392,8 @@ export const MAJOR_CITIES: Record<string, string[]> = {
 export const CITY_EXPANSION_CAP = 4;
 
 /** Total Overpass query budget for one search (targets × query-groups). Bounds
- *  the fan-out so query expansion stays broad in COVERAGE but sane in REQUESTS.
- *  Raised 9 → 12 when B2B gained a fourth group (the office-name role match,
- *  §V3.3): at 9 a country-wide B2B search would have dropped from 3 target
- *  cities to 2 purely to pay for the new group. City-level searches are
- *  unaffected (a single target). */
-export const MAX_DISCOVERY_QUERIES = 12;
+ *  the fan-out so query expansion stays broad in COVERAGE but sane in REQUESTS. */
+export const MAX_DISCOVERY_QUERIES = 9;
 
 /** German/English commercial-role name terms for the B2B discovery group — used
  *  to catch wholesalers/importers/distributors whose OSM name states it. Applied

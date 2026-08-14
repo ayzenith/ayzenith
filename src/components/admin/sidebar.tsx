@@ -37,6 +37,7 @@ function NavRow({
       <span
         className={cn(base, "cursor-default text-subtle")}
         aria-disabled="true"
+        title={item.note}
       >
         <Icon className="size-4 shrink-0" aria-hidden="true" />
         <span className="flex-1">{item.label}</span>

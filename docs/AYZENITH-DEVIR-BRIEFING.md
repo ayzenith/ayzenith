@@ -114,12 +114,65 @@ DATA → SCORING → SNAPSHOT → AI → UI
 ## 4. ÜÇ SİSTEM
 
 ### 4.1 CMS — `/admin` (BİTTİ, canlı)
-Teknik olmayan sahibin siteyi kod yazmadan yönetmesi için. Ürünler, medya kütüphanesi,
-iletişim kutusu, kullanıcılar, site ayarları, **"Sayfalar & Metinler"** (298 metnin 3 dilde
-düzenlenebildiği override sistemi) ve **Görseller** sekmesi — hepsi canlı.
+Teknik olmayan sahibin siteyi kod yazmadan yönetmesi için. Admin arayüzü **tek dilli Türkçe**
+ve `noindex`. Kendi `(admin)` route group'unda, **kendi root layout'u** ile yaşar
+(public site `app/layout.tsx` kullanmaz — next-intl'in `[locale]/layout.tsx`'i de-facto root'tur;
+iki root layout yan yana çalışır).
 
-Kalanlar (sahibin tasarım kararı bekliyor): Blog, Hizmet/Kategori düzenleme, SEO düzenleme,
-revizyon geçmişi.
+#### ⭐ Override mimarisi — sistemin en zarif parçası, bozma
+
+**"Sayfalar & Metinler"** (`/admin/content`) sitedeki **298 metnin 3 dilde** düzenlenmesini
+sağlar. Numarası şu: **hiçbir bileşen değişmedi.**
+
+```
+next-intl temel katalog (messages/*.json)
+        ↓
+  ContentOverride tablosu (key @id, en/tr/de nullable) request anında ÜSTÜNE bindirilir
+        ↓
+  her t() çağrısı otomatik olarak düzenlenmiş metni görür
+```
+
+- `src/lib/content-merge.ts` — saf fonksiyonlar: `flattenMessages` / `getPath` / `setPath` /
+  `applyOverrides` (structuredClone ile)
+- `src/server/content.ts` — `getLocaleOverrides` (`unstable_cache`, tag `content-overrides`,
+  **hata durumunda `{}` döner** → site asla çökmez), `listOverrides`, `saveOverride`
+  (boş→null, hepsi null→satır silinir)
+- `src/i18n/request.ts` — temel katalogu yükler, `applyOverrides` uygular (try/catch korumalı)
+- `src/config/content-schema.ts` — **17 Türkçe grup başlığı** (`CONTENT_GROUPS`) + `humanizeKey`
+- Kaydetme sadece **varsayılandan farklı olan dili** gönderir → dokunulmamış diller orijinali
+  izlemeye devam eder
+- `revalidateTag` + `revalidatePath("/","layout")` → düzenleme **anında** siteye yansır
+
+**Görseller sekmesi** aynı deseni GÖRSELLER için tekrarlar: site tüm imgeleri semantik bir
+registry (`src/config/assets.ts`) üzerinden **tek bir bileşenle** render eder —
+`src/components/ui/media.tsx` `<Media>`. Bu bileşen **async Server Component** yapıldı,
+`getAssetOverrides()` okur, override varsa onu basar, yoksa registry'deki varsayılanı.
+**Çağıran hiçbir yer değişmedi.** `AssetOverride` modeli, 6 gerçek düzenlenebilir slot
+(2 hakkımızda + 4 hizmetler). Override URL'leri **Supabase-media host'unda olmak zorunda**
+(next/image `remotePatterns`).
+
+> 🔑 **Ders:** Yeni bir "düzenlenebilirlik" isteği geldiğinde önce bu override desenini
+> düşün. Bileşenlere dokunmadan davranış eklemenin yolu bu.
+
+#### Diğer canlı modüller
+
+| Modül | Nasıl çalışır |
+|---|---|
+| **Ürünler** | `Product` modeli + `ProductStatus` (DRAFT/PUBLISHED/HIDDEN). Çok dilli alanlar JSON kolonlarda. `src/server/products.ts` **tek veri sınırı**. Form tüm ürünü tek `payload` JSON'a serialize eder → zod ile doğrulanır. Public sayfalar `revalidate = 0` (düzenleme anında görünsün) |
+| **Medya Kütüphanesi** | Supabase Storage public bucket `media` (10MB, sadece image mime). **Tüm yüklemeler sunucudan geçer** — tarayıcı Supabase ile asla konuşmaz. Storage yolu değişmez; yeniden adlandırma sadece DB etiketini değiştirir |
+| **Mesajlar** | `ContactMessage` + durum (NEW/READ/ARCHIVED). Public `/api/contact` ek olarak DB'ye de yazar (best-effort try/catch — form sözleşmesi değişmedi). CSV export (UTF-8 BOM) |
+| **Kullanıcılar** | SUPER_ADMIN'e özel. Korumalar: kendi rolünü/aktifliğini değiştiremezsin; **son aktif SUPER_ADMIN düşürülemez**. Hard-delete yok, devre dışı bırakma = soft-delete |
+| **Site Ayarları** | Tek satırlık `SiteSetting` (id="site"), **tüm alanlar nullable** → boşsa `src/config/site.ts` varsayılanlarına düşer. Yani boş tablo = site aynen çalışır, seed gerekmez. Footer, iletişim sayfası ve analytics buradan besleniyor → sahibi **redeploy olmadan** analytics açabiliyor |
+
+#### Kalanlar (sahibin tasarım kararı bekliyor)
+
+| Nav'da "Yakında" | Gerçek durum |
+|---|---|
+| **Blog** | DB modeli **yok**, public sayfalar **yok**. Gerçek bir proje — model + admin CRUD + public liste/detay + i18n + SEO. Tasarım kararı gerekir |
+| **Hizmetler** | ⚠️ **İçerik ZATEN düzenlenebilir** — `services` namespace'i `CONTENT_GROUPS`'ta "Hizmetler Sayfası" olarak var. Sahibi bunu Sayfalar & Metinler'den düzenliyor. Ayrı bir sayfa gerekmiyor olabilir |
+| **Kategoriler** | Ürün kategorileri `src/config/product-options.ts` içinde sabit liste. DB'ye taşımak orta ölçekli iş |
+| **SEO** | GSC doğrulaması ve structured-data e-posta/telefon **bilerek** env tabanlı bırakıldı — metadata refactor'ü riskli görüldü. Dokunmadan önce iki kez düşün |
+| Revizyon geçmişi · içerik içi görsel düzenleme | Başlanmadı |
 
 ### 4.2 RADAR — "bu pazara girmeye değer mi?"
 Kategori + hedef pazar gir → resmî ticaret verisinden **deterministik 0–100 fırsat skoru**.
@@ -134,6 +187,68 @@ asla skor, ticaret rakamı veya HS kodu uydurmaz.** Her sayısal iddia kaynaklı
 - **Snapshot'lar değişmezdir** — tekrar çalıştırma yeni satır açar, kullanılan ağırlıkları dondurur.
   Ağırlığı sonra değiştirmek geçmişi asla yeniden yazmaz.
 - Sadece **VERIFIED** HS kodları skorlamaya girer. AI kod önerebilir, insan onaylar.
+
+#### 🔴 EN DEĞERLİ BİLGİ: UN Comtrade ücretsiz endpoint'inin çalışma şekli
+
+> Bu, saatler harcanarak deneme-yanılmayla bulundu. **Kaybedersen yeniden keşfetmek çok pahalı.**
+> Dokümantasyondan anlaşılmıyor.
+
+Endpoint: `https://comtradeapi.un.org/public/v1/preview/C/A/HS` (M49 ülke kodları kullanır)
+
+**Ne ÇALIŞMAZ:**
+- ❌ Çoklu `cmd` veya çoklu `period` göndermek → boş döner
+- ❌ Aggregation filtreleri kullanmak → boş döner
+- ❌ Filtresiz sorgu → **500 satır limitine** takılır ve dönen satırlar granüler
+  `partner2` / `customs` / `mot` kırılımlarıdır — **gerçek toplamı gizler**
+
+**Ne ÇALIŞIR — tek doğru primitif:**
+```
+reporter + partner + TEK cmd + TEK yıl + customsCode=C00 + motCode=0
+```
+- Temiz toplam = **`partner2Code === 0`** olan satır
+- `partner=World` sorgulandığında, kaynak ülkeler **aynı cevaptaki**
+  `partner2Code !== 0` satırlarıdır (ikinci istek atma!)
+
+**Bu yüzden mimari böyle:** üst seviye metotlar bu primitifi sınırlı eşzamanlılıkla (6) döngüye
+sokar + **30 günlük kalıcı ham cache** (`RadarRawCache`) kullanır, böylece çakışan ihtiyaçlar
+ağa tekrar gitmez.
+
+⚠️ Son yıllar (örn. 2024) ülkeler arası **düzensiz** raporlanır → varlık başına bir yıl geriye
+düşme (fallback) mantığı peer/TR sepetini dolu tutar.
+
+#### RADAR'ın ticari zekâ katmanı (V1.1)
+
+Hepsi **dondurulmuş snapshot verisinden okuma anında** deterministik hesaplanır → eski
+snapshot'lar skorlarını aynen korur. Migration gerekmedi.
+
+- **İki ayrı skor:** *Pazar Fırsatı* (talep + büyüme + rekabet) vs ***AYZENITH Uyumu***
+  (tedarik avantajı + giriş kolaylığı). "Pazar iyi" ≠ "biz uygunuz"
+- **B2B / B2C ayrımı** mevcut `tradeModel` kolonunu kullanır (migration yok). `B2C_WEIGHTS`
+  aynı 5 doğrulanmış kriteri tüketici merceğinden yeniden ağırlıklandırır.
+  `B2C_UNMEASURED_SIGNALS` (gelir, e-ticaret yaygınlığı, nüfus, davranış) arayüzde
+  **"ölçülmedi" diye açıkça yazılır — asla uydurulmaz**
+- **Karar Güveni** — veri güveninden AYRI bir sayı. Eksik kriter, varsayılan gümrük, büyüme
+  anomalisi, çelişki ve B2C ölçülemeyen sinyaller (−25) için puan düşer; asla veri güvenini aşamaz
+- **Yoğunlaşma:** HHI → düşük/orta/yüksek bandı + isimleriyle ilk 10 tedarikçi ülke
+- `deriveConflicts` (çelişkili sinyaller) · `deriveAnomalies` (|CAGR| ≥ 80 işaretlenir,
+  otomatik "iyi" sayılmaz) · `rankProducts` (büyüklüğe değil **kompozit skora** göre sıralar)
+
+#### 🔴 RADAR'ın dürüstlük doktrini (dilde bile geçerli)
+
+| Kural | Neden |
+|---|---|
+| **VERİ YOK ≠ DÜŞÜK DEĞER** | "TR bağlantısı yok denecek kadar az" cümlesi SADECE tedarik ölçülmüş VE ihracat ≤ 0 iken kurulur. Ölçülemeyen veri ayrı bir **"Veri Sınırlamaları"** bölümüne gider — asla olumsuz çıkarım |
+| **"ithalat" ≠ "talep"** | Kriter adı "Pazar Büyüklüğü & **İthalat Aktivitesi**". İthalat rakamı tüketici talebini kanıtlamaz |
+| **B2C tavsiyesi B2B tavsiyesi değildir** | `decisionActions(model,…)` ikisini katı şekilde ayırır: B2B → ithalatçı/distribütör/toptancı; B2C → e-ticaret/marketplace + "tüketici talebi ölçülmedi" uyarısı |
+| Kesin dil yasak | "kolay", "yüksek fırsat" gibi ifadeler yok; fırsatlar **sayıyla** verilir (en büyük tedarikçi payı %, HHI) |
+| Sonuç ekranı üçe ayrılır | **Riskler** / **Çelişkili Sinyaller** / **Veri Sınırlamaları** |
+
+#### RADAR anti-hedefi (taksonomi)
+
+Bir HS kodu kategoriye "yakın duruyor" diye eklenmez. Örnek: `850760 Lityum-iyon aküler`
+tüketici elektroniği altında VERIFIED'dı → **bileşen, bitmiş ürün değil** diye
+NEEDS_REVIEW'a düşürüldü. ⚠️ Seed asla canlı satırı ezmez, dolayısıyla **canlı DB'de hâlâ
+VERIFIED olabilir** — sahibinin HS Eşlemeleri ekranından düşürmesi gerekir.
 
 > ### 🚫 RADAR'A DOKUNMA
 > Yeni bir görevde açıkça "RADAR'ı değiştir" denmediyse RADAR'ın skoru, snapshot'ı, HS
@@ -297,6 +412,85 @@ src/server/leads/
 src/app/(admin)/admin/(dashboard)/lead-finder/    Arayüz
 src/components/admin/leads/                       Kartlar, "Neden bu lead?" (why.ts)
 ```
+
+### RADAR
+
+```
+src/config/radar.ts                    Ağırlıklar, eşikler, bölgeler, sertifika yükü, kategoriler
+src/config/radar-hs-seed.ts            7 kategori için küratörlü HS-6 tablosu (WCO HS 2022)
+src/server/radar/
+  ├─ providers/comtrade.ts             ★ Ücretsiz endpoint primitifi (yukarıdaki kırmızı bölüm)
+  ├─ providers/eurostat.ts, wits.ts    AB yedeği · gümrük vergileri
+  ├─ cache.ts                          30 günlük ham cache (RadarRawCache)
+  ├─ scoring.ts                        SAF fonksiyon — skorun tek kaynağı
+  ├─ hs.ts                             HS eşleme CRUD, sadece VERIFIED skorlamaya girer
+  ├─ analyze.ts                        Orkestrasyon: DATA → scoring
+  ├─ ai.ts                             Sıkı korumalı AI yorumu; ANTHROPIC_API_KEY yoksa null
+  │                                    döner ve SİSTEM YİNE ÇALIŞIR (AI opsiyoneldir)
+  ├─ snapshot.ts                       Değişmez yazma + compareSnapshots
+  └─ watch.ts                           Takip listesi, ±eşik uyarıları
+src/components/admin/radar/insights.ts  Deterministik ticari zekâ (splitScores, HHI, çelişkiler)
+src/app/api/radar/cron/route.ts         Haftalık cron (Bearer CRON_SECRET) + vercel.json
+```
+
+### CMS (override mimarisi)
+
+```
+src/lib/content-merge.ts               Saf birleştirme fonksiyonları
+src/server/content.ts                  Metin override'ları (fail-safe {} döner)
+src/server/assets.ts                   Görsel override'ları
+src/i18n/request.ts                    Temel katalog + override birleşimi
+src/config/content-schema.ts           17 Türkçe grup başlığı
+src/config/asset-schema.ts             6 düzenlenebilir görsel slotu
+src/components/ui/media.tsx            <Media> async Server Component
+src/server/products.ts · media.ts · contact.ts · users.ts · settings.ts    Veri sınırları
+```
+
+---
+
+## 9.5 AYZENITH'E ÖZEL İPUÇLARI
+
+Bunlar dokümandan okunmaz, yaşayarak öğrenildi.
+
+**1. Sistemin ruhu: "az ama doğrulanmış" > "çok ama şüpheli".**
+Her tasarım kararında bu kazanır. Bir özellik daha fazla sonuç üretiyor ama bir kısmı
+şüpheliyse — o özellik yanlıştır. Sahibi 200 şüpheli lead yerine 5 sağlam lead ister.
+
+**2. Sahibi rakamların DOĞRULUĞUNU kontrol ediyor.**
+Ayaz teknik değil ama sonuçlara bakıp "bu firma neden burada?" diye soruyor ve haklı çıkıyor.
+C&A'nın B2B'de HIGH çıkması, Eisen-Philipp'in mutfak ekipmanı sanılması — hepsini o yakaladı.
+**Sayı üretmeden önce o sayının savunulabilir olduğundan emin ol.**
+
+**3. Almanca bileşik kelimeler substring eşleşmesini bozar.**
+`"import"` → **"important"**. `"sourcing"` → **"outsourcing"**. `"wäsche"` → **"unterwäsche"**.
+Ama düz substring eşleşmesini tamamen atma: `"großhandel"` teriminin
+**"Elektrogroßhandel"** içinde eşleşmesi *isteniyor*. Doğru çözüm: varsayılan substring,
+sorunlu terimler için RegExp.
+
+**4. Bir terim "sektörde geçiyor" diye ürün kanıtı değildir.**
+İnşaat malzemesi toptancısının menüsünde "Unterwäsche" olabilir — iş güvenliği içliği olarak.
+**Terimin geçtiği BAĞLAMA bak**, sadece geçip geçmediğine değil.
+
+**5. Eksik doğrulama ile olumsuz doğrulamayı ASLA karıştırma.**
+`UNCLEAR` iki farklı şey olabilir: "baktık, belirsiz" veya "hiç bakmadık". İkincisini
+birincisi gibi raporlamak sahibini yanıltır. Şu an `VERIFY_CAP=40` yüzünden firmaların
+~%80'i ikinci gruptadır.
+
+**6. Ücretsizlik bir tercih değil, kuraldır.**
+"Şu API olsa çok daha iyi olurdu" diye düşünüyorsan — düşünmeyi bırak. Mimari ücretli
+kaynak *eklenebilsin* diye modüler, ama hiçbir zaman *gerekmeyecek* şekilde.
+
+**7. Türkçe arayüz metinlerinde AYZENITH tonu:** sakin, net, abartısız.
+"Muhteşem fırsat!" yok. "Doğrulandı / Muhtemel / Belirsiz / Doğrulanamadı" var.
+Belirsizliği saklamak yerine **etiketle**.
+
+**8. Deploy öncesi refleks:** `typecheck → lint → build`. Üçü yeşil değilse deploy yok.
+Ayrıca dev server açıkken **asla** `next build` çalıştırma.
+
+**9. Sahibi işi toplu deploy etmeyi sever.** Küçük değişiklikleri biriktir, birlikte çıkar.
+
+**10. Bir şeyi bilmiyorsan "bilmiyorum" de.** Bu projede en çok değer verilen davranış bu.
+Uydurulmuş bir cevap, verilmemiş bir cevaptan çok daha pahalıya mal olur.
 
 ---
 

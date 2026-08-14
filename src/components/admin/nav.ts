@@ -35,6 +35,10 @@ export type NavItem = {
   icon: LucideIcon;
   status: NavStatus;
   minRole?: Role;
+  /** For a "soon" item whose capability ALREADY exists somewhere else today —
+   *  shown as a hover hint so the badge never reads as "you cannot do this yet"
+   *  when in fact you can. Honesty rule: never let the UI understate what works. */
+  note?: string;
 };
 
 export type NavGroup = { heading: string; items: NavItem[] };
@@ -51,7 +55,17 @@ export const navGroups: NavGroup[] = [
     items: [
       { label: "Ürünler", href: "/admin/products", icon: Package, status: "live" },
       { label: "Blog", href: "/admin/blog", icon: Newspaper, status: "soon" },
-      { label: "Hizmetler", href: "/admin/services", icon: Wrench, status: "soon" },
+      {
+        label: "Hizmetler",
+        href: "/admin/services",
+        icon: Wrench,
+        status: "soon",
+        // The services page copy is ALREADY editable today: the `services`
+        // namespace is a group in CONTENT_GROUPS ("Hizmetler Sayfası"), and its
+        // four images are slots in asset-schema. A dedicated screen is still on
+        // the roadmap, but the badge alone would wrongly imply nothing works.
+        note: "Hizmetler sayfasının metinleri ve görselleri şu an Sayfalar & Metinler bölümünden düzenlenebiliyor.",
+      },
       { label: "Kategoriler", href: "/admin/categories", icon: FolderTree, status: "soon" },
       { label: "Sayfalar & Metinler", href: "/admin/content", icon: FileText, status: "live" },
       { label: "Medya", href: "/admin/media", icon: Images, status: "live" },

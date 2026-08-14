@@ -379,3 +379,367 @@ model RadarSetting {
   alertThreshold       Int? // score delta that raises a watch alert (default 5)
   updatedAt            DateTime @updatedAt
 }
+
+// ============================================================================
+// AYZENITH LEAD FINDER — internal commercial lead-discovery system.
+//
+// An independent module that sits BESIDE RADAR (it does not modify it). RADAR
+// answers "is this market worth entering?"; Lead Finder answers "who do we sell
+// to there?". It turns a (country + product + business model) input into a pool
+// of DISCOVERED candidates, then VERIFIES, CLASSIFIES, SCORES and PRIORITISES
+// them — all from FREE, public sources (OpenStreetMap, official company sites),
+// with a $0 mandatory API cost. It reuses RADAR's honesty spine verbatim:
+//   • Discovery and verification are SEPARATE phases (a discovered row is never
+//     an automatic qualified lead).
+//   • Every important datum carries its source + lastCheckedAt; nothing is ever
+//     fabricated — missing data is shown as missing, never guessed.
+//   • The AI layer (optional) only ever phrases/suggests over sourced data.
+//   • It shares RADAR's raw-response cache (RadarRawCache) so the two tools grow
+//     into one AYZENITH data engine.
+// Strict layering: DISCOVERY → DEDUP → QUALIFY → SCORE → CONTACT → EXPORT,
+// enforced by the repository boundary in src/server/leads/*.
+// ============================================================================
+
+/// The lifecycle state of a candidate. DISCOVERED is the raw pool; a row is only
+/// promoted to QUALIFIED/HIGH_PRIORITY after verification. Missing-data and
+/// duplicate outcomes are first-class (the system may say "I don't know" or
+/// "already have this"), never silently dropped. CRM-forward stages
+/// (CONTACTED…WON/LOST) exist so an exported lead maps cleanly into a future CRM;
+/// V1 only writes the discovery→priority range.
+enum LeadStatus {
+  DISCOVERED
+  SCREENING
+  QUALIFIED
+  HIGH_PRIORITY
+  REJECTED
+  DUPLICATE
+  INACTIVE
+  INSUFFICIENT_DATA
+  // CRM-forward (reserved for later batches; not written in V1 discovery)
+  CONTACTED
+  REPLIED
+  MEETING
+  QUOTATION
+  NEGOTIATION
+  WON
+  LOST
+}
+
+/// Company/store size, derived ONLY from verifiable signals (branch count,
+/// employee count, public profile). UNKNOWN is the honest default — the system
+/// never guesses a size to fill the field.
+enum LeadSize {
+  LARGE
+  MEDIUM
+  SMALL
+  MICRO
+  ONLINE
+  UNKNOWN
+}
+
+/// Whether the candidate is actually connected to the searched product. VERIFIED
+/// requires evidence on a source (category page, catalogue, profile); otherwise
+/// UNCLEAR/UNVERIFIED. A strong lead is never shown without a VERIFIED fit.
+enum LeadProductFit {
+  VERIFIED
+  LIKELY
+  UNCLEAR
+  NOT_RELEVANT
+  UNVERIFIED
+}
+
+/// Strength of a real commercial-activity signal. NONE = no signal found (which
+/// is NOT a negative signal — absence of data is never read as a bad datum).
+enum LeadSignalStrength {
+  STRONG
+  MEDIUM
+  WEAK
+  NONE
+}
+
+/// Data freshness for a company/contact, from lastCheckedAt vs the re-check TTL.
+enum LeadFreshness {
+  FRESH // 🟢 recently verified
+  RECHECK // 🟡 re-verification recommended
+  STALE // 🔴 old / could not be re-verified
+}
+
+/// Where a datum came from. Kept coarse + stable so provenance is comparable and
+/// the module can add PAID_* source types later without a schema change.
+enum LeadSourceType {
+  OSM // OpenStreetMap / Overpass
+  OFFICIAL_WEBSITE // the company's own site (incl. Impressum)
+  PUBLIC_WEB // other public web page
+  PUBLIC_BUSINESS_DIRECTORY // open business directory
+  RADAR // carried over from a RADAR analysis (context linkage)
+  MANUAL // entered/curated by an operator
+  OTHER_FREE_SOURCE
+}
+
+/// One search run — the commercial question asked. Freezes the full context
+/// (country/city/product/model/lead types) so results are always interpretable,
+/// and preserves the RADAR linkage (§2): a lead found via RADAR keeps a pointer
+/// back to the snapshot + the band that motivated it. Independent runs simply
+/// leave the radar* fields null (§3).
+model LeadSearch {
+  id            String   @id @default(cuid())
+  country       String // ISO alpha-2 (target market)
+  countryLabel  String // display label at run time
+  city          String? // optional city focus
+  productQuery  String // natural-language product, e.g. "kadın iç giyim"
+  businessModel String   @default("B2B") // "B2B" | "B2C" (kept a string, mirrors RADAR)
+  leadTypes     Json     @default("[]") // string[] of LeadRole keys, [] = all
+  searchTerms   Json     @default("[]") // the multilingual terms actually used (audit)
+
+  // RADAR linkage (§2) — null for a standalone run (§3).
+  radarSnapshotId String?
+  categoryKey     String? // carried from RADAR when opened from an analysis
+  hs6             String? // carried HS-6 (context only; never treated as verified here)
+  radarScore      Int? // the RADAR score that motivated this search (context)
+  radarDecision   String? // the RADAR band label (context)
+
+  status         LeadStatus @default(DISCOVERED)
+  totalDiscovered Int       @default(0)
+  // Discovery reliability (V2 fix): whether the free source(s) actually answered.
+  // "OK" = source responded; "PARTIAL" = some queries failed; "FAILED" = the
+  // source could not be reached — so a 0 result is NOT a "no leads" verdict.
+  discoveryStatus String   @default("OK")
+  sourceStats     Json     @default("{}") // { osm: { status, queriesRun, queriesOk, queriesFailed, rawResults } }
+  errors         Json       @default("[]") // string[] — provider outages, surfaced never masked
+  createdById    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  companies LeadCompany[]
+  exports   LeadExport[]
+
+  @@index([country])
+  @@index([createdAt])
+  @@index([radarSnapshotId])
+}
+
+/// A discovered company or physical store. This is the heart of the module. A row
+/// starts life as a DISCOVERED candidate and only earns a score/priority after
+/// verification. `commercialRoles` is an array on purpose (§9): one firm may be
+/// importer + distributor + wholesaler + e-commerce at once. Size/productFit have
+/// honest "unknown/unverified" defaults so an empty field never reads as a fact.
+/// Dedup keys (domain, name+city) are indexed so the same firm is not stored
+/// twice across searches (§13).
+model LeadCompany {
+  id       String     @id @default(cuid())
+  searchId String?
+  search   LeadSearch? @relation(fields: [searchId], references: [id], onDelete: SetNull)
+
+  name       String
+  legalName  String? // e.g. "ABC Handels GmbH" from an Impressum (verified only)
+  domain     String? // normalised registrable domain — the primary dedup key
+  website    String?
+  phone      String?
+  email      String?
+
+  country    String
+  city       String?
+  address    String?
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+
+  businessModel   String            @default("B2B")
+  commercialRoles Json              @default("[]") // LeadRole[] (array — multi-role)
+  size            LeadSize          @default(UNKNOWN)
+  sizeSignals     Json              @default("[]") // [{ label, value, source }] used for size (or [])
+  productFit      LeadProductFit    @default(UNVERIFIED)
+  productFitNote  String? // short, sourced reason — never an AI guess presented as fact
+
+  // V2 — website intelligence (all additive + nullable; a null means "not
+  // determined", never a negative fact). Populated by the verification stage.
+  detectedModel     String? // "B2B" | "B2C" | "BOTH" — detected from the site, not the search
+  websiteStatus     String? // "ACTIVE" | "UNREACHABLE" | "NONE"
+  productCategories Json    @default("[]") // string[] of categories evidenced on the site
+  storeCount        Int? // physical stores/branches, only if the site stated it
+  employeeCount     Int? // only if the company publicly stated it
+  matchStatus       String? // "UNCERTAIN_MATCH" when dedup was ambiguous (§14)
+  verifiedAt        DateTime? // when website verification last ran (distinct from discovery)
+
+  // V2.1 — qualification (§1–§9). All additive/nullable.
+  modelFit         String? // ModelFit for the searched model: VERIFIED|POSSIBLE|NOT_SUITABLE|UNVERIFIED
+  modelFitEvidence Json    @default("[]") // string[] — why (roles/site signals)
+  productFitTier   String? // "STRONG" | "MEDIUM" | "WEAK"
+  canonicalName    String? // normalised brand/name used for company-identity dedup
+  locationCount    Int     @default(1) // distinct branches merged under this company (§4)
+
+  // V2.1 — social intelligence (§13–§29). Sourced from the company's OWN website.
+  instagramUrl         String?
+  facebookUrl          String?
+  linkedinUrl          String?
+  tiktokUrl            String?
+  youtubeUrl           String?
+  xUrl                 String?
+  socialMatchStatus    String? // "VERIFIED" (link on own site) | "POSSIBLE" | "UNVERIFIED"
+  socialProductSignal  String? // "STRONG" | "WEAK" | null — from social handle/url only
+  socialBusinessSignal String? // "B2B" | "B2C" | null — from social handle/url only
+  socialVerifiedAt     DateTime?
+
+  leadScore      Int? // deterministic 0–100; null until scored / when insufficient
+  leadConfidence Int? // 0–100, how verified the underlying data is (≠ score, §15)
+  scoreBreakdown Json      @default("{}") // { components: [{ key, weight, score, available }], ... }
+
+  status    LeadStatus    @default(DISCOVERED)
+  freshness LeadFreshness @default(FRESH)
+
+  // RADAR context carried onto the lead itself (so a card can show "why found").
+  radarSnapshotId String?
+
+  discoveredVia LeadSourceType @default(OSM)
+  discoveredAt  DateTime       @default(now())
+  lastCheckedAt DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  contacts      LeadContact[]
+  sources       LeadSource[]
+  signals       LeadSignal[]
+  verifications LeadVerification[]
+  locations     LeadLocation[]
+
+  @@index([searchId])
+  @@index([country, city])
+  @@index([domain])
+  @@index([status])
+  @@index([leadScore])
+}
+
+/// A decision-maker / professional contact at a company (§17). Only public,
+/// professional information is stored (corporate email, public role, profile).
+/// `roleVerified` gates whether the role is shown as fact or as "doğrulanamadı" —
+/// a role is never inferred and presented as certain. Personal/private data is
+/// out of scope by design (§18). Populated in a later batch; the relation exists
+/// now so the data model is CRM-ready.
+model LeadContact {
+  id        String      @id @default(cuid())
+  companyId String
+  company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  firstName      String?
+  lastName       String?
+  role           String? // e.g. "Purchasing Manager" — shown as fact only if verified
+  roleVerified   Boolean @default(false)
+  corporateEmail String?
+  profileUrl     String? // public professional profile (e.g. LinkedIn)
+  confidence     Int     @default(0) // 0–100 deterministic
+
+  source        LeadSourceType @default(OFFICIAL_WEBSITE)
+  sourceUrl     String?
+  lastCheckedAt DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+
+  @@index([companyId])
+}
+
+/// A physical branch/location of a company (§4/§9). A retail chain with several
+/// stores in one city is ONE LeadCompany with several LeadLocation rows — never
+/// duplicated as separate company leads. Additive: companies without branch data
+/// simply have zero location rows and locationCount defaults to 1.
+model LeadLocation {
+  id        String      @id @default(cuid())
+  companyId String
+  company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  name       String?
+  address    String?
+  city       String?
+  postalCode String?
+  latitude   Float?
+  longitude  Float?
+  phone      String?
+  sourceType LeadSourceType @default(OSM)
+  sourceUrl  String?
+  createdAt  DateTime       @default(now())
+
+  @@index([companyId])
+}
+
+/// Provenance for one field of a company (§19). This is the spine of "no unsourced
+/// datum is shown as verified": every important value maps to one of these, with
+/// the source, a deep link when available, and when it was collected/last checked.
+model LeadSource {
+  id        String      @id @default(cuid())
+  companyId String
+  company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  dataField   String // which field this backs, e.g. "address", "website", "productFit"
+  sourceType  LeadSourceType
+  label       String? // human label, e.g. "OpenStreetMap — Berlin"
+  sourceUrl   String?
+  collectedAt DateTime @default(now())
+  lastCheckedAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+/// A real commercial-activity signal (§16), e.g. "active product category",
+/// "new market expansion". Strength is a controlled band, never "is buying now".
+/// Absence of signals is NONE — never read as a negative. Populated from later
+/// batches; the relation exists now.
+model LeadSignal {
+  id        String      @id @default(cuid())
+  companyId String
+  company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  kind       String // e.g. "category-active", "sourcing", "expansion"
+  strength   LeadSignalStrength @default(NONE)
+  note       String?
+  sourceType LeadSourceType     @default(PUBLIC_WEB)
+  sourceUrl  String?
+  detectedAt DateTime           @default(now())
+
+  @@index([companyId])
+}
+
+/// One verification check result (§10) — the audit trail of qualification. Each
+/// of the honesty checks (real business? in target country? website present?
+/// product connection? role verifiable? contact present? address verifiable?
+/// active store/site?) is a row, with the evidence and where it came from. This
+/// is what makes discovery→qualification a transparent, reviewable step.
+model LeadVerification {
+  id        String      @id @default(cuid())
+  companyId String
+  company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  check     String // machine key, e.g. "is-real-business", "in-target-country"
+  passed    Boolean? // null = could not be determined (honest "unknown")
+  evidence  String? // short sourced note
+  sourceUrl String?
+  checkedAt DateTime @default(now())
+
+  @@index([companyId])
+}
+
+/// An export event (§27/§28) — a durable record of what was exported, with the
+/// exact filters in force, so an export is reproducible and auditable.
+model LeadExport {
+  id        String      @id @default(cuid())
+  searchId  String?
+  search    LeadSearch? @relation(fields: [searchId], references: [id], onDelete: SetNull)
+
+  format      String // "xlsx" | "csv"
+  filterJson  Json     @default("{}") // the active filter set applied
+  rowCount    Int      @default(0)
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([searchId])
+  @@index([createdAt])
+}
+
+/// Single-row (id = "lead") configuration for the Lead Finder scoring engine and
+/// pipeline. Mirrors RadarSetting: every knob lives here, all fields nullable,
+/// falling back to the compiled defaults in src/config/leads.ts. Weight changes
+/// affect only FUTURE scoring (existing companies keep their frozen breakdown).
+model LeadSetting {
+  id          String   @id @default("lead")
+  weights     Json? // { productFit, roleFit, activity, market, size, dataQuality } → 100
+  thresholds  Json? // { strong: 80, potential: 60 }
+  recheckDays Int? // when a lead becomes "re-verify recommended" (default 30)
+  updatedAt   DateTime @updatedAt
+}

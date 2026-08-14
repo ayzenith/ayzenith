@@ -14,6 +14,7 @@ import {
   Radar,
   Table2,
   SlidersHorizontal,
+  Crosshair,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 
@@ -62,6 +63,12 @@ export const navGroups: NavGroup[] = [
       { label: "RADAR", href: "/admin/radar", icon: Radar, status: "live", minRole: "ADMIN" },
       { label: "HS Eşlemeleri", href: "/admin/radar/hs", icon: Table2, status: "live", minRole: "ADMIN" },
       { label: "RADAR Ayarları", href: "/admin/radar/settings", icon: SlidersHorizontal, status: "live", minRole: "ADMIN" },
+    ],
+  },
+  {
+    heading: "Lead Finder",
+    items: [
+      { label: "Lead Finder", href: "/admin/lead-finder", icon: Crosshair, status: "live", minRole: "ADMIN" },
     ],
   },
   {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import {
   ArrowLeft, ShieldCheck, Sparkles, Lightbulb, AlertTriangle,
   ChevronRight, ExternalLink, CheckCircle2, XCircle, History,
-  TrendingUp, Target, Zap, GitCompareArrows, Info,
+  TrendingUp, Target, Zap, GitCompareArrows, Info, Crosshair,
 } from "lucide-react";
 import { requireRole } from "@/server/auth";
 import { getSnapshot } from "@/server/radar/snapshot";
@@ -232,6 +232,23 @@ export default async function AnalysisResultPage({
             {!insufficient ? (
               <WatchButton categoryKey={snap.categoryKey} countryCode={snap.countryCode} alreadyWatched={alreadyWatched} />
             ) : null}
+            {/* §2 — carry this analysis into Lead Finder (country/product/model +
+                the RADAR context, preserved on every lead found from here). */}
+            <Link
+              href={`/admin/lead-finder/new?${new URLSearchParams({
+                country: snap.countryCode,
+                product: isProduct ? (snap.productName ?? categoryLabel(snap.categoryKey)) : categoryLabel(snap.categoryKey),
+                model,
+                snapshot: snap.id,
+                category: snap.categoryKey,
+                ...(snap.hsCode ? { hs6: snap.hsCode } : {}),
+                ...(snap.finalScore != null ? { score: String(snap.finalScore) } : {}),
+                decision: band.label,
+              }).toString()}`}
+              className="inline-flex h-11 items-center gap-2 rounded-xl bg-navy-950 px-4 text-small font-semibold text-white transition-opacity hover:opacity-90"
+            >
+              <Crosshair className="size-4" aria-hidden="true" /> Lead Finder ile Ara
+            </Link>
           </div>
         }
       />

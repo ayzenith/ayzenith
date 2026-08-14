@@ -1,0 +1,138 @@
+import { qualifiedPriority, type LeadPriority } from "@/config/leads";
+import type { LeadCompanyView } from "./leads";
+
+/**
+ * AYZENITH LEAD FINDER — shared result filtering + summary (V2.1, §2/§7/§15).
+ *
+ * ONE pure filter used by BOTH the results screen and the export route, so an
+ * export always contains exactly what the active filters show on screen (§16).
+ * Priority is the GATED priority (§6): a high score alone never yields HIGH —
+ * model-fit, product-fit, an active website and a contact route are required.
+ * NOT_RELEVANT products and NOT_SUITABLE (wrong-model) firms are hidden by
+ * default (kept in the DB, never deleted) unless a filter explicitly asks.
+ */
+
+export type LeadFilters = {
+  role?: string;
+  size?: string;
+  city?: string;
+  minScore?: number;
+  fit?: string;
+  priority?: string;
+  modelFit?: string; // "VERIFIED" | "POSSIBLE" | "NOT_SUITABLE" | "UNVERIFIED"
+  website?: string; // "yes" (active only)
+  contact?: string; // "yes"
+  social?: string; // "yes"
+};
+
+/** True when a lead has a real contact route (decision-maker OR company email/phone). */
+export function hasContact(c: LeadCompanyView): boolean {
+  return c.contactCount > 0 || Boolean(c.email) || Boolean(c.phone);
+}
+
+/** The GATED priority for a lead (§6). Used everywhere so card/summary/filter agree. */
+export function priorityOf(c: LeadCompanyView): LeadPriority {
+  return qualifiedPriority({
+    leadScore: c.leadScore,
+    modelFit: c.modelFit,
+    productFit: c.productFit,
+    websiteStatus: c.websiteStatus,
+    hasContact: hasContact(c),
+  });
+}
+
+export function parseLeadFilters(sp: Record<string, string | string[] | undefined>): LeadFilters {
+  const get = (k: string) => {
+    const v = sp[k];
+    return typeof v === "string" ? v : Array.isArray(v) ? v[0] : undefined;
+  };
+  const minScoreRaw = get("minScore");
+  const minScore = minScoreRaw ? Number(minScoreRaw) : undefined;
+  return {
+    role: get("role") || undefined,
+    size: get("size") || undefined,
+    city: get("city") || undefined,
+    minScore: Number.isFinite(minScore) ? minScore : undefined,
+    fit: get("fit") || undefined,
+    priority: get("priority") || undefined,
+    modelFit: get("modelFit") || undefined,
+    website: get("website") || undefined,
+    contact: get("contact") || undefined,
+    social: get("social") || undefined,
+  };
+}
+
+export function applyLeadFilters(companies: LeadCompanyView[], f: LeadFilters): LeadCompanyView[] {
+  return companies.filter((c) => {
+    // Hidden-by-default: irrelevant products and wrong-model firms (§2/§7).
+    if (c.productFit === "NOT_RELEVANT" && f.fit !== "NOT_RELEVANT") return false;
+    if (c.modelFit === "NOT_SUITABLE" && f.modelFit !== "NOT_SUITABLE") return false;
+
+    if (f.role && !c.commercialRoles.includes(f.role)) return false;
+    if (f.size && c.size !== f.size) return false;
+    if (f.city && (c.city ?? "").toLocaleLowerCase("tr") !== f.city.toLocaleLowerCase("tr")) return false;
+    if (f.minScore != null && (c.leadScore ?? -1) < f.minScore) return false;
+    if (f.fit && c.productFit !== f.fit) return false;
+    if (f.modelFit && c.modelFit !== f.modelFit) return false;
+    if (f.priority && priorityOf(c) !== f.priority) return false;
+    if (f.website === "yes" && c.websiteStatus !== "ACTIVE") return false;
+    if (f.contact === "yes" && c.contactCount <= 0) return false;
+    if (f.social === "yes" && c.socialMatchStatus !== "VERIFIED") return false;
+    return true;
+  });
+}
+
+/** Distinct, sorted cities present in a result set — for the city filter. */
+export function distinctCities(companies: LeadCompanyView[]): string[] {
+  const set = new Set<string>();
+  for (const c of companies) if (c.city) set.add(c.city);
+  return Array.from(set).sort((a, b) => a.localeCompare(b, "tr"));
+}
+
+export type LeadSummary = {
+  total: number; // excluding NOT_RELEVANT + NOT_SUITABLE (the hidden set)
+  verified: number; // productFit VERIFIED
+  likely: number;
+  needsReview: number; // UNCLEAR
+  unverified: number; // website not checked
+  notRelevant: number;
+  // Model fit (for the searched model)
+  modelVerified: number;
+  modelPossible: number;
+  notSuitable: number;
+  // Gated priority
+  high: number;
+  medium: number;
+  low: number;
+  withContact: number;
+  withSocial: number;
+  totalLocations: number;
+};
+
+/** Headline counts for the result screen (§15). Computed from the full set. */
+export function summarize(companies: LeadCompanyView[]): LeadSummary {
+  const s: LeadSummary = {
+    total: 0, verified: 0, likely: 0, needsReview: 0, unverified: 0, notRelevant: 0,
+    modelVerified: 0, modelPossible: 0, notSuitable: 0,
+    high: 0, medium: 0, low: 0, withContact: 0, withSocial: 0, totalLocations: 0,
+  };
+  for (const c of companies) {
+    s.totalLocations += Math.max(1, c.locationCount ?? 1);
+    if (c.productFit === "NOT_RELEVANT") { s.notRelevant++; continue; }
+    if (c.modelFit === "NOT_SUITABLE") { s.notSuitable++; continue; }
+    s.total++;
+    if (c.productFit === "VERIFIED") s.verified++;
+    else if (c.productFit === "LIKELY") s.likely++;
+    else if (c.productFit === "UNCLEAR") s.needsReview++;
+    else s.unverified++;
+    if (c.modelFit === "VERIFIED") s.modelVerified++;
+    else if (c.modelFit === "POSSIBLE") s.modelPossible++;
+    const p = priorityOf(c);
+    if (p === "HIGH") s.high++;
+    else if (p === "MEDIUM") s.medium++;
+    else if (p === "LOW") s.low++;
+    if (hasContact(c)) s.withContact++;
+    if (c.socialMatchStatus === "VERIFIED") s.withSocial++;
+  }
+  return s;
+}

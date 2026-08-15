@@ -58,8 +58,20 @@ export type DiscoverResult = {
  *  of a typical 200-firm run never looked at. Staging covers 90 for a comparable
  *  budget. Everything beyond the caps is still marked "not checked" — honestly,
  *  never negatively. */
-const SHALLOW_CAP = 80;
-const DEEP_CAP = 35;
+// Sized for the WAIT, not for coverage. Deferred verification (§V3.4) finishes
+// every remaining firm afterwards — on demand from the results screen or by the
+// hourly cron — so the in-run pass no longer has to be exhaustive, and every
+// extra site read here is paid for in time someone spends watching a loading
+// screen. A first view with more "kontrol edilmedi", stated plainly and with a
+// button to continue, beats a longer wait for the same eventual answer.
+//
+// Phase timings from a cold Köln run, which corrected two guesses of mine:
+// verification was NOT the expensive part (shallow 13.5s, deep 13.7s), and the
+// sequential database save was (127s of 222s). The save is now parallel, and a
+// cold Stuttgart run finishes in 110s inside a 300s ceiling. These caps are kept
+// modest on their own merits rather than to buy back that headroom.
+const SHALLOW_CAP = 40;
+const DEEP_CAP = 12;
 /** The shallow pass is one request per host against MANY different domains, so it
  *  can run wider without being impolite to anyone; the deep pass hits the same
  *  host repeatedly and stays at the original, gentler width. */

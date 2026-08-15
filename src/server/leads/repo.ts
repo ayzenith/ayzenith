@@ -118,8 +118,23 @@ export async function saveDiscovery(
     select: { id: true },
   });
 
+  // Companies are written with BOUNDED CONCURRENCY, not one after another.
+  //
+  // Measured on a cold Köln run: saving 148 firms sequentially took 127s of a
+  // 222s pipeline — 57% of the whole search, and by far its largest cost. Each
+  // row is its own round trip to a remote Postgres, so the time was almost
+  // entirely spent waiting on the network rather than on the database. Prisma's
+  // createMany cannot help here because every company writes nested sources,
+  // contacts, verifications and locations alongside it, so the fix is to have
+  // several of those round trips in flight at once.
+  //
+  // The width is deliberately modest: this runs against a pooled connection and
+  // a Supabase pooler has a finite client budget, so this is meant to remove the
+  // idle waiting, not to saturate the pool.
+  const SAVE_CONCURRENCY = 8;
+
   let saved = 0;
-  for (const c of companies) {
+  const writeCompany = async (c: CompanyDraft) => {
     await db.leadCompany.create({
       data: {
         searchId: created.id,
@@ -220,7 +235,23 @@ export async function saveDiscovery(
       },
     });
     saved++;
-  }
+  };
+
+  // A single bad row must not lose the whole search, so each write is isolated:
+  // it is recorded as not-saved and the rest still land.
+  let cursor = 0;
+  await Promise.all(
+    Array.from({ length: Math.min(SAVE_CONCURRENCY, companies.length) }, async () => {
+      while (cursor < companies.length) {
+        const c = companies[cursor++]!;
+        try {
+          await writeCompany(c);
+        } catch {
+          // keep going; savedCount reports what actually landed
+        }
+      }
+    }),
+  );
 
   return { searchId: created.id, savedCount: saved };
 }

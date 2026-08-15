@@ -13,7 +13,10 @@ import { verifyPendingAcrossSearches, enrichChainScale, findSearchNeedingScale }
  * `Authorization: Bearer $CRON_SECRET`, and with no secret configured the
  * endpoint refuses to run so it cannot be triggered anonymously in production.
  *
- * Scheduled in vercel.json.
+ * Scheduled DAILY in vercel.json. Daily is the most frequent schedule a Vercel
+ * Hobby plan accepts, so this deploys on any plan; the results screen's
+ * "Doğrulamaya devam et" button is there for anyone who does not want to wait
+ * for the next run.
  */
 
 export const dynamic = "force-dynamic";

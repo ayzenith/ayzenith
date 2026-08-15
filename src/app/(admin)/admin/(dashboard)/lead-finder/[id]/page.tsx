@@ -64,7 +64,9 @@ export default async function LeadResultsPage({
   // irrelevance from outranking an unverified match.
   const topLeads = [...filtered]
     .map((c) => ({ c, p: priorityOf(c), r: relevanceRank(c) }))
-    .filter((x) => x.p === "HIGH" || x.p === "MEDIUM" || x.r >= 3)
+    // r >= 4 is "LIKELY product fit or better" — the threshold moved with the
+    // relevance scale (§V3.10) so this keeps admitting exactly what it used to.
+    .filter((x) => x.p === "HIGH" || x.p === "MEDIUM" || x.r >= 4)
     .sort(
       (a, b) =>
         b.r - a.r ||
@@ -285,8 +287,10 @@ export default async function LeadResultsPage({
             gibi doğrulanmış sinyaller sıralar. Yüksek skor tek başına yeterli değildir — sitesi henüz
             okunmamış bir uzman mağaza, ürünle ilgisi olmayan ama verisi tam bir toptancıdan önce gelir.
             &ldquo;Sitesini okuduk, ürün bağlantısı çıkmadı&rdquo; ile &ldquo;henüz bakmadık&rdquo; aynı şey
-            değildir: ilki zayıf da olsa bir bilgidir ve daha aşağıda sıralanır. Hiçbiri &ldquo;ilgisiz&rdquo;
-            sayılmaz, hiçbiri gizlenmez.
+            değildir: ilki zayıf da olsa bir bilgidir ve daha aşağıda sıralanır. Bakamadıklarımız
+            arasında da, aranan ürün ailesine ait bir kayıt taşıyan firma hiçbir ürün sinyali
+            olmayanın üstünde gelir. Hiçbiri &ldquo;ilgisiz&rdquo; sayılmaz, hiçbiri gizlenmez, puanlar
+            değişmez.
           </p>
           <ol className="mt-4 grid gap-3 lg:grid-cols-3">
             {topLeads.map(({ c, p, why }, i) => (

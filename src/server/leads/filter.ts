@@ -185,8 +185,8 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
  */
 export function relevanceRank(c: LeadCompanyView): number {
   if (c.productFit === "NOT_RELEVANT") return 0; // checked, and contradicted
-  if (c.productFit === "VERIFIED") return 5;
-  if (c.productFit === "LIKELY") return c.productFitTier === "STRONG" ? 4 : 3;
+  if (c.productFit === "VERIFIED") return 6;
+  if (c.productFit === "LIKELY") return c.productFitTier === "STRONG" ? 5 : 4;
 
   // "We looked and found nothing" is NOT the same as "we never looked" (§V3.10).
   //
@@ -207,7 +207,23 @@ export function relevanceRank(c: LeadCompanyView): number {
   // on a page we actually read is not a gap.
   if (c.websiteStatus === "ACTIVE") return 1;
 
-  return 2; // never looked at — unknown, and unknown is not negative
+  // Among the firms we could NOT read, two things are still distinguishable, and
+  // the pipeline already records the difference — it just was not being used for
+  // ordering (§V3.10). UNCLEAR means discovery found a generic category tag that
+  // belongs to the searched product's family; UNVERIFIED means no product signal
+  // of any kind was ever seen.
+  //
+  // The second Milano run made the cost visible. Intimissimi and Calzedonia carry
+  // OSM's `shop=clothes` — weak, but it is the right family — while Ecofer (steel),
+  // Parasider (steel), METRO (food) and Daniele Cabibbe carry nothing at all. All
+  // four sat above both lingerie chains purely because an unreachable wholesaler
+  // scores higher on data completeness than a shop with no website.
+  //
+  // A weak signal in the right family outranks no signal. Neither is called
+  // proof, and the score is untouched.
+  if (c.productFit === "UNCLEAR") return 3;
+
+  return 2; // nothing known about the product at all
 }
 
 /** Order for the results list: relevance first, then the score within it. */

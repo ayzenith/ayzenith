@@ -131,7 +131,7 @@ export async function saveDiscovery(
   // The width is deliberately modest: this runs against a pooled connection and
   // a Supabase pooler has a finite client budget, so this is meant to remove the
   // idle waiting, not to saturate the pool.
-  const SAVE_CONCURRENCY = 8;
+  const SAVE_CONCURRENCY = 12;
 
   let saved = 0;
   const writeCompany = async (c: CompanyDraft) => {

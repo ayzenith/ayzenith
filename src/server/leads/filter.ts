@@ -113,7 +113,13 @@ export type LeadSummary = {
   // many firms were actually reached keeps the difference visible.
   siteChecked: number; // website fetch ran and the site answered
   siteUnreachable: number; // website known, but it did not answer this run
-  siteNotChecked: number; // never attempted (past the verification cap, or no website)
+  /** HAS a website, no run has reached it yet — a queue, and it will shrink. */
+  sitePending: number;
+  /** No website at all. NOT a queue: there is nothing here to check, ever, and
+   *  it must not be reported as "we did not get to it". Lumping these together
+   *  told the owner 187 firms were awaiting a look when only 62 were, and made
+   *  coverage read as 40 of 227 instead of 40 of the 102 that have a site. */
+  siteNone: number;
 };
 
 /** Headline counts for the result screen (§15). Computed from the full set. */
@@ -122,7 +128,7 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
     total: 0, verified: 0, likely: 0, needsReview: 0, unverified: 0, notRelevant: 0,
     modelVerified: 0, modelPossible: 0, notSuitable: 0,
     high: 0, medium: 0, low: 0, withContact: 0, withSocial: 0, totalLocations: 0,
-    siteChecked: 0, siteUnreachable: 0, siteNotChecked: 0,
+    siteChecked: 0, siteUnreachable: 0, sitePending: 0, siteNone: 0,
   };
   for (const c of companies) {
     s.totalLocations += Math.max(1, c.locationCount ?? 1);
@@ -143,7 +149,8 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
     if (c.socialMatchStatus === "VERIFIED") s.withSocial++;
     if (c.websiteStatus === "ACTIVE") s.siteChecked++;
     else if (c.websiteStatus === "UNREACHABLE") s.siteUnreachable++;
-    else s.siteNotChecked++;
+    else if (c.websiteStatus === "NONE") s.siteNone++;
+    else s.sitePending++;
   }
   return s;
 }

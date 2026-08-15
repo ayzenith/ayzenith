@@ -245,10 +245,16 @@ export default async function LeadResultsPage({
         <b className="font-medium text-foreground">Doğrulama kapsamı:</b>{" "}
         <b className="font-medium text-[#2f7a48]">{sum.siteChecked}</b> firmanın sitesi okundu
         {sum.siteUnreachable > 0 ? <> · {sum.siteUnreachable} siteye ulaşılamadı</> : null}
-        {sum.siteNotChecked > 0 ? <> · <b className="font-medium text-[#8a6d1f]">{sum.siteNotChecked}</b> firma bu turda kontrol edilmedi</> : null}
-        {sum.siteNotChecked > 0 ? (
+        {sum.sitePending > 0 ? <> · <b className="font-medium text-[#8a6d1f]">{sum.sitePending}</b> firma sırada bekliyor</> : null}
+        {sum.siteNone > 0 ? <> · {sum.siteNone} firmanın sitesi yok</> : null}
+        {sum.sitePending > 0 ? (
           <span className="ml-1">
-            — kontrol edilmeyenler için &quot;belirsiz&quot; ifadesi <i>o firma hakkında bir bulgu değil</i>, sadece bu turda sıra gelmediği anlamına gelir.
+            — sırada bekleyenler için &quot;belirsiz&quot; ifadesi <i>o firma hakkında bir bulgu değil</i>, sadece henüz sıra gelmediği anlamına gelir.
+          </span>
+        ) : null}
+        {sum.siteNone > 0 ? (
+          <span className="ml-1">
+            Sitesi olmayanlar bu kuyruğun dışındadır: kontrol edilecek bir şey yoktur, ürün uyumları yalnızca OSM kaydından bilinir.
           </span>
         ) : null}
         <ContinueVerify searchId={search.id} pending={pendingCount} />

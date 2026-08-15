@@ -14,7 +14,7 @@
 
 /** Free sources wired in V1. The paid slot is intentionally absent — adding one
  *  later is a new value here, never a change to how the pipeline is structured. */
-export type LeadProviderId = "overpass" | "nominatim" | "website";
+export type LeadProviderId = "overpass" | "nominatim" | "website" | "vies";
 
 export type LeadSourceKind =
   | "OSM"

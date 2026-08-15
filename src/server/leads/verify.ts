@@ -1,6 +1,7 @@
 import "server-only";
 
 import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } from "./providers/website";
+import { checkVatId } from "./providers/vies";
 import type { DedupedCandidate } from "./dedup";
 import type { Classification } from "./classify";
 import {
@@ -395,6 +396,40 @@ export async function verifyCandidate(
   // else keep the discovery-time size (branch count) — do NOT guess.
 
   if (intel.legalName) base.legalName = intel.legalName;
+
+  // EU VAT registration (§V3.7) — the one thing a free source can tell us that
+  // the company's own marketing cannot: that it is a real, currently registered
+  // business cleared to trade across EU borders. The number is already on the
+  // legal page we just read, so this costs one fast call and no new crawling.
+  //
+  // Only a POSITIVE answer is recorded. Our extraction of the number from page
+  // text can be wrong, and VIES cannot tell "this firm is not registered" from
+  // "you sent me the wrong string", so an invalid or unreachable answer is left
+  // as silence rather than turned into a finding about the company.
+  if (intel.vatId) {
+    const vat = await checkVatId(intel.vatId);
+    if (vat?.valid) {
+      base.verifications.push({
+        check: "eu-vat-registered",
+        passed: true,
+        evidence: vat.name
+          ? `AB KDV numarası doğrulandı: ${vat.vatId} — kayıtlı unvan: ${vat.name}`
+          : `AB KDV numarası doğrulandı: ${vat.vatId} (bu ülke unvanı VIES üzerinden paylaşmıyor)`,
+        sourceUrl: vat.sourceUrl,
+      });
+      base.extraSources.push({
+        dataField: "vatId",
+        sourceType: "PUBLIC_WEB",
+        label: "VIES (AB Komisyonu KDV doğrulama)",
+        sourceUrl: vat.sourceUrl,
+      });
+      // Most member states disclose the registered name; Germany does not. Where
+      // it exists it is the OFFICIAL one, so it fills a gap the Impressum parser
+      // left — and it is the only company name we get in markets whose legal
+      // pages this crawler cannot yet read.
+      if (!base.legalName && vat.name) base.legalName = vat.name;
+    }
+  }
 
   // Company-level contact enrichment (only fill what was missing).
   const companyEmail = pickCompanyEmail(intel.emails, opts.domain);

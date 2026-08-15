@@ -421,6 +421,7 @@ const CHECK_LABELS: Record<string, string> = {
   "commercial-role": "Ticari rol doğrulandı",
   "product-connection": "Ürün bağlantısı",
   "contact-present": "İletişim / karar verici",
+  "eu-vat-registered": "AB KDV kaydı (VIES)",
 };
 
 function countryToIso(label: string): string {

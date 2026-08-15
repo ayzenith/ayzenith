@@ -43,6 +43,8 @@ export type SiteIntel = {
   emails: string[];
   phones: string[];
   legalName?: string;
+  /** EU VAT id printed on a legal page, unvalidated (§V3.7). */
+  vatId?: string;
   /** Which of the supplied product terms appeared on the site. */
   productTermsFound: string[];
   /** Tiered product evidence (§2): STRONG/MEDIUM terms actually found on site. */
@@ -213,6 +215,44 @@ function isPlaceholderEmail(e: string): boolean {
   return false;
 }
 
+/** Labels that introduce a VAT id on a legal page, across the markets we search
+ *  (§V3.7). Word boundaries are NOT decoration here: an early probe matched the
+ *  bare letters "nif" inside "Knifeless Tape" on a real shop's page and would
+ *  have sent a product name to VIES. */
+const VAT_LABEL_RE =
+  /\b(?:ust[-\s]?id(?:nr)?|umsatzsteuer[-\s]?identifikationsnummer|vat\s*(?:id|no\.?|number|reg)?|tva(?:\s*intracommunautaire)?|partita\s*iva|p\.?\s?iva|btw[-\s]?nummer|nif|nipc|cif|momsnr|alv[-\s]?nro)\b/i;
+
+/** A VAT id as printed: country prefix then 8–12 alphanumerics, run together.
+ *  The trailing guard matters — NKD's Impressum reads
+ *  "USt-IdNr.: DE293542139 WEEE-Reg.-Nr.: …", and a pattern that tolerated
+ *  internal spaces swallowed "WEEE" into the number and made a perfectly valid
+ *  id unverifiable. */
+const VAT_ID_COMPACT = /\b([A-Z]{2})[\s.-]{0,2}([0-9A-Z]{8,12})(?![0-9A-Z])/;
+/** Fallback for markets that print the id in spaced groups ("FR 12 345678901").
+ *  Only accepted if the separators strip down to a plausible length. */
+const VAT_ID_SPACED = /\b([A-Z]{2})[\s.-]{0,2}((?:[0-9A-Z][\s.-]{0,1}){8,14})(?![0-9A-Z])/;
+
+/** Pull a VAT id out of legal-page text: find a label, then read the id that
+ *  follows it within a short window. Requiring the label keeps this from
+ *  harvesting arbitrary alphanumeric tokens — an early probe matched a product
+ *  name because the bare letters "nif" appear inside "Knifeless Tape". */
+function findVatId(text: string): string | undefined {
+  const label = text.match(VAT_LABEL_RE);
+  if (!label || label.index == null) return undefined;
+  const from = label.index + label[0].length;
+  const window = text.slice(from, from + 80);
+
+  const compact = window.match(VAT_ID_COMPACT);
+  if (compact) return `${compact[1]}${compact[2]}`;
+
+  const spaced = window.match(VAT_ID_SPACED);
+  if (spaced) {
+    const digits = (spaced[2] ?? "").replace(/[\s.-]/g, "");
+    if (digits.length >= 8 && digits.length <= 12) return `${spaced[1]}${digits}`;
+  }
+  return undefined;
+}
+
 const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/gi;
 const PHONE_RE = /(?:tel:|telefon:?|phone:?|\+)[\s]?[\d\s()/.+-]{6,}/gi;
 
@@ -379,6 +419,7 @@ export async function fetchSiteIntel(
   const socialsByPlatform = new Map<string, string>();
   const decisionMakers: DecisionMaker[] = [];
   let legalName: string | undefined;
+  let vatId: string | undefined;
   let storeCount: number | undefined;
   let employeeCount: number | undefined;
   let b2b = false;
@@ -445,6 +486,7 @@ export async function fetchSiteIntel(
 
     // Legal name + decision-makers from the Impressum (strongest source, §6).
     if (isImpressum) {
+      vatId = vatId ?? findVatId(text);
       const legal = text.match(
         /((?:[A-Za-zÄÖÜäöü0-9][\wäöüß.&\-]+\s+){1,3}(?:GmbH(?: & Co\.? KG)?|AG|KG|OHG|e\.K\.|UG(?: \(haftungsbeschränkt\))?|Ltd\.?|Inc\.?|GbR))/,
       );
@@ -475,6 +517,7 @@ export async function fetchSiteIntel(
     emails: Array.from(emails).slice(0, 10),
     phones: Array.from(phones).slice(0, 6),
     legalName,
+    vatId,
     productTermsFound: Array.from(productTermsFound),
     strongFound: Array.from(strongFound),
     mediumFound: Array.from(mediumFound),

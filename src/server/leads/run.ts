@@ -186,6 +186,7 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
         searchModel: params.businessModel,
         productSignals,
         depth,
+        country: countryIso,
       });
     } catch {
       return null;

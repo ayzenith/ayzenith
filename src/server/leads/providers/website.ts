@@ -2,6 +2,26 @@ import "server-only";
 
 import { cachedLeadFetch } from "../cache";
 import { SOCIAL_PLATFORMS } from "@/config/leads";
+import {
+  langForSite,
+  subpageRounds,
+  normalizeForMatch,
+  LEGAL_PAGE_RE,
+  COMPANY_INFO_PAGE_RE,
+  foldAccents,
+  HIGH_VALUE_PATH_RE,
+  LOW_VALUE_PATH_RE,
+  ROLE_TERMS_MULTILANG,
+  B2B_TERMS_MULTILANG,
+  B2C_TERMS_MULTILANG,
+  DM_ROLE_PATTERNS_MULTILANG,
+  NAME_TITLE_MULTILANG_RE,
+  NAME_STOPWORDS_MULTILANG,
+  PERSON_NAME_RE,
+  LEGAL_FORM_RE,
+  STORE_TERMS_MULTILANG,
+  EMPLOYEE_TERMS_MULTILANG,
+} from "./lang";
 
 /**
  * AYZENITH LEAD FINDER — website intelligence provider (V2, free).
@@ -64,36 +84,15 @@ export type SiteIntel = {
 /** Product-fit signal tiers passed in from the resolved profile (§2). */
 export type ProductSignals = { strong: string[]; medium: string[] };
 
-/** Sub-pages to try after the homepage, grouped into parallel rounds and ordered
- *  most-likely-to-exist first (§V3.6). A German company site almost always has
- *  /impressum — it is a legal requirement — so round one usually settles it and
- *  round two never runs. */
-const SUBPAGE_ROUNDS: string[][] = [
-  ["impressum", "kontakt", "ueber-uns"],
-  ["contact", "about", "about-us"],
-];
-
 /** Page context classification for product/model signal weighting (§V3.1).
  *  HIGH-VALUE pages (product/shop pages) → signals weighted fully.
- *  LOW-VALUE pages (career/corporate/news) → signals weighted down (not product evidence). */
+ *  LOW-VALUE pages (career/corporate/news) → signals weighted down (not product evidence).
+ *  Both path vocabularies are multi-language (§V3.9) — a French /carrieres page is
+ *  as poor a source of product evidence as a German /karriere one. */
 function pageContext(url: string): "HIGH_VALUE" | "LOW_VALUE" | "NORMAL" {
-  const path = url.toLocaleLowerCase("de");
-  // Product-focused pages
-  if (
-    /\/(shop|produkt|product|kategori|category|sortiment|katalog|katalogue|kollektion|collection|item|ware)(?:\/|$)/i.test(
-      path,
-    )
-  ) {
-    return "HIGH_VALUE";
-  }
-  // Career/corporate/news — low contextual value for product signals
-  if (
-    /\/(career|jobs?|karriere|partner|partnership|corporate|investor|presse|news|blog|press|newsroom|medien|media)(?:\/|$)/i.test(
-      path,
-    )
-  ) {
-    return "LOW_VALUE";
-  }
+  const path = normalizeForMatch(url);
+  if (HIGH_VALUE_PATH_RE.test(path)) return "HIGH_VALUE";
+  if (LOW_VALUE_PATH_RE.test(path)) return "LOW_VALUE";
   return "NORMAL";
 }
 
@@ -105,15 +104,18 @@ function pageContext(url: string): "HIGH_VALUE" | "LOW_VALUE" | "NORMAL" {
  *  the few terms whose substring form produces false positives (§V3.2):
  *  "import" matches "important", "sourcing" matches "outsourcing". Those two
  *  alone were enough to stamp a plain B2C retailer as İthalatçı/Tedarik. */
-const ROLE_KEYWORDS: Array<{ role: string; terms: Array<string | RegExp> }> = [
+const ROLE_KEYWORDS_BASE: Array<{ role: string; terms: Array<string | RegExp> }> = [
   { role: "wholesaler", terms: ["großhandel", "grosshandel", "wholesale", "b2b-großhandel", "wiederverkäufer", "wiederverkaufer"] },
   // "vertrieb" alone is intentionally NOT here: it means "sales/distribution dept"
   // and appears on ordinary retailer sites, falsely tagging them distributors.
   // Only the unambiguous B2B forms remain (§3/§8).
   { role: "distributor", terms: ["distribution", "distributor", "vertriebspartner", "fachdistribution", "distribütör"] },
   // "import" must not fire on "important"/"importance"/"importantes" — the single
-  // greediest false positive in the whole role map (§V3.2).
-  { role: "importer", terms: [/import(?!ant|ance)/, "importeur", "einfuhr", "ithalat"] },
+  // greediest false positive in the whole role map (§V3.2). The guard is now
+  // "importan", which additionally blocks the Italian and Spanish false friends
+  // "importanza"/"importancia" while still admitting importateur / importatore /
+  // importador / importazione / importación (§V3.9).
+  { role: "importer", terms: [/import(?!an)/, "importeur", "einfuhr", "ithalat"] },
   { role: "manufacturer", terms: ["hersteller", "manufacturer", "produktion", "manufaktur", "üretici", "fabrikation"] },
   { role: "ecommerce", terms: ["onlineshop", "online-shop", "warenkorb", "in den warenkorb", "add to cart", "zum warenkorb", "online bestellen"] },
   { role: "retail_chain", terms: ["filialen", "filiale", "stores", "branches", "şubelerimiz"] },
@@ -126,10 +128,20 @@ const ROLE_KEYWORDS: Array<{ role: string; terms: Array<string | RegExp> }> = [
   { role: "sourcing", terms: [/(?<!out|re)sourcing/, "procurement services", "sourcing agent", "einkaufsbüro"] },
 ];
 
+/** Role vocabulary in every market we search, folded into the German/English base.
+ *
+ *  These are ALWAYS ON, never gated on a detected language (§V3.9). A German firm's
+ *  English export page and an Italian firm's German landing page must both stay
+ *  readable, and matching against text we have already downloaded costs nothing. */
+const ROLE_KEYWORDS: Array<{ role: string; terms: Array<string | RegExp> }> = ROLE_KEYWORDS_BASE.map((entry) => ({
+  role: entry.role,
+  terms: [...entry.terms, ...(ROLE_TERMS_MULTILANG[entry.role] ?? [])],
+}));
+
 // Explicit, unambiguous B2B/wholesale markers only. Bare "vertrieb" is excluded
 // on purpose (see distributor note above) — it is not proof of a B2B channel (§3/§8).
-const B2B_TERMS = ["großhandel", "grosshandel", "b2b", "wiederverkäufer", "wiederverkaufer", "händler werden", "handler werden", "für händler", "fur handler", "geschäftskunden", "geschaftskunden", "wholesale"];
-const B2C_TERMS = ["warenkorb", "in den warenkorb", "add to cart", "onlineshop", "online-shop", "endkunden", "privatkunden"];
+const B2B_TERMS = ["großhandel", "grosshandel", "b2b", "wiederverkäufer", "wiederverkaufer", "händler werden", "handler werden", "für händler", "fur handler", "geschäftskunden", "geschaftskunden", "wholesale", ...B2B_TERMS_MULTILANG];
+const B2C_TERMS = ["warenkorb", "in den warenkorb", "add to cart", "onlineshop", "online-shop", "endkunden", "privatkunden", ...B2C_TERMS_MULTILANG];
 
 /** Decision-maker role labels literally searched for in Impressum/pages (§3/§6).
  *  "Vertreten durch" is deliberately excluded — it too often precedes an address
@@ -164,54 +176,100 @@ const DM_ROLE_PATTERNS: Array<{ label: string; re: RegExp }> = [
   { label: "Sales Director", re: /sales director\s*:?\s*/i },
   { label: "Vertriebsleiter", re: /vertriebsleiter(?:in)?\s*:?\s*/i },
   { label: "Export Manager", re: /export[- ]?manager(?:in)?\s*:?\s*/i },
+  // Every other market we search (§V3.9). Appended rather than interleaved so the
+  // German/English precedence above is untouched; the multi-language list carries
+  // its own specific-before-generic ordering.
+  ...DM_ROLE_PATTERNS_MULTILANG,
 ];
 
 /** Titles/honorifics that may sit between a role marker and the actual name
- *  ("Geschäftsführer: Herr Max Mustermann"). Stripped before name capture so the
- *  honorific is never mistaken for a first name (§6 — no fabricated-looking name). */
-const NAME_TITLE_RE = /^(?:herr|frau|mr|mrs|ms|dr|prof|dipl\.?-?ing|dipl|ing)\.?\s+/i;
+ *  ("Geschäftsführer: Herr Max Mustermann", "Gérant : Monsieur Jean Dupont").
+ *  Stripped before name capture so the honorific is never mistaken for a first
+ *  name (§6 — no fabricated-looking name). */
+const NAME_TITLE_RE = NAME_TITLE_MULTILANG_RE;
 
 /** Tokens that must never be accepted as a person's name (geography, org forms,
- *  common Impressum words). Guards against turning an address into a "contact". */
-const NAME_STOPWORDS = new Set(
-  [
-    "berlin", "hamburg", "münchen", "munchen", "köln", "koln", "frankfurt", "stuttgart",
-    "düsseldorf", "dusseldorf", "deutschland", "germany", "österreich", "osterreich",
-    "schweiz", "straße", "strasse", "str", "platz", "weg", "allee", "gmbh", "kg", "ag",
-    "geschäft", "geschaft", "handel", "vertrieb", "die", "der", "das", "und", "post",
-    "email", "mail", "telefon", "kontakt", "impressum", "inhalte", "inhalt",
-    "unser", "unsere", "für", "fur", "von", "bei", "mit", "im", "am", "zur", "zum",
-    "startseite", "home", "über", "uber", "firma", "company",
-  ].map((s) => s),
-);
+ *  common legal-page words). Guards against turning an address into a "contact". */
+const NAME_STOPWORDS = new Set([
+  "berlin", "hamburg", "münchen", "munchen", "köln", "koln", "frankfurt", "stuttgart",
+  "düsseldorf", "dusseldorf", "deutschland", "germany", "österreich", "osterreich",
+  "schweiz", "straße", "strasse", "str", "platz", "weg", "allee", "gmbh", "kg", "ag",
+  "geschäft", "geschaft", "handel", "vertrieb", "die", "der", "das", "und", "post",
+  "email", "mail", "telefon", "kontakt", "impressum", "inhalte", "inhalt",
+  "unser", "unsere", "für", "fur", "von", "bei", "mit", "im", "am", "zur", "zum",
+  "startseite", "home", "über", "uber", "firma", "company",
+  ...NAME_STOPWORDS_MULTILANG,
+]);
 
 function looksLikeName(first?: string, last?: string): boolean {
   if (!first || !last) return false;
-  const parts = `${first} ${last}`.toLocaleLowerCase("de").split(/\s+/);
+  const parts = normalizeForMatch(`${first} ${last}`).split(/\s+/);
   return parts.every((p) => p.length >= 2 && !NAME_STOPWORDS.has(p));
 }
 
-const ORG_FORM_RE = /^(gmbh|ag|kg|ohg|ug|e\.k\.|ltd\.?|inc\.?|gbr)$/i;
+const ORG_FORM_RE = /^(gmbh|ag|kg|ohg|ug|ek|ltd|inc|gbr|sarl|sas|sasu|eurl|srl|srls|spa|snc|sl|slu|sau|sa|bv|nv|vof|bvba|sprl|lda|oy|oyj|ab|as|aps|kft|zrt|sro|doo|plc|llc|sti)$/i;
+
+/** Is this token a legal-entity suffix rather than part of the name? Dots and
+ *  commas are stripped first so "S.p.A." and "B.V." are recognised alongside
+ *  "GmbH". Used to tell "loveco GmbH" (name + form) from "adresinde Calzedonia
+ *  S.p.A" (leaked word + name + form). */
+function isOrgFormToken(token: string): boolean {
+  return ORG_FORM_RE.test(token.replace(/[.,&]/g, ""));
+}
 
 /** Drop leading non-name words (e.g. "Inhalte") that can leak into a captured
  *  legal name, keeping "loveco GmbH" rather than "Inhalte loveco GmbH". Returns
  *  null if nothing but the org form remains (a bare "GmbH" is not a company name). */
 function cleanLegalName(raw: string): string | null {
   const tokens = raw.trim().split(/\s+/);
-  while (tokens.length > 1 && NAME_STOPWORDS.has(tokens[0]!.toLocaleLowerCase("de"))) {
+  // Also drop a leading bare number or copyright mark: the legal entity is very
+  // often printed in the footer right after the year, and Hunkemöller's came back
+  // as "2026 Hunkemöller B.V." on the first multi-language run (§V3.9).
+  while (
+    tokens.length > 1 &&
+    (NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) || /^(?:[©®]|\d{2,4}|[©®]\d{2,4})$/.test(tokens[0]!))
+  ) {
     tokens.shift();
   }
-  if (tokens.length < 2 && ORG_FORM_RE.test(tokens[0] ?? "")) return null;
+  // Drop leading ORDINARY WORDS that the surrounding sentence leaked in.
+  //
+  // The capture takes up to three tokens before the legal form, so a sentence like
+  // "…adresinde Calzedonia S.p.A…" yields "adresinde Calzedonia S.p.A". The tell is
+  // capitalisation: a leaked sentence word is lowercase while the name that follows
+  // is not. The org-form token is excluded from that test on purpose — otherwise
+  // "loveco GmbH", a genuinely lowercase brand, would be stripped down to "GmbH".
+  while (
+    tokens.length > 1 &&
+    tokens[0]! === tokens[0]!.toLocaleLowerCase("de") &&
+    tokens.slice(1).some((t) => !isOrgFormToken(t) && t !== t.toLocaleLowerCase("de"))
+  ) {
+    tokens.shift();
+  }
+  if (tokens.length < 2 && isOrgFormToken(tokens[0] ?? "")) return null;
   return tokens.join(" ");
 }
 
 /** Obvious placeholder / example emails that appear in templates, not real
- *  contacts — never stored (§18). */
+ *  contacts — never stored (§18). The example vocabulary is multi-language: a live
+ *  Italian site served its form hint as "kullanici@ornek.com", Turkish for
+ *  user@example.com, and the German-English list let it through as a real contact. */
 function isPlaceholderEmail(e: string): boolean {
   const local = e.split("@")[0] ?? "";
   const domain = e.split("@")[1] ?? "";
-  if (/^(du|name|vorname|nachname|max|erika|mustermann|your|you|example|test|email|info-)$/i.test(local)) return true;
-  if (/(example\.|email\.com|domain\.|muster|sentry|wixpress|test\.)/i.test(domain)) return true;
+  if (
+    /^(du|name|vorname|nachname|max|erika|mustermann|your|you|example|test|email|info-|nom|prenom|nome|cognome|nombre|apellido|naam|imie|isim|ad|soyad|kullanici|utente|usuario|utilisateur|gebruiker|uzytkownik)$/i.test(
+      local,
+    )
+  ) {
+    return true;
+  }
+  if (
+    /(example\.|email\.com|domain\.|muster|sentry|wixpress|test\.|ornek|esempio|ejemplo|exemple|exemplo|voorbeeld|przyklad|priklad)/i.test(
+      domain,
+    )
+  ) {
+    return true;
+  }
   return false;
 }
 
@@ -278,14 +336,17 @@ function normalizeUrl(website: string): string | null {
 
 /** Extract a person name that appears right after a role marker. Deliberately
  *  conservative: only accepts a "Firstname Lastname" (optionally with a middle
- *  token) so we never store a fragment as a person (§18). */
+ *  token) so we never store a fragment as a person (§18). The name pattern is
+ *  Latin-script-wide (§V3.9) — the German-only original could not see François,
+ *  Łukasz, Öztürk or D'Angelo. */
 function nameAfter(text: string, re: RegExp): { first?: string; last?: string } | null {
   const m = text.match(re);
   if (!m || m.index == null) return null;
   let after = text.slice(m.index + m[0].length, m.index + m[0].length + 70);
-  // Drop a leading honorific (Herr/Frau/Mr/Dr…) so it isn't captured as a name (§6).
+  // Drop a leading honorific (Herr/Frau/Monsieur/Sig./Sr./Dr…) so it isn't
+  // captured as a name (§6).
   after = after.replace(NAME_TITLE_RE, "");
-  const nm = after.match(/([A-ZÄÖÜ][a-zäöüß]+)\s+([A-ZÄÖÜ][a-zäöüß]+(?:\s+[A-ZÄÖÜ][a-zäöüß]+)?)/);
+  const nm = after.match(PERSON_NAME_RE);
   if (!nm) return null;
   const parts = `${nm[1]} ${nm[2]}`.split(/\s+/);
   return { first: parts[0], last: parts.slice(1).join(" ") };
@@ -332,6 +393,79 @@ const SHALLOW_TIMEOUT_MS = 7_000;
 /** Budget for a sub-page once the homepage has already answered (§V3.6). */
 const SUBPAGE_TIMEOUT_MS = 8_000;
 
+/**
+ * Read the homepage's OWN links to find where this site keeps its legal and
+ * company pages, instead of guessing paths at the root (§V3.9).
+ *
+ * Guessing is what breaks on real European sites. Calzedonia, Women'secret and
+ * Esotiq all serve their legal notice under a locale prefix — /es/aviso-legal,
+ * /it/note-legali — so every root-relative guess 404s and the firm comes back with
+ * nothing but a homepage, which is exactly what the first live test showed. The
+ * site itself already tells us the right URL in its own footer, and that footer is
+ * in HTML we have ALREADY downloaded, so reading it costs no request at all.
+ *
+ * Links are classified by href AND by anchor text, because a French footer links
+ * "/legal/12" with the words "Mentions légales".
+ *
+ * Only four pages are ever read, so ORDER decides what a firm gets known by. The
+ * ranking is by how reliably a page names the legal entity: a statutory notice
+ * first, then the privacy policy (the GDPR obliges every EU site to name its data
+ * controller there, which makes it the most dependable page on the continent),
+ * then contact, then anything else. Shallower paths win ties — Hunkemöller's
+ * /privacy carries "Hunkemöller B.V." while its /over-ons/corporate-social-
+ * responsibility carries nothing, and without this the deep sub-page displaced it.
+ */
+const PRIVACY_HINT_RE = /(privacy|datenschutz|confidentialite|privacid|prywatnosci|gizlilik|tietosuoja|osobnich)/i;
+const CONTACT_HINT_RE = /(contact|kontakt|contatti|contacto|contactos|iletisim|yhteystiedot)/i;
+
+function discoverInfoPages(html: string, base: string): string[] {
+  const found: Array<{ url: string; rank: number; depth: number }> = [];
+  const seen = new Set<string>();
+  let host: string;
+  try {
+    host = new URL(base).hostname.replace(/^www\./, "");
+  } catch {
+    return [];
+  }
+
+  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]{0,160}?)<\/a>/gi)) {
+    if (found.length >= 24) break;
+    const href = m[1] ?? "";
+    if (/^(mailto:|tel:|javascript:|#|data:)/i.test(href)) continue;
+
+    let abs: URL;
+    try {
+      abs = new URL(href, base);
+    } catch {
+      continue;
+    }
+    // Same site only — a link to a payment provider's imprint is not this firm's.
+    if (abs.hostname.replace(/^www\./, "") !== host) continue;
+    if (/\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(abs.pathname)) continue;
+
+    const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
+    if (url === base || seen.has(url)) continue;
+
+    const label = foldAccents(stripTags(m[2] ?? ""));
+    const path = foldAccents(abs.pathname);
+    const hit = (re: RegExp) => re.test(path) || re.test(label);
+
+    let rank: number;
+    if (hit(LEGAL_PAGE_RE)) rank = 0;
+    else if (!hit(COMPANY_INFO_PAGE_RE)) continue;
+    else if (hit(PRIVACY_HINT_RE)) rank = 1;
+    else if (hit(CONTACT_HINT_RE)) rank = 2;
+    else rank = 3;
+
+    seen.add(url);
+    found.push({ url, rank, depth: abs.pathname.replace(/\/$/, "").split("/").length });
+  }
+
+  return found
+    .sort((a, b) => a.rank - b.rank || a.depth - b.depth || a.url.length - b.url.length)
+    .map((f) => f.url);
+}
+
 /** How deeply to read a site (§V3.3).
  *  "shallow" — homepage only (1 request). Enough for reachability, product terms,
  *              role/model signals and social links, i.e. everything qualification
@@ -348,15 +482,22 @@ export type SiteDepth = "shallow" | "full";
  * it is reachable (and depth is "full") does it try a couple of high-signal
  * sub-pages. `productTerms` are the local-language terms the caller wants to
  * confirm on the site.
+ *
+ * `country` is the ISO code the firm was discovered in. It only ever selects WHICH
+ * sub-page paths to ask for (§V3.9) — never which words to look for, because the
+ * text dictionaries are all-language and always on. The site's own ccTLD outranks
+ * it when there is one.
  */
 export async function fetchSiteIntel(
   website: string,
   productTerms: string[],
   signals?: ProductSignals,
   depth: SiteDepth = "full",
+  country?: string | null,
 ): Promise<SiteIntel | null> {
   const base = normalizeUrl(website);
   if (!base) return null;
+  const lang = langForSite(website, country);
 
   const home = await fetchPage(base, depth === "shallow" ? SHALLOW_TIMEOUT_MS : 12_000);
   if (home == null) {
@@ -389,20 +530,40 @@ export async function fetchSiteIntel(
   // are small on purpose: unlike the shallow pass, these all hit the SAME host,
   // and hammering one server with six simultaneous requests is not something a
   // polite crawler does. Skipped entirely on a shallow read.
+  //
+  // WHICH pages are asked for is the one language-dependent part of verification
+  // (§V3.9), and the request count is unchanged. Two sources, in order:
+  //
+  //   1. Links the homepage itself publishes. Free — the HTML is already in hand —
+  //      and correct even when the site nests everything under a locale prefix
+  //      (/es/aviso-legal) or an opaque id (/legal/12 labelled "Mentions légales").
+  //   2. The country's conventional paths, as a fallback for sites whose footer is
+  //      script-built. A French site is asked for /mentions-legales, /contact,
+  //      /qui-sommes-nous rather than three guaranteed 404s on the German set.
   if (depth === "full") {
-    for (const round of SUBPAGE_ROUNDS) {
+    const discovered = discoverInfoPages(home, base);
+    const guessed = subpageRounds(lang).flat().map((p) => `${base}/${p}`);
+    const queue: string[] = [];
+    for (const u of [...discovered, ...guessed]) if (!queue.includes(u)) queue.push(u);
+
+    // Same shape as before: small parallel rounds of three, at most two of them.
+    // Rounds stay small on purpose — unlike the shallow pass these all hit the
+    // SAME host, and hammering one server with six simultaneous requests is not
+    // something a polite crawler does.
+    for (let i = 0; i < queue.length && i < 6; i += 3) {
       if (pages.length >= 4) break;
+      const round = queue.slice(i, i + 3);
       const results = await Promise.all(
-        round.map(async (path) => ({
-          url: `${base}/${path}`,
+        round.map(async (url) => ({
+          url,
           // The homepage already proved this host answers, so a sub-page that
           // stalls is a dead path rather than a slow server: it does not earn
           // the full budget.
-          html: await fetchPage(`${base}/${path}`, SUBPAGE_TIMEOUT_MS),
+          html: await fetchPage(url, SUBPAGE_TIMEOUT_MS),
         })),
       );
-      // Keep the declared path priority, not whichever answered first, so the
-      // pages a firm gets read are deterministic.
+      // Keep the declared priority, not whichever answered first, so the pages a
+      // firm gets read are deterministic.
       for (const r of results) {
         if (pages.length >= 4) break;
         if (r.html) pages.push({ url: r.url, html: r.html });
@@ -425,14 +586,25 @@ export async function fetchSiteIntel(
   let b2b = false;
   let b2c = false;
 
-  const normProductTerms = productTerms.map((t) => t.toLocaleLowerCase("de")).filter((t) => t.length >= 3);
-  const strongTerms = (signals?.strong ?? []).map((t) => t.toLocaleLowerCase("de")).filter((t) => t.length >= 3);
-  const mediumTerms = (signals?.medium ?? []).map((t) => t.toLocaleLowerCase("de")).filter((t) => t.length >= 3);
+  const normProductTerms = productTerms.map((t) => normalizeForMatch(t)).filter((t) => t.length >= 3);
+  const strongTerms = (signals?.strong ?? []).map((t) => normalizeForMatch(t)).filter((t) => t.length >= 3);
+  const mediumTerms = (signals?.medium ?? []).map((t) => normalizeForMatch(t)).filter((t) => t.length >= 3);
 
   for (const { url, html } of pages) {
     const text = stripTags(html);
-    const lower = text.toLocaleLowerCase("de");
-    const isImpressum = /impressum/i.test(url) || /impressum/i.test(lower.slice(0, 400));
+    const lower = normalizeForMatch(text);
+    // Two tiers of company-disclosure page (§V3.9).
+    //
+    // Germany's Impressum is a legal obligation to name the managing directors, so
+    // a name printed there is an official disclosure. Most of Europe has no such
+    // page: French, Italian and Spanish firms put their management on
+    // /qui-sommes-nous, /chi-siamo or /contacto instead, and the privacy policy
+    // names the data controller everywhere in the EU because the GDPR requires it.
+    // Reading only the strict legal page meant every non-German firm came back with
+    // no decision-maker at all. Both tiers are now read; the weaker one simply
+    // carries lower confidence, which is what the confidence field is for.
+    const isLegalPage = LEGAL_PAGE_RE.test(url) || LEGAL_PAGE_RE.test(lower.slice(0, 400));
+    const isCompanyInfo = isLegalPage || COMPANY_INFO_PAGE_RE.test(url);
     const context = pageContext(url);
 
     // Emails / phones — only what's literally present (placeholders excluded).
@@ -447,14 +619,21 @@ export async function fetchSiteIntel(
       if (cleaned.replace(/\D/g, "").length >= 7) phones.add(cleaned);
     }
 
-    // Role + model signals.
-    for (const { role, terms } of ROLE_KEYWORDS) {
-      if (terms.some((t) => (typeof t === "string" ? lower.includes(t) : t.test(lower)))) {
-        roleSignals.add(role);
+    // Role + model signals — from pages that actually speak about the business.
+    //
+    // The same page-context rule V3.1 applied to product terms applies here, and
+    // for the same reason: boilerplate is not evidence. A privacy policy discusses
+    // the "distribution" of personal data and a careers page discusses the company
+    // in the abstract; neither says what this firm sells or who it sells to.
+    if (context !== "LOW_VALUE") {
+      for (const { role, terms } of ROLE_KEYWORDS) {
+        if (terms.some((t) => (typeof t === "string" ? lower.includes(t) : t.test(lower)))) {
+          roleSignals.add(role);
+        }
       }
+      if (B2B_TERMS.some((t) => lower.includes(t))) b2b = true;
+      if (B2C_TERMS.some((t) => lower.includes(t))) b2c = true;
     }
-    if (B2B_TERMS.some((t) => lower.includes(t))) b2b = true;
-    if (B2C_TERMS.some((t) => lower.includes(t))) b2c = true;
 
     // Product term evidence (flat + tiered, §2/§V3.1).
     // V3.1: Product signals from LOW_VALUE pages (career/news/blog) are NOT added to
@@ -480,16 +659,20 @@ export async function fetchSiteIntel(
       }
     }
 
-    // Scale signals (only if literally stated).
-    storeCount = storeCount ?? numberBefore(lower, ["filialen", "filialen in", "standorte", "stores", "branches", "şube"]) ?? undefined;
-    employeeCount = employeeCount ?? numberBefore(lower, ["mitarbeiter", "mitarbeitende", "beschäftigte", "employees", "çalışan"]) ?? undefined;
+    // Scale signals (only if literally stated), in every language we read (§V3.9).
+    storeCount =
+      storeCount ??
+      numberBefore(lower, ["filialen", "filialen in", "standorte", "stores", "branches", "şube", ...STORE_TERMS_MULTILANG]) ??
+      undefined;
+    employeeCount =
+      employeeCount ??
+      numberBefore(lower, ["mitarbeiter", "mitarbeitende", "beschäftigte", "employees", "çalışan", ...EMPLOYEE_TERMS_MULTILANG]) ??
+      undefined;
 
-    // Legal name + decision-makers from the Impressum (strongest source, §6).
-    if (isImpressum) {
+    // Legal name, VAT id and decision-makers from a company-disclosure page (§6).
+    if (isCompanyInfo) {
       vatId = vatId ?? findVatId(text);
-      const legal = text.match(
-        /((?:[A-Za-zÄÖÜäöü0-9][\wäöüß.&\-]+\s+){1,3}(?:GmbH(?: & Co\.? KG)?|AG|KG|OHG|e\.K\.|UG(?: \(haftungsbeschränkt\))?|Ltd\.?|Inc\.?|GbR))/,
-      );
+      const legal = text.match(LEGAL_FORM_RE);
       const cleaned = legal && legal[1] ? cleanLegalName(legal[1]) : null;
       if (cleaned) legalName = legalName ?? cleaned;
       for (const { label, re } of DM_ROLE_PATTERNS) {
@@ -502,7 +685,10 @@ export async function fetchSiteIntel(
               lastName: nm.last,
               role: label,
               sourceUrl: url,
-              confidence: 85, // named + titled on the official Impressum → HIGH
+              // An official legal notice is a stronger source than an about or
+              // contact page, and the difference is recorded rather than flattened:
+              // 85 for a statutory disclosure, 70 for a self-published company page.
+              confidence: isLegalPage ? 85 : 70,
             });
           }
         }

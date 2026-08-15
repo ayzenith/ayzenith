@@ -236,6 +236,10 @@ export async function verifyCandidate(
     /** How deeply to read the site (§V3.3). Defaults to the full read so every
      *  existing caller keeps its old behaviour. */
     depth?: SiteDepth;
+    /** ISO country the firm was discovered in (§V3.9). Selects which sub-page
+     *  paths to ask for — never which words to look for. Optional: without it the
+     *  site's own ccTLD decides, and failing that the international path set. */
+    country?: string | null;
   },
 ): Promise<VerifyOutcome> {
   const base: VerifyOutcome = {
@@ -295,7 +299,13 @@ export async function verifyCandidate(
 
   let intel: SiteIntel | null = null;
   try {
-    intel = await fetchSiteIntel(dc.candidate.website, opts.productTerms, opts.productSignals, opts.depth ?? "full");
+    intel = await fetchSiteIntel(
+      dc.candidate.website,
+      opts.productTerms,
+      opts.productSignals,
+      opts.depth ?? "full",
+      opts.country ?? dc.candidate.country,
+    );
   } catch {
     intel = null;
   }

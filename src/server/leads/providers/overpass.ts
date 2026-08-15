@@ -122,7 +122,22 @@ function areaLine(target: Target): string {
     : `area["ISO3166-1"="${esc(target.value)}"][admin_level=2]->.a;`;
 }
 
-type QueryGroup = { key: string; label: string; clauses: string[] };
+type QueryGroup = {
+  key: string;
+  label: string;
+  clauses: string[];
+  /** Time this group is worth waiting for, as a fraction of the normal budget
+   *  (§V3.6). Groups are NOT equally valuable: the shop-tag query returns up to
+   *  150 firms and is the backbone of a search, while the name-regex query has to
+   *  be evaluated against every shop name in the area and typically returns two
+   *  to four extras. Measured across Düsseldorf and Bremen, the name group is
+   *  both the slowest and the one that most often fails outright, and because
+   *  groups run concurrently, it was setting the pace for all of them. Giving it
+   *  a smaller share means a slow one is abandoned rather than waited out — we
+   *  lose a handful of candidates instead of tens of seconds, and the loss is
+   *  reported honestly as a failed query. */
+  budget?: number;
+};
 
 /** Build the expansion plan (the query groups) for a product + business model. */
 function buildGroups(shops: string[], nameTerms: string[], model: string): QueryGroup[] {
@@ -143,6 +158,7 @@ function buildGroups(shops: string[], nameTerms: string[], model: string): Query
       key: "name",
       label: `İsim eşleşmesi (${nameTerms.filter((t) => t.length >= 4).slice(0, 4).join(", ")}…)`,
       clauses: [`nwr["shop"]["name"~"(${terms.join("|")})",i](area.a);`],
+      budget: 0.55,
     });
   }
 
@@ -235,20 +251,29 @@ async function fetchOverpass(
    *  (§V3.6) — that is what lets the whole group run at once without any single
    *  instance seeing more than its slot allowance. */
   preferIndex = 0,
+  /** Share of the normal per-endpoint budget this query is worth (see
+   *  QueryGroup.budget). 1 = full. */
+  budget = 1,
 ): Promise<OverpassElement[]> {
+  const scale = (e: { url: string; timeoutMs: number }) => ({
+    url: e.url,
+    timeoutMs: Math.max(6_000, Math.round(e.timeoutMs * budget)),
+  });
   const primary = ENDPOINTS[preferIndex % ENDPOINTS.length];
-  const mirror = ENDPOINTS[(preferIndex + 1) % ENDPOINTS.length];
+  const mirrorRaw = ENDPOINTS[(preferIndex + 1) % ENDPOINTS.length];
   if (!primary) throw new Error("Overpass uç noktası tanımlı değil");
+  const scaledPrimary = scale(primary);
+  const mirror = mirrorRaw ? scale(mirrorRaw) : undefined;
 
   let settled = false;
   const errors: string[] = [];
 
-  const primaryCall = askEndpoint(primary, ql, queryKey).then(
+  const primaryCall = askEndpoint(scaledPrimary, ql, queryKey).then(
     (r) => { settled = true; return r; },
     (e) => { errors.push(`birincil: ${(e as Error).message}`); throw e; },
   );
 
-  if (!mirror || mirror === primary) return primaryCall;
+  if (!mirror || mirror.url === scaledPrimary.url) return primaryCall;
 
   const mirrorCall = (async () => {
     await sleep(HEDGE_MS);
@@ -392,7 +417,7 @@ export async function discoverOsm(opts: {
             kind: target.kind,
             group: group.key,
             shops: shops.join(","),
-          }, i);
+          }, i, group.budget ?? 1);
           const cityLabel = target.kind === "city" ? normalizeCity(target.value) : undefined;
           const cands: LeadCandidate[] = [];
           for (const el of elements) {

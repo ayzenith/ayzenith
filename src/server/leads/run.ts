@@ -75,7 +75,7 @@ const DEEP_CAP = 12;
 /** The shallow pass is one request per host against MANY different domains, so it
  *  can run wider without being impolite to anyone; the deep pass hits the same
  *  host repeatedly and stays at the original, gentler width. */
-const SHALLOW_CONCURRENCY = 12;
+const SHALLOW_CONCURRENCY = 18;
 const VERIFY_CONCURRENCY = 8;
 
 /** Bounded-concurrency map (same pattern RADAR uses for its providers). */

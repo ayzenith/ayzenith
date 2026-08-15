@@ -1,5 +1,6 @@
 import "server-only";
 
+import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import type { LeadCandidate } from "./providers/types";
 import type { LeadRole } from "@/config/leads";
@@ -237,21 +238,172 @@ export async function saveDiscovery(
     saved++;
   };
 
-  // A single bad row must not lose the whole search, so each write is isolated:
-  // it is recorded as not-saved and the rest still land.
-  let cursor = 0;
-  await Promise.all(
-    Array.from({ length: Math.min(SAVE_CONCURRENCY, companies.length) }, async () => {
-      while (cursor < companies.length) {
-        const c = companies[cursor++]!;
-        try {
-          await writeCompany(c);
-        } catch {
-          // keep going; savedCount reports what actually landed
-        }
-      }
-    }),
+  // BULK PATH (§V3.6). A nested `create` per company is one round trip each, and
+  // at ~150 firms that was the single largest remaining cost of a search. The
+  // rows do not depend on one another, so they go as a handful of bulk inserts
+  // instead: ids are generated here, then companies and their children are
+  // written with createMany. Round trips drop from ~150 to a handful.
+  //
+  // createMany has no per-row isolation — one bad value rejects its whole
+  // statement — so writes are chunked to bound the blast radius, and any chunk
+  // that fails is retried ROW BY ROW through the nested path above. Losing a
+  // company to a bad value is acceptable; losing 149 of its neighbours is not.
+  const CHUNK = 50;
+  const chunks = <T,>(arr: T[], n: number): T[][] => {
+    const out: T[][] = [];
+    for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n));
+    return out;
+  };
+
+  const withIds = companies.map((c) => ({ c, id: randomUUID() }));
+
+  const companyRows = withIds.map(({ c, id }) => ({
+    id,
+    searchId: created.id,
+    name: c.candidate.name,
+    legalName: c.legalName ?? null,
+    canonicalName: c.canonicalName ?? null,
+    domain: c.domain ?? null,
+    website: c.candidate.website ?? null,
+    phone: c.phone ?? c.candidate.phone ?? null,
+    email: c.email ?? c.candidate.email ?? null,
+    country: c.candidate.country,
+    city: c.candidate.city ?? null,
+    address: c.candidate.address ?? null,
+    postalCode: c.candidate.postalCode ?? null,
+    latitude: c.candidate.latitude ?? null,
+    longitude: c.candidate.longitude ?? null,
+    businessModel: search.businessModel,
+    commercialRoles: c.roles,
+    size: c.size,
+    sizeSignals: c.sizeSignals as object,
+    productFit: c.productFit,
+    productFitTier: c.productFitTier,
+    productFitNote: c.productFitNote,
+    detectedModel: c.detectedModel,
+    modelFit: c.modelFit,
+    modelFitEvidence: c.modelFitEvidence,
+    websiteStatus: c.websiteStatus,
+    productCategories: c.productCategories,
+    storeCount: c.storeCount,
+    employeeCount: c.employeeCount,
+    locationCount: c.locationCount,
+    matchStatus: c.matchStatus,
+    verifiedAt: c.verifiedAt,
+    instagramUrl: c.instagramUrl ?? null,
+    facebookUrl: c.facebookUrl ?? null,
+    linkedinUrl: c.linkedinUrl ?? null,
+    tiktokUrl: c.tiktokUrl ?? null,
+    youtubeUrl: c.youtubeUrl ?? null,
+    xUrl: c.xUrl ?? null,
+    socialMatchStatus: c.socialMatchStatus ?? null,
+    socialProductSignal: c.socialProductSignal ?? null,
+    socialBusinessSignal: c.socialBusinessSignal ?? null,
+    socialVerifiedAt: c.socialVerifiedAt ?? null,
+    leadScore: c.leadScore,
+    leadConfidence: c.leadConfidence,
+    scoreBreakdown: c.scoreBreakdown as object,
+    status: c.status,
+    freshness: "FRESH" as const,
+    radarSnapshotId: c.radarSnapshotId ?? null,
+    discoveredVia: c.candidate.discoveredVia,
+  }));
+
+  // Children are only written for companies whose own row actually landed.
+  const landed = new Set<string>();
+
+  for (const chunk of chunks(companyRows, CHUNK)) {
+    try {
+      await db.leadCompany.createMany({ data: chunk as never });
+      for (const r of chunk) landed.add(r.id);
+      saved += chunk.length;
+    } catch {
+      // Fall back to the isolated nested path for just this chunk, so one bad
+      // value costs one company rather than fifty.
+      const ids = new Set(chunk.map((r) => r.id));
+      let cursor = 0;
+      const fallback = withIds.filter((w) => ids.has(w.id));
+      await Promise.all(
+        Array.from({ length: Math.min(SAVE_CONCURRENCY, fallback.length) }, async () => {
+          while (cursor < fallback.length) {
+            const item = fallback[cursor++]!;
+            try {
+              await writeCompany(item.c);
+            } catch {
+              // keep going; savedCount reports what actually landed
+            }
+          }
+        }),
+      );
+    }
+  }
+
+  const sourceRows = withIds.flatMap(({ c, id }) =>
+    landed.has(id)
+      ? c.sources.map((s) => ({
+          companyId: id,
+          dataField: s.dataField,
+          sourceType: s.sourceType,
+          label: s.label ?? null,
+          sourceUrl: s.sourceUrl ?? null,
+        }))
+      : [],
   );
+  const contactRows = withIds.flatMap(({ c, id }) =>
+    landed.has(id)
+      ? c.contacts.map((p) => ({
+          companyId: id,
+          firstName: p.firstName ?? null,
+          lastName: p.lastName ?? null,
+          role: p.role ?? null,
+          roleVerified: p.roleVerified,
+          corporateEmail: p.corporateEmail ?? null,
+          profileUrl: p.profileUrl ?? null,
+          confidence: p.confidence,
+          source: p.source,
+          sourceUrl: p.sourceUrl ?? null,
+        }))
+      : [],
+  );
+  const verificationRows = withIds.flatMap(({ c, id }) =>
+    landed.has(id)
+      ? c.verifications.map((v) => ({
+          companyId: id,
+          check: v.check,
+          passed: v.passed,
+          evidence: v.evidence ?? null,
+          sourceUrl: v.sourceUrl ?? null,
+        }))
+      : [],
+  );
+  // Branch locations — only when a firm actually has multiple (§4/§9); a
+  // single-location company is represented by its own row.
+  const locationRows = withIds.flatMap(({ c, id }) =>
+    landed.has(id) && c.locations.length > 1
+      ? c.locations.map((l) => ({
+          companyId: id,
+          name: l.name ?? null,
+          address: l.address ?? null,
+          city: l.city ?? null,
+          postalCode: l.postalCode ?? null,
+          latitude: l.latitude ?? null,
+          longitude: l.longitude ?? null,
+          phone: l.phone ?? null,
+          sourceType: "OSM" as const,
+          sourceUrl: l.sourceUrl ?? null,
+        }))
+      : [],
+  );
+
+  // Children go in parallel: they are independent tables with no ordering
+  // between them, and each is already batched.
+  const CHILD_CHUNK = 300;
+  await Promise.all([
+    ...chunks(sourceRows, CHILD_CHUNK).map((d) => db.leadSource.createMany({ data: d as never }).catch(() => undefined)),
+    ...chunks(contactRows, CHILD_CHUNK).map((d) => db.leadContact.createMany({ data: d as never }).catch(() => undefined)),
+    ...chunks(verificationRows, CHILD_CHUNK).map((d) => db.leadVerification.createMany({ data: d as never }).catch(() => undefined)),
+    ...chunks(locationRows, CHILD_CHUNK).map((d) => db.leadLocation.createMany({ data: d as never }).catch(() => undefined)),
+  ]);
 
   return { searchId: created.id, savedCount: saved };
 }

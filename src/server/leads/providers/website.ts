@@ -62,14 +62,13 @@ export type SiteIntel = {
 /** Product-fit signal tiers passed in from the resolved profile (§2). */
 export type ProductSignals = { strong: string[]; medium: string[] };
 
-const CANDIDATE_PATHS = [
-  "", // homepage
-  "impressum",
-  "kontakt",
-  "contact",
-  "ueber-uns",
-  "about",
-  "about-us",
+/** Sub-pages to try after the homepage, grouped into parallel rounds and ordered
+ *  most-likely-to-exist first (§V3.6). A German company site almost always has
+ *  /impressum — it is a legal requirement — so round one usually settles it and
+ *  round two never runs. */
+const SUBPAGE_ROUNDS: string[][] = [
+  ["impressum", "kontakt", "ueber-uns"],
+  ["contact", "about", "about-us"],
 ];
 
 /** Page context classification for product/model signal weighting (§V3.1).
@@ -290,6 +289,9 @@ async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null
  *  stays honestly "UNREACHABLE" rather than being called inactive (§V3.3). */
 const SHALLOW_TIMEOUT_MS = 7_000;
 
+/** Budget for a sub-page once the homepage has already answered (§V3.6). */
+const SUBPAGE_TIMEOUT_MS = 8_000;
+
 /** How deeply to read a site (§V3.3).
  *  "shallow" — homepage only (1 request). Enough for reachability, product terms,
  *              role/model signals and social links, i.e. everything qualification
@@ -335,14 +337,36 @@ export async function fetchSiteIntel(
   }
 
   const pages: Array<{ url: string; html: string }> = [{ url: base, html: home }];
-  // Try a few sub-pages, but stop early once we have an Impressum + contact.
-  // Skipped entirely on a shallow read — that is the whole point of the cheap pass.
+  // Sub-pages, in PARALLEL ROUNDS rather than one at a time (§V3.6).
+  //
+  // These were fetched strictly sequentially, so a company whose /impressum and
+  // /kontakt happen not to exist paid a full timeout for each miss before even
+  // trying the next — up to six round trips in a row for one firm, and the deep
+  // pass was the slowest phase of the whole search because of it.
+  //
+  // Each round asks for a few paths at once and stops as soon as we have enough,
+  // so the common case (a German site with /impressum) is a single round. Rounds
+  // are small on purpose: unlike the shallow pass, these all hit the SAME host,
+  // and hammering one server with six simultaneous requests is not something a
+  // polite crawler does. Skipped entirely on a shallow read.
   if (depth === "full") {
-    for (const path of CANDIDATE_PATHS.slice(1)) {
+    for (const round of SUBPAGE_ROUNDS) {
       if (pages.length >= 4) break;
-      const url = `${base}/${path}`;
-      const html = await fetchPage(url);
-      if (html) pages.push({ url, html });
+      const results = await Promise.all(
+        round.map(async (path) => ({
+          url: `${base}/${path}`,
+          // The homepage already proved this host answers, so a sub-page that
+          // stalls is a dead path rather than a slow server: it does not earn
+          // the full budget.
+          html: await fetchPage(`${base}/${path}`, SUBPAGE_TIMEOUT_MS),
+        })),
+      );
+      // Keep the declared path priority, not whichever answered first, so the
+      // pages a firm gets read are deterministic.
+      for (const r of results) {
+        if (pages.length >= 4) break;
+        if (r.html) pages.push({ url: r.url, html: r.html });
+      }
     }
   }
 

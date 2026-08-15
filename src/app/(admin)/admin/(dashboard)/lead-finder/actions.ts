@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/server/auth";
 import { canManageSettings } from "@/lib/auth/roles";
 import { logActivity } from "@/server/activity";
 import { runDiscovery } from "@/server/leads/run";
+import { verifyPendingBatch } from "@/server/leads/reverify";
 import { COUNTRY_LABELS } from "@/config/leads";
 
 /**
@@ -86,5 +87,39 @@ export async function startSearchAction(
     return { searchId };
   } catch (e) {
     return { error: `Arama çalıştırılamadı: ${(e as Error).message}` };
+  }
+}
+
+/**
+ * Verify the next batch of firms a search never got to (§V3.4).
+ *
+ * Discovery stops reading websites once it hits its request budget, so a large
+ * search ends with most firms marked "kontrol edilmedi". This lets the owner
+ * push that forward from the results screen instead of waiting for the hourly
+ * cron. It only ever reads sites already on file — it never re-discovers.
+ */
+export type ContinueVerifyState = {
+  error?: string;
+  attempted?: number;
+  reachable?: number;
+  remaining?: number;
+};
+
+export async function continueVerificationAction(
+  _prev: ContinueVerifyState,
+  formData: FormData,
+): Promise<ContinueVerifyState> {
+  const user = await requireAdmin();
+  if (!user) return { error: "Bu işlem için yetkiniz yok." };
+
+  const searchId = String(formData.get("searchId") ?? "").trim();
+  if (!searchId) return { error: "Arama bulunamadı." };
+
+  try {
+    const r = await verifyPendingBatch(searchId);
+    revalidatePath(`/admin/lead-finder/${searchId}`);
+    return { attempted: r.attempted, reachable: r.reachable, remaining: r.remaining };
+  } catch (e) {
+    return { error: `Doğrulama sürdürülemedi: ${(e as Error).message}` };
   }
 }

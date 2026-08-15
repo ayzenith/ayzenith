@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
+import { httpGetText } from "./http";
 import type { LeadProviderId } from "./providers/types";
 
 /**
@@ -39,6 +40,12 @@ export type LeadFetchOptions = {
   parse?: (text: string) => unknown;
   /** Abort the request after this many ms (free endpoints can hang). */
   timeoutMs?: number;
+  /** Fetch through the hardened node:https client instead of global fetch.
+   *  Set for arbitrary third-party WEBSITES: a malformed response makes undici
+   *  assert outside the promise chain and take the whole process down, which one
+   *  real lead's site did reproducibly. Our own known API endpoints (Overpass)
+   *  stay on fetch. See http.ts (§V3.4). */
+  safeHttp?: boolean;
   /** Reject a parsed payload as a soft failure WITHOUT caching it — e.g. an
    *  Overpass server-side timeout returns HTTP 200 with an empty body + a
    *  `remark`, which must never be cached or read as a real "empty" result. */
@@ -77,27 +84,39 @@ export async function cachedLeadFetch(opts: LeadFetchOptions): Promise<LeadFetch
   }
 
   // 2. Real fetch (with a timeout; free endpoints occasionally stall).
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 25_000);
   let text: string;
-  try {
-    const res = await fetch(opts.url, {
-      method: opts.method ?? "GET",
-      headers: {
-        // A descriptive UA is required by OSM/Nominatim usage policy.
-        "user-agent": "AYZENITH-LeadFinder/1.0 (+https://www.ayzenith.com)",
-        ...opts.headers,
-      },
-      body: opts.body,
-      cache: "no-store",
-      signal: controller.signal,
-    });
-    if (!res.ok) {
+  if (opts.safeHttp) {
+    // Third-party websites go through the hardened node:https client: some real
+    // servers answer with malformed framing, and undici reacts to that with an
+    // AssertionError thrown outside the promise chain, which no try/catch here
+    // can stop — it kills the process. See http.ts (§V3.4).
+    const res = await httpGetText(opts.url, { timeoutMs: opts.timeoutMs ?? 25_000, headers: opts.headers });
+    if (res.status < 200 || res.status >= 300) {
       throw new Error(`${opts.provider} HTTP ${res.status} — ${opts.url}`);
     }
-    text = await res.text();
-  } finally {
-    clearTimeout(timer);
+    text = res.text;
+  } else {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), opts.timeoutMs ?? 25_000);
+    try {
+      const res = await fetch(opts.url, {
+        method: opts.method ?? "GET",
+        headers: {
+          // A descriptive UA is required by OSM/Nominatim usage policy.
+          "user-agent": "AYZENITH-LeadFinder/1.0 (+https://www.ayzenith.com)",
+          ...opts.headers,
+        },
+        body: opts.body,
+        cache: "no-store",
+        signal: controller.signal,
+      });
+      if (!res.ok) {
+        throw new Error(`${opts.provider} HTTP ${res.status} — ${opts.url}`);
+      }
+      text = await res.text();
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   const payload = (opts.parse ?? JSON.parse)(text);

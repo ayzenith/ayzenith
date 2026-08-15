@@ -273,6 +273,9 @@ async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null
       parse: (t) => t, // keep raw HTML
       timeoutMs,
       ttlDays: 30,
+      // Company sites are untrusted third parties — one of them (a real Berlin
+      // lead) reliably crashed the process through undici's parser (§V3.4).
+      safeHttp: true,
     });
     return typeof res.payload === "string" ? res.payload : null;
   } catch {

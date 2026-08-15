@@ -14,6 +14,8 @@ import { LeadCard } from "@/components/admin/leads/lead-card";
 import { LeadFilters } from "@/components/admin/leads/filters";
 import { buildWhyLead, positiveWhy } from "@/components/admin/leads/why";
 import { flagEmoji } from "@/components/admin/leads/ui";
+import { ContinueVerify } from "@/components/admin/leads/continue-verify";
+import { countPending } from "@/server/leads/reverify";
 
 export const metadata: Metadata = { title: "Sonuçlar · Lead Finder", robots: { index: false, follow: false } };
 export const dynamic = "force-dynamic";
@@ -37,6 +39,8 @@ export default async function LeadResultsPage({
   const filtered = applyLeadFilters(all, filters);
   const cities = distinctCities(all);
   const sum = summarize(all);
+  // Firms still awaiting a first website check — drives the "continue" button (§V3.4).
+  const pendingCount = await countPending(id);
 
   // TOP LEADS (§7) — the commercially strongest candidates from the CURRENT
   // filtered view, ranked by the GATED priority then score (never score alone).
@@ -225,6 +229,7 @@ export default async function LeadResultsPage({
             — kontrol edilmeyenler için &quot;belirsiz&quot; ifadesi <i>o firma hakkında bir bulgu değil</i>, sadece bu turda sıra gelmediği anlamına gelir.
           </span>
         ) : null}
+        <ContinueVerify searchId={search.id} pending={pendingCount} />
       </div>
 
       {/* Provider errors / honest limitations (§16/§31) */}

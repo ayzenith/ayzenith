@@ -147,3 +147,48 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
   }
   return s;
 }
+
+// ---------------------------------------------------------------------------
+// Relevance ordering (§V3.8)
+// ---------------------------------------------------------------------------
+
+/**
+ * How relevant a firm is TO THE SEARCHED PRODUCT, as a rank for ordering.
+ *
+ * The score deliberately does NOT answer this. When product fit is UNVERIFIED
+ * the component is marked unavailable and the score is re-normalised over the
+ * remaining criteria — which is the honest thing to do, because "we did not
+ * look" must never read as "this firm is bad". But it means a firm with no
+ * product relevance at all is not held back either: it is simply scored on
+ * being a well-documented wholesaler.
+ *
+ * The first live Berlin run showed exactly what that costs. Searching for
+ * kadın iç giyim returned Raab Karcher (building materials) at 76 and Sonepar
+ * (electrical) at 73, above every one of the seven actual lingerie shops —
+ * Mode & Dessous 68, Rose Rosa Dessous-Fachgeschäft 58, Anna Dessous, Change
+ * Lingerie, Viabella Dessous and Damenwäsche at 53. A meat wholesaler and a
+ * flower market outranked a Dessous-Fachgeschäft.
+ *
+ * So relevance drives the ORDER while the score keeps its meaning. Nothing is
+ * penalised for being unchecked: "no product proof" sits in the middle, above
+ * only firms we actually looked at and found unrelated. The tier split matters
+ * too — a STRONG signal is a specific shop tag or the firm's own name, which is
+ * what separates a Dessous shop from the workwear catalogues that merely list
+ * "Unterwäsche" among boots and ear protection.
+ */
+export function relevanceRank(c: LeadCompanyView): number {
+  if (c.productFit === "NOT_RELEVANT") return 0; // checked, and contradicted
+  if (c.productFit === "VERIFIED") return 4;
+  if (c.productFit === "LIKELY") return c.productFitTier === "STRONG" ? 3 : 2;
+  return 1; // UNCLEAR / UNVERIFIED — unknown, never treated as negative
+}
+
+/** Order for the results list: relevance first, then the score within it. */
+export function sortByRelevance(companies: LeadCompanyView[]): LeadCompanyView[] {
+  return [...companies].sort(
+    (a, b) =>
+      relevanceRank(b) - relevanceRank(a) ||
+      (b.leadScore ?? -1) - (a.leadScore ?? -1) ||
+      a.name.localeCompare(b.name, "tr"),
+  );
+}

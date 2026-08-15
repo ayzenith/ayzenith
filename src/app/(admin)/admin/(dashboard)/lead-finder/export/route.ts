@@ -2,7 +2,7 @@ import type { NextRequest } from "next/server";
 import { getCurrentUser } from "@/server/auth";
 import { canManageSettings } from "@/lib/auth/roles";
 import { getSearch, listCompaniesForSearch } from "@/server/leads/leads";
-import { applyLeadFilters, parseLeadFilters } from "@/server/leads/filter";
+import { applyLeadFilters, parseLeadFilters, sortByRelevance } from "@/server/leads/filter";
 import { getCompaniesForExport, buildXlsx, buildCsv } from "@/server/leads/export";
 import { db } from "@/lib/db";
 
@@ -35,7 +35,9 @@ export async function GET(req: NextRequest) {
 
   const filters = parseLeadFilters(Object.fromEntries(sp.entries()));
   const all = await listCompaniesForSearch(searchId);
-  const filtered = applyLeadFilters(all, filters);
+  // Same relevance order the screen shows, so a downloaded file never disagrees
+  // with the list it was exported from (§16/§V3.8).
+  const filtered = sortByRelevance(applyLeadFilters(all, filters));
   const companies = await getCompaniesForExport(filtered.map((c) => c.id));
 
   // Record the export (auditable; §27).

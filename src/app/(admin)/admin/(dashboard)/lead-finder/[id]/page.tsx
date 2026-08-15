@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/server/auth";
 import { getSearch, listCompaniesForSearch } from "@/server/leads/leads";
-import { applyLeadFilters, parseLeadFilters, distinctCities, summarize, priorityOf } from "@/server/leads/filter";
+import { applyLeadFilters, parseLeadFilters, distinctCities, summarize, priorityOf, sortByRelevance, relevanceRank } from "@/server/leads/filter";
 import { PRIORITY_LABELS } from "@/config/leads";
 import { PageHeader } from "@/components/admin/page-header";
 import { LeadCard } from "@/components/admin/leads/lead-card";
@@ -36,7 +36,10 @@ export default async function LeadResultsPage({
 
   const all = await listCompaniesForSearch(id);
   const filters = parseLeadFilters(sp);
-  const filtered = applyLeadFilters(all, filters);
+  // Ordered by relevance to the SEARCHED product first, then score (§V3.8) — the
+  // score alone put building-materials and electrical wholesalers above every
+  // actual lingerie shop in the first live run.
+  const filtered = sortByRelevance(applyLeadFilters(all, filters));
   const cities = distinctCities(all);
   const sum = summarize(all);
   // Firms still awaiting a first website check — drives the "continue" button (§V3.4).
@@ -48,7 +51,15 @@ export default async function LeadResultsPage({
   const topLeads = [...filtered]
     .map((c) => ({ c, p: priorityOf(c) }))
     .filter((x) => x.p === "HIGH" || x.p === "MEDIUM")
-    .sort((a, b) => (PRIORITY_RANK[b.p] ?? 0) - (PRIORITY_RANK[a.p] ?? 0) || (b.c.leadScore ?? -1) - (a.c.leadScore ?? -1))
+    // Priority first, then RELEVANCE to the searched product, then score. Without
+    // the middle term this block led with whichever wholesaler happened to be
+    // best documented, regardless of whether it sells anything like the product.
+    .sort(
+      (a, b) =>
+        (PRIORITY_RANK[b.p] ?? 0) - (PRIORITY_RANK[a.p] ?? 0) ||
+        relevanceRank(b.c) - relevanceRank(a.c) ||
+        (b.c.leadScore ?? -1) - (a.c.leadScore ?? -1),
+    )
     .slice(0, 3)
     .map(({ c, p }) => ({
       c,

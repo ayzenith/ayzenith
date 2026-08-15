@@ -31,9 +31,20 @@ export const LEAD_BAND: Record<LeadBand, BandStyle> = {
   INSUFFICIENT_DATA: { label: "VERİ YETERSİZ", dot: "⚠", fg: "#5b5b5b", bg: "#f1f0ee", border: "#d9d6d1" },
 };
 
+/** Every value LeadProductFit can take MUST have an entry (§V3.8).
+ *
+ *  LIKELY and NOT_RELEVANT were missing, and the lookup falls back to
+ *  UNVERIFIED, so a firm we had genuinely placed as "Muhtemel" was shown to the
+ *  owner as "Doğrulanamadı". In the first live Berlin search that hit every one
+ *  of the seven real lingerie shops — Mode & Dessous, Rose Rosa
+ *  Dessous-Fachgeschäft, Anna Dessous, Change Lingerie and the rest — so the
+ *  screen was hiding the best product signal the run produced. Understating what
+ *  we know is the same failure as overstating it. */
 export const FIT_STYLE: Record<string, { fg: string; bg: string; label: string }> = {
   VERIFIED: { fg: "#2f7a48", bg: "#eaf3ec", label: "Doğrulandı" },
+  LIKELY: { fg: "#8a6d1f", bg: "#f8f1dc", label: "Muhtemel" },
   UNCLEAR: { fg: "#8a6d1f", bg: "#f8f1dc", label: "Belirsiz" },
+  NOT_RELEVANT: { fg: "#8a2b2b", bg: "#fbeaea", label: "İlgisiz" },
   UNVERIFIED: { fg: "#5b5b5b", bg: "#f1f0ee", label: "Doğrulanamadı" },
 };
 

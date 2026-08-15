@@ -14,7 +14,7 @@ import {
   type LeadScoreComponent,
 } from "@/config/leads";
 import { PageHeader } from "@/components/admin/page-header";
-import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct } from "@/components/admin/leads/ui";
+import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct, externalHref } from "@/components/admin/leads/ui";
 import { buildWhyLead } from "@/components/admin/leads/why";
 
 export const metadata: Metadata = { title: "Lead Detayı · Lead Finder", robots: { index: false, follow: false } };
@@ -185,11 +185,15 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             {/* Contact — only sourced fields */}
             {(c.website || c.phone || c.email) ? (
               <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 text-small text-muted">
-                {c.website ? (
-                  <a href={c.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-foreground">
+                {c.website && externalHref(c.website) ? (
+                  <a href={externalHref(c.website)!} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 hover:text-foreground">
                     <Globe className="size-4 shrink-0" aria-hidden="true" />{c.website}
                     <ExternalLink className="size-3 text-subtle" aria-hidden="true" />
                   </a>
+                ) : c.website ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Globe className="size-4 shrink-0" aria-hidden="true" />{c.website}
+                  </span>
                 ) : null}
                 {c.phone ? <span className="inline-flex items-center gap-2"><Phone className="size-4 shrink-0" aria-hidden="true" />{c.phone}</span> : null}
                 {c.email ? <span className="inline-flex items-center gap-2"><Mail className="size-4 shrink-0" aria-hidden="true" />{c.email}</span> : null}

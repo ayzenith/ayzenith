@@ -6,7 +6,7 @@ import {
   scoreBand, qualifiedPriority, PRIORITY_LABELS, LEAD_ROLE_LABELS, SIZE_LABELS,
   DETECTED_MODEL_LABELS, FRESHNESS_META, MODEL_FIT_META, SOCIAL_PLATFORMS,
 } from "@/config/leads";
-import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct } from "./ui";
+import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct, externalHref } from "./ui";
 import { buildWhyLead, positiveWhy } from "./why";
 import type { LeadCompanyView } from "@/server/leads/leads";
 
@@ -27,6 +27,8 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
     qualifiedPriority({ leadScore: c.leadScore, modelFit: c.modelFit, productFit: c.productFit, websiteStatus: c.websiteStatus, hasContact })
   ];
   const model = c.businessModel === "B2C" ? "B2C" : "B2B";
+  // OSM website tags are free text and often lack a scheme (§V3.9).
+  const websiteHref = c.website ? externalHref(c.website) : null;
   const mfit = MODEL_FIT_META[(c.modelFit as keyof typeof MODEL_FIT_META)] ?? MODEL_FIT_META.UNVERIFIED;
   const socials = SOCIAL_PLATFORMS.map((p) => ({
     label: p.label,
@@ -121,12 +123,19 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
       {/* Contact — only what is actually sourced */}
       {(c.website || c.phone || c.email || c.address) ? (
         <div className="flex flex-col gap-1 text-caption text-muted">
-          {c.website ? (
-            <a href={c.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 truncate hover:text-foreground">
+          {websiteHref ? (
+            <a href={websiteHref} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1.5 truncate hover:text-foreground">
               <Globe className="size-3.5 shrink-0" aria-hidden="true" />
               <span className="truncate">{c.domain ?? c.website}</span>
               <ExternalLink className="size-3 shrink-0 text-subtle" aria-hidden="true" />
             </a>
+          ) : c.website ? (
+            // A website we cannot turn into a safe link is still worth showing —
+            // suppressing it would hide a sourced field (§18).
+            <span className="inline-flex items-center gap-1.5 truncate">
+              <Globe className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="truncate">{c.domain ?? c.website}</span>
+            </span>
           ) : null}
           {c.phone ? <span className="inline-flex items-center gap-1.5"><Phone className="size-3.5 shrink-0" aria-hidden="true" />{c.phone}</span> : null}
           {c.email ? <span className="inline-flex items-center gap-1.5 truncate"><Mail className="size-3.5 shrink-0" aria-hidden="true" />{c.email}</span> : null}

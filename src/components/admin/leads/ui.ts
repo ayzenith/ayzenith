@@ -48,6 +48,28 @@ export const FIT_STYLE: Record<string, { fg: string; bg: string; label: string }
   UNVERIFIED: { fg: "#5b5b5b", bg: "#f1f0ee", label: "Doğrulanamadı" },
 };
 
+/**
+ * A website value turned into a safe absolute href.
+ *
+ * OSM's `website` tag is free text and is very often written without a scheme —
+ * "dmagazine.it". A bare host in an href is a RELATIVE path, so that lead's link
+ * pointed at ayzenith.com/admin/lead-finder/dmagazine.it and 404'd instead of
+ * opening the firm's site. Normalising here rather than at save time also repairs
+ * every row already in the database. Anything that is not http(s) is refused
+ * outright, so a stray "javascript:" in a map tag can never become a link.
+ */
+export function externalHref(url: string): string | null {
+  const raw = url.trim();
+  if (!raw) return null;
+  const withScheme = /^[a-z][a-z0-9+.-]*:/i.test(raw) ? raw : `https://${raw}`;
+  try {
+    const u = new URL(withScheme);
+    return u.protocol === "http:" || u.protocol === "https:" ? u.toString() : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Country ISO alpha-2 → flag emoji (same technique as RADAR). */
 export function flagEmoji(cc: string): string {
   if (!cc || cc.length !== 2) return "🌍";

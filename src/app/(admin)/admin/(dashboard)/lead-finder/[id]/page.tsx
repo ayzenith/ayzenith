@@ -48,16 +48,27 @@ export default async function LeadResultsPage({
   // TOP LEADS (§7) — the commercially strongest candidates from the CURRENT
   // filtered view, ranked by the GATED priority then score (never score alone).
   const PRIORITY_RANK: Record<string, number> = { HIGH: 3, MEDIUM: 2, LOW: 1, DATA_LIMITED: 0, DO_NOT: -1 };
+  // RELEVANCE leads here, then priority, then score (§V3.8).
+  //
+  // Priority alone was the wrong gate for this block. It measures how COMPLETE
+  // our data on a firm is — website read, contact found — so the seven genuine
+  // Dessous shops in the first Berlin run all sat at DÜŞÜK simply because nobody
+  // had opened their sites yet, and the block led with a workwear printer and a
+  // building-materials merchant that happened to be well documented. That
+  // answers "what do we know most about", not "who is worth approaching about
+  // this product".
+  //
+  // A firm carrying a STRONG product signal — a shop tag or its own name — is
+  // therefore eligible even at LOW priority. Its card still shows every gap
+  // honestly, so promoting it overstates nothing; it just stops a verified
+  // irrelevance from outranking an unverified match.
   const topLeads = [...filtered]
-    .map((c) => ({ c, p: priorityOf(c) }))
-    .filter((x) => x.p === "HIGH" || x.p === "MEDIUM")
-    // Priority first, then RELEVANCE to the searched product, then score. Without
-    // the middle term this block led with whichever wholesaler happened to be
-    // best documented, regardless of whether it sells anything like the product.
+    .map((c) => ({ c, p: priorityOf(c), r: relevanceRank(c) }))
+    .filter((x) => x.p === "HIGH" || x.p === "MEDIUM" || x.r >= 3)
     .sort(
       (a, b) =>
+        b.r - a.r ||
         (PRIORITY_RANK[b.p] ?? 0) - (PRIORITY_RANK[a.p] ?? 0) ||
-        relevanceRank(b.c) - relevanceRank(a.c) ||
         (b.c.leadScore ?? -1) - (a.c.leadScore ?? -1),
     )
     .slice(0, 3)
@@ -264,8 +275,9 @@ export default async function LeadResultsPage({
             <Star className="size-4 text-[#2f7a48]" aria-hidden="true" /> Öne çıkan lead&apos;ler
           </h2>
           <p className="mt-0.5 text-caption text-subtle">
-            Ticari açıdan en değerli adaylar — yalnızca ürün uyumu, ticari model, website ve iletişim gibi
-            doğrulanmış sinyallere göre sıralanır (yüksek skor tek başına yeterli değildir).
+            Aranan ürünle bağlantısı en güçlü adaylar önce gelir; sonra ticari model, website ve iletişim
+            gibi doğrulanmış sinyaller sıralar. Yüksek skor tek başına yeterli değildir — sitesi henüz
+            okunmamış bir uzman mağaza, ürünle ilgisi olmayan ama verisi tam bir toptancıdan önce gelir.
           </p>
           <ol className="mt-4 grid gap-3 lg:grid-cols-3">
             {topLeads.map(({ c, p, why }, i) => (

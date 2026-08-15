@@ -11,6 +11,7 @@ import {
   startAnalysisAction, matchProductAction,
   type StartState, type MatchState,
 } from "@/app/(admin)/admin/(dashboard)/radar/actions";
+import { BrandLoader } from "@/components/ui/brand-loader";
 import { BUSINESS_MODELS, type BusinessModel } from "@/config/radar";
 import type { HsMatch } from "@/server/radar/hs";
 import { cn } from "@/lib/utils";
@@ -43,7 +44,7 @@ function Running() {
   return (
     <div className="rounded-2xl border border-border bg-surface p-8">
       <div className="flex items-center gap-3">
-        <Loader2 className="size-5 animate-spin text-accent" aria-hidden="true" />
+        <BrandLoader size="lg" label="Analiz hazırlanıyor" />
         <div>
           <h2 className="text-h6 font-semibold text-foreground">Analiz çalışıyor…</h2>
           <p className="text-caption text-subtle">

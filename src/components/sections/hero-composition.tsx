@@ -41,9 +41,12 @@ export function HeroComposition() {
           <line x1="200" y1="80" x2="200" y2="320" />
         </g>
 
-        {/* Outer reach ring — dashed, slowly rotating (motion-safe). */}
+        {/* Outer reach ring — dashed, rotating (motion-safe). At the original 90s
+            the movement was below the threshold most people notice, so the
+            artwork read as a flat illustration; 45s is still unhurried but the
+            piece is now visibly alive. */}
         <g
-          className="motion-safe:[animation:spin_90s_linear_infinite]"
+          className="motion-safe:[animation:spin_45s_linear_infinite]"
           style={{ transformOrigin: "200px 200px" }}
         >
           <circle
@@ -59,7 +62,7 @@ export function HeroComposition() {
 
         {/* Tilted trade-route orbit with connection nodes and links. */}
         <g
-          className="motion-safe:[animation:spin_120s_linear_infinite]"
+          className="motion-safe:[animation:spin_60s_linear_infinite]"
           style={{ transformOrigin: "200px 200px" }}
         >
           <ellipse

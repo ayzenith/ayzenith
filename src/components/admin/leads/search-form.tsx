@@ -3,13 +3,14 @@
 import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertCircle, Building2, ChevronDown, Loader2, MapPin, Play, Search,
+  AlertCircle, Building2, ChevronDown, MapPin, Play, Search,
   ShoppingCart, Radar as RadarIcon,
 } from "lucide-react";
 import {
   startSearchAction, type StartSearchState,
 } from "@/app/(admin)/admin/(dashboard)/lead-finder/actions";
 import { LEAD_ROLES } from "@/config/leads";
+import { BrandLoader } from "@/components/ui/brand-loader";
 import { cn } from "@/lib/utils";
 
 /**
@@ -50,8 +51,8 @@ const STAGES = [
 function Running() {
   return (
     <div className="rounded-2xl border border-border bg-surface p-8">
-      <div className="flex items-center gap-3">
-        <Loader2 className="size-5 animate-spin text-accent" aria-hidden="true" />
+      <div className="flex items-center gap-4">
+        <BrandLoader size="lg" label="Aday firmalar aranıyor" />
         <div>
           <h2 className="text-h6 font-semibold text-foreground">Aday firmalar aranıyor…</h2>
           <p className="text-caption text-subtle">

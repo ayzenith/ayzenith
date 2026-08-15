@@ -284,6 +284,9 @@ export default async function LeadResultsPage({
             Aranan ürünle bağlantısı en güçlü adaylar önce gelir; sonra ticari model, website ve iletişim
             gibi doğrulanmış sinyaller sıralar. Yüksek skor tek başına yeterli değildir — sitesi henüz
             okunmamış bir uzman mağaza, ürünle ilgisi olmayan ama verisi tam bir toptancıdan önce gelir.
+            &ldquo;Sitesini okuduk, ürün bağlantısı çıkmadı&rdquo; ile &ldquo;henüz bakmadık&rdquo; aynı şey
+            değildir: ilki zayıf da olsa bir bilgidir ve daha aşağıda sıralanır. Hiçbiri &ldquo;ilgisiz&rdquo;
+            sayılmaz, hiçbiri gizlenmez.
           </p>
           <ol className="mt-4 grid gap-3 lg:grid-cols-3">
             {topLeads.map(({ c, p, why }, i) => (

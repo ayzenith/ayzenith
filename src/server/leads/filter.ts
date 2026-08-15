@@ -185,9 +185,29 @@ export function summarize(companies: LeadCompanyView[]): LeadSummary {
  */
 export function relevanceRank(c: LeadCompanyView): number {
   if (c.productFit === "NOT_RELEVANT") return 0; // checked, and contradicted
-  if (c.productFit === "VERIFIED") return 4;
-  if (c.productFit === "LIKELY") return c.productFitTier === "STRONG" ? 3 : 2;
-  return 1; // UNCLEAR / UNVERIFIED — unknown, never treated as negative
+  if (c.productFit === "VERIFIED") return 5;
+  if (c.productFit === "LIKELY") return c.productFitTier === "STRONG" ? 4 : 3;
+
+  // "We looked and found nothing" is NOT the same as "we never looked" (§V3.10).
+  //
+  // Both used to sit at the same rank, and the first live Milano run showed what
+  // that costs. The OSM wholesale tag says a firm sells in bulk but never says
+  // WHAT it sells, and in Milano that tag is dominated by construction: the
+  // kadın-iç-giyim search surfaced Pibamarmi (marble), Mastro Legno (timber),
+  // Attorgomma (rubber), Ecofer and Parasider (steel) and four builders' merchants.
+  // We fetched their sites and found no lingerie term anywhere on them — yet
+  // Pibamarmi still ranked at 78, ABOVE Intimissimi at 59, a genuine four-branch
+  // lingerie chain whose site we never opened because OSM lists no website for it.
+  //
+  // Reading a firm's own site and finding no trace of the product is weak evidence,
+  // but it IS evidence, and it is strictly more than we know about a firm we never
+  // opened. So it ranks below "not looked at" — while still, deliberately, ranking
+  // above NOT_RELEVANT. Nothing here is called irrelevant and nothing is hidden:
+  // the honesty doctrine forbids treating a gap as a negative, and an absence found
+  // on a page we actually read is not a gap.
+  if (c.websiteStatus === "ACTIVE") return 1;
+
+  return 2; // never looked at — unknown, and unknown is not negative
 }
 
 /** Order for the results list: relevance first, then the score within it. */

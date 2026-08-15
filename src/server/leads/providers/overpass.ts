@@ -329,3 +329,84 @@ export async function discoverOsm(opts: {
     errors,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Chain scale (§V3.5) — how many outlets a BRAND has across the whole country.
+// ---------------------------------------------------------------------------
+
+/** Endpoints for the chain-scale query. It is far heavier than a discovery
+ *  query (it scans a whole country) so it gets its own, much longer budget —
+ *  measured at ~82s for six brands. The mirror leads because the main public
+ *  instance rejects a request this size more often. */
+const SCALE_ENDPOINTS: Array<{ url: string; timeoutMs: number }> = [
+  { url: "https://overpass.kumi.systems/api/interpreter", timeoutMs: 110_000 },
+  { url: "https://overpass-api.de/api/interpreter", timeoutMs: 100_000 },
+];
+
+/** Count a chain's outlets per brand, country-wide, in ONE query.
+ *
+ * A search only ever sees the branches inside the searched city, so a national
+ * chain and a single shop look identical — "Berlin'de 1 şube" is true of both
+ * NKD (1101 outlets in Germany) and a corner boutique. This closes that gap.
+ *
+ * Deliberately keyed on OSM's `brand` tag rather than `name`: `brand` is what
+ * mappers put on chain outlets, so a hit is real evidence of a chain. A brand
+ * that returns NOTHING is NOT a firm with zero shops — it is a firm OSM does not
+ * record as a chain, and callers must treat the absence as "not measured", never
+ * as a count of 0.
+ *
+ * The response is reduced to per-brand counts BEFORE caching, so the cache row
+ * holds a handful of numbers instead of the ~1.5 MB of tags they came from.
+ */
+export async function countBrandOutlets(
+  countryIso: string,
+  brands: string[],
+): Promise<Record<string, number>> {
+  const wanted = Array.from(new Set(brands.map((b) => b.trim()).filter((b) => b.length >= 2))).slice(0, 30);
+  if (wanted.length === 0) return {};
+
+  const alt = wanted.map(reEsc).join("|");
+  const ql = [
+    `[out:json][timeout:120];`,
+    `area["ISO3166-1"="${esc(countryIso)}"][admin_level=2]->.a;`,
+    `nwr["brand"~"^(${alt})$"](area.a);`,
+    `out tags;`,
+  ].join("\n");
+
+  // Fold the elements down to { brand: count } at PARSE time so that is all the
+  // shared cache ever stores.
+  const parse = (text: string): Record<string, number> => {
+    const payload = JSON.parse(text) as OverpassResponse;
+    const counts: Record<string, number> = {};
+    for (const el of payload.elements ?? []) {
+      const brand = el.tags?.brand;
+      if (brand) counts[brand] = (counts[brand] ?? 0) + 1;
+    }
+    return counts;
+  };
+
+  let lastErr = "bilinmeyen hata";
+  for (const endpoint of SCALE_ENDPOINTS) {
+    try {
+      const res = await cachedLeadFetch({
+        provider: "overpass",
+        query: { scale: countryIso, brands: wanted.slice().sort().join("|"), v: CACHE_VERSION },
+        url: endpoint.url,
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: `data=${encodeURIComponent(ql)}`,
+        timeoutMs: endpoint.timeoutMs,
+        parse,
+        // An empty result may be a real "none of these are chains" OR a busy
+        // server; never cache it, so a transient refusal cannot freeze a firm's
+        // scale as unknown for 30 days.
+        shouldCache: (p) => Object.keys((p ?? {}) as object).length > 0,
+      });
+      return (res.payload ?? {}) as Record<string, number>;
+    } catch (e) {
+      lastErr = (e as Error).message;
+      await sleep(2_000);
+    }
+  }
+  throw new Error(lastErr);
+}

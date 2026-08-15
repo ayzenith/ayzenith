@@ -39,6 +39,7 @@ export type ExportCompany = {
   modelFit: string | null;
   websiteStatus: string | null;
   storeCount: number | null;
+  sizeSignals: unknown;
   employeeCount: number | null;
   locationCount: number;
   verifiedAt: Date | null;
@@ -111,6 +112,7 @@ export async function getCompaniesForExport(ids: string[]): Promise<ExportCompan
       modelFit: c.modelFit,
       websiteStatus: c.websiteStatus,
       storeCount: c.storeCount,
+      sizeSignals: c.sizeSignals,
       employeeCount: c.employeeCount,
       locationCount: c.locationCount,
       verifiedAt: c.verifiedAt,
@@ -218,6 +220,7 @@ export async function buildXlsx(search: LeadSearchView, companies: ExportCompany
     { header: "Website Status", key: "webstatus", width: 15 },
     { header: "Store Count", key: "stores", width: 11 },
     { header: "Employee Count", key: "employees", width: 14 },
+    { header: "Zincir Şube (ülke, OSM)", key: "chainOutlets", width: 22 },
     { header: "Locations", key: "locations", width: 10 },
     { header: "Lead Score", key: "score", width: 11 },
     { header: "Priority", key: "priority", width: 18 },
@@ -257,6 +260,7 @@ export async function buildXlsx(search: LeadSearchView, companies: ExportCompany
       fit: PRODUCT_FIT_LABELS[c.productFit] ?? c.productFit,
       webstatus: c.websiteStatus ? (WEBSITE_STATUS_LABELS[c.websiteStatus] ?? c.websiteStatus) : "",
       stores: c.storeCount ?? "",
+      chainOutlets: chainOutlets(c.sizeSignals),
       employees: c.employeeCount ?? "",
       locations: c.locationCount ?? 1,
       score: c.leadScore ?? "",
@@ -375,7 +379,7 @@ export async function buildXlsx(search: LeadSearchView, companies: ExportCompany
 const CSV_HEADER = [
   "Company", "Country", "City", "Address", "Website", "Phone", "Email",
   "Commercial Roles", "Business Size", "Business Model", "Model Fit", "Product", "HS Code",
-  "Product Fit", "Website Status", "Store Count", "Employee Count", "Locations",
+  "Product Fit", "Website Status", "Store Count", "Employee Count", "Zincir Şube (ülke, OSM)", "Locations",
   "Lead Score", "Priority", "Lead Confidence", "Why This Lead", "Commercial Signals",
   "Instagram", "Facebook", "LinkedIn", "Social Match",
   "Source", "Source URL", "Collected At", "Verified At", "Last Checked At", "Status",
@@ -408,6 +412,7 @@ export function buildCsv(search: LeadSearchView, companies: ExportCompany[]): st
         c.websiteStatus ? (WEBSITE_STATUS_LABELS[c.websiteStatus] ?? c.websiteStatus) : "",
         c.storeCount ?? "",
         c.employeeCount ?? "",
+        chainOutlets(c.sizeSignals),
         c.locationCount ?? 1,
         c.leadScore ?? "",
         priorityLabelOf(c),
@@ -430,4 +435,16 @@ export function buildCsv(search: LeadSearchView, companies: ExportCompany[]): st
     );
   }
   return lines.join("\r\n");
+}
+
+/** Country-wide chain outlet count from the size-evidence signals (§V3.5).
+ *  Empty when the firm was never measured OR OSM has no chain record for it —
+ *  both are "not measured", and neither may be exported as a 0. */
+function chainOutlets(sizeSignals: unknown): string {
+  if (!Array.isArray(sizeSignals)) return "";
+  const row = (sizeSignals as Array<{ label?: string; value?: string }>).find((s) =>
+    s?.label?.startsWith("Ülke genelinde şube"),
+  );
+  if (!row?.value || !/^\d+$/.test(row.value)) return "";
+  return row.value;
 }

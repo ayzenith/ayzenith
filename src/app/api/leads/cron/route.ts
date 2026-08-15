@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifyPendingAcrossSearches } from "@/server/leads/reverify";
+import { verifyPendingAcrossSearches, enrichChainScale, findSearchNeedingScale } from "@/server/leads/reverify";
 
 /**
  * AYZENITH LEAD FINDER — deferred verification (cron entry point).
@@ -37,5 +37,14 @@ export async function GET(request: Request) {
   const reachable = results.reduce((s, r) => s + r.reachable, 0);
   const remaining = results.reduce((s, r) => s + r.remaining, 0);
 
-  return NextResponse.json({ ok: true, searches: results.length, attempted, reachable, remaining });
+  // Chain scale only once the verification backlog is clear: it is a single very
+  // heavy country-wide query (~82s), and website coverage is worth more than a
+  // size refinement, so it never competes with it for the same tick.
+  let scale: { measured: number; chains: number } | null = null;
+  if (attempted === 0) {
+    const searchId = await findSearchNeedingScale();
+    if (searchId) scale = await enrichChainScale(searchId);
+  }
+
+  return NextResponse.json({ ok: true, searches: results.length, attempted, reachable, remaining, scale });
 }

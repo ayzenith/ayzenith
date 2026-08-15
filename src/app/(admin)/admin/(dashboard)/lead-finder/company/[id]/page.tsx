@@ -18,6 +18,8 @@ import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct } from "@/compo
 import { buildWhyLead } from "@/components/admin/leads/why";
 
 export const metadata: Metadata = { title: "Lead Detayı · Lead Finder", robots: { index: false, follow: false } };
+type SizeSignalRow = { label: string; value: string; source?: string };
+
 export const dynamic = "force-dynamic";
 
 type BreakdownComponent = {
@@ -142,6 +144,28 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
               {c.employeeCount != null ? <Fact label="Çalışan sayısı">{c.employeeCount.toLocaleString("tr-TR")}</Fact> : null}
               {c.storeCount != null ? <Fact label="Şube/mağaza sayısı">{c.storeCount.toLocaleString("tr-TR")}</Fact> : null}
             </dl>
+
+            {/* Size evidence (§V3.5). Each row states WHERE the number came from,
+                and the country-wide chain count is what separates a national
+                chain from a single shop — a search only ever sees the branches
+                inside the searched city. A firm OSM does not record as a chain
+                shows "zincir kaydı yok", which means NOT MEASURED, not zero. */}
+            {Array.isArray(c.sizeSignals) && (c.sizeSignals as SizeSignalRow[]).length > 0 ? (
+              <div className="mt-4 rounded-lg border border-subtle bg-surface-sunken px-3 py-2">
+                <p className="text-caption font-medium text-foreground">Ölçek kanıtı</p>
+                <ul className="mt-1 space-y-0.5">
+                  {(c.sizeSignals as SizeSignalRow[]).map((s, i) => (
+                    <li key={i} className="text-caption text-subtle">
+                      {s.label}: <b className="font-medium text-foreground">{s.value}</b>
+                      {s.source ? <span className="text-subtle"> · {s.source}</span> : null}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-caption text-subtle">
+                  Ciro ve pazar payı <b className="font-medium">ölçülmedi</b> — ücretsiz kaynaklarda bulunmuyor.
+                </p>
+              </div>
+            ) : null}
 
             {Array.isArray(c.productCategories) && (c.productCategories as string[]).length > 0 ? (
               <div className="mt-4">

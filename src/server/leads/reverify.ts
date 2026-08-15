@@ -222,12 +222,18 @@ export async function verifyPendingBatch(
     // One transaction per firm: replace the website-derived rows this pass owns
     // (contacts, verification checks, website sources) and leave the OSM-derived
     // provenance from discovery untouched.
-    await db.$transaction(async (tx) => {
-      await tx.leadContact.deleteMany({ where: { companyId: row.id, source: "OFFICIAL_WEBSITE" } });
-      await tx.leadVerification.deleteMany({ where: { companyId: row.id } });
-      await tx.leadSource.deleteMany({ where: { companyId: row.id, sourceType: "OFFICIAL_WEBSITE" } });
-
-      await tx.leadCompany.update({
+    //
+    // Written as a BATCH rather than an interactive `$transaction(async tx =>
+    // …)`, because DATABASE_URL points at the Supabase pooler in transaction
+    // mode: an interactive transaction pins a server connection for its whole
+    // duration, which is exactly the wrong thing to hold while a batch of firms
+    // is being written. None of these four statements reads another's result, so
+    // the batch form is equivalent, still atomic, and takes one round trip.
+    await db.$transaction([
+      db.leadContact.deleteMany({ where: { companyId: row.id, source: "OFFICIAL_WEBSITE" } }),
+      db.leadVerification.deleteMany({ where: { companyId: row.id } }),
+      db.leadSource.deleteMany({ where: { companyId: row.id, sourceType: "OFFICIAL_WEBSITE" } }),
+      db.leadCompany.update({
         where: { id: row.id },
         data: {
           legalName: outcome.legalName ?? undefined,
@@ -297,8 +303,8 @@ export async function verifyPendingBatch(
             })),
           },
         },
-      });
-    });
+      }),
+    ]);
   }
 
   return { attempted: rows.length, reachable, remaining: await countPending(searchId) };

@@ -4,6 +4,7 @@ import { COUNTRY_LABELS, resolveProductProfile, B2B_SUPPLIER_ROLES, B2C_ROLES } 
 import { discoverOsm } from "./providers/overpass";
 import { dedupeCandidates, normalizeDomain, type DedupedCandidate } from "./dedup";
 import { classify } from "./classify";
+import { resolveBrandFacts, type BrandFacts } from "./providers/wikidata";
 import { verifyCandidate, computeModelFit, type VerifyOutcome, type SocialProfile } from "./verify";
 import { scoreCompany } from "./scoring";
 import { getLeadSettings } from "./settings";
@@ -145,7 +146,28 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
   const productSignals = profile.signals;
 
   // 3. CLASSIFY (discovery-time roles/size/product tier).
-  const classifications = deduped.map((dc) => classify(dc, { productMatched: matched, specificShops, strongTerms }));
+  // What Wikidata says each discovered CHAIN sells (§V3.11). One batched, heavily
+  // cached lookup for the whole search — it is the only free source that knows
+  // Intimissimi sells lingerie while OSM only knows it is a clothes shop.
+  let brandFacts = new Map<string, BrandFacts>();
+  try {
+    brandFacts = await resolveBrandFacts(
+      deduped.map((dc) => dc.candidate.brandWikidataId).filter((q): q is string => Boolean(q)),
+    );
+  } catch {
+    // A brand lookup failure must never fail a search — the run simply keeps the
+    // knowledge it already had.
+  }
+
+  const classifications = deduped.map((dc) =>
+    classify(dc, {
+      productMatched: matched,
+      specificShops,
+      strongTerms,
+      mediumTerms: profile.signals?.medium ?? [],
+      brandFacts: dc.candidate.brandWikidataId ? brandFacts.get(dc.candidate.brandWikidataId) : undefined,
+    }),
+  );
 
   // 4. WEBSITE VERIFICATION — cap to candidates that have a website.
   // V3.2: the cap is spent on the MOST PROMISING candidates for the searched

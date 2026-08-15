@@ -332,6 +332,9 @@ function toCandidate(el: OverpassElement, countryLabel: string, fallbackCity: st
     longitude: typeof lon === "number" ? lon : undefined,
     roleHints,
     rawType: tags.shop ?? tags.office ?? undefined,
+    // The brand id is preferred over the outlet id: we want facts about the CHAIN
+    // ("Intimissimi sells lingerie"), not about this particular branch (§V3.11).
+    brandWikidataId: tags["brand:wikidata"] || tags.wikidata || undefined,
     discoveredVia: "OSM",
     sourceUrl: `https://www.openstreetmap.org/${el.type}/${el.id}`,
     sourceLabel: `OpenStreetMap — ${fallbackCity || countryLabel}`,

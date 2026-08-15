@@ -14,7 +14,7 @@
 
 /** Free sources wired in V1. The paid slot is intentionally absent — adding one
  *  later is a new value here, never a change to how the pipeline is structured. */
-export type LeadProviderId = "overpass" | "nominatim" | "website" | "vies";
+export type LeadProviderId = "overpass" | "nominatim" | "website" | "vies" | "wikidata";
 
 export type LeadSourceKind =
   | "OSM"
@@ -41,6 +41,10 @@ export type LeadCandidate = {
   roleHints: string[];
   /** OSM shop/office value or similar raw type tag, for classification. */
   rawType?: string;
+  /** OSM `brand:wikidata` (or `wikidata`) id, when the outlet carries one (§V3.11).
+   *  Lets a chain be looked up in Wikidata, which — unlike OSM — states what the
+   *  brand actually sells. */
+  brandWikidataId?: string;
   discoveredVia: LeadSourceKind;
   sourceUrl?: string;
   sourceLabel?: string;

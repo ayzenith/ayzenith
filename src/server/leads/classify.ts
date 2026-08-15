@@ -1,6 +1,7 @@
 import "server-only";
 
 import type { DedupedCandidate } from "./dedup";
+import { isWholesaleIndustry, type BrandFacts } from "./providers/wikidata";
 import { normalizeProduct, type LeadRole } from "@/config/leads";
 
 /**
@@ -94,10 +95,26 @@ function sizeFromBranches(branchCount: number): {
 
 export function classify(
   dc: DedupedCandidate,
-  opts: { productMatched: boolean; specificShops: string[]; strongTerms: string[] },
+  opts: {
+    productMatched: boolean;
+    specificShops: string[];
+    strongTerms: string[];
+    /** Broader product terms — used only for the Wikidata signal (§V3.11). */
+    mediumTerms?: string[];
+    /** What Wikidata says this outlet's BRAND produces and which industry it is
+     *  in, when OSM gave us a `brand:wikidata` id. */
+    brandFacts?: BrandFacts;
+  },
 ): Classification {
   const roles = rolesFromHints(dc.candidate.roleHints);
   const { size, signals } = sizeFromBranches(dc.branchCount);
+
+  // Wikidata classifies some chains as wholesale/B2B outright — Calzedonia's
+  // industry reads "Wholesale trade (business-to-business) of clothing and
+  // footwear". That is a genuine supplier signal and OSM has no equivalent (§V3.11).
+  if (opts.brandFacts && isWholesaleIndustry(opts.brandFacts) && !roles.includes("wholesaler")) {
+    roles.push("wholesaler");
+  }
 
   // Product fit from OSM alone is never "VERIFIED" (only a real source confirms).
   // Tiered honesty (§2):
@@ -115,11 +132,35 @@ export function classify(
   });
   const isSpecialty = roles.includes("specialty_store") || roles.includes("boutique");
 
+  // What Wikidata says the BRAND sells (§V3.11). OSM tags Intimissimi, Yamamay and
+  // Tezenis as plain `shop=clothes`, so before this a lingerie search could not
+  // tell them from Zara; Wikidata answers "lingerie, undergarment" for all three.
+  // It ranks with a specific shop tag rather than above it: this is a third-party
+  // database, not the firm's own statement, so it can never reach "Doğrulandı".
+  const brandTerms = opts.brandFacts
+    ? [...opts.brandFacts.produces, ...opts.brandFacts.industry].map(normalizeProduct)
+    : [];
+  const matchIn = (terms: string[]) =>
+    terms
+      .map(normalizeProduct)
+      .filter((t) => t.length >= 3)
+      .find((t) => brandTerms.some((b) => b.includes(t)));
+  const brandStrong = brandTerms.length ? matchIn(opts.strongTerms) : undefined;
+  const brandMedium = brandTerms.length && !brandStrong ? matchIn(opts.mediumTerms ?? []) : undefined;
+
   let productFit: Classification["productFit"] = "UNVERIFIED";
   let productFitTier: Classification["productFitTier"] = null;
   let productFitNote: string | null = null;
 
-  if (isSpecificShop || nameStrong) {
+  if (brandStrong) {
+    productFit = "LIKELY";
+    productFitTier = "STRONG";
+    productFitNote = `Wikidata kaydına göre ${opts.brandFacts!.label || dc.candidate.name} markası bu ürünü üretiyor/satıyor (${opts.brandFacts!.produces.join(", ") || opts.brandFacts!.industry.join(", ")}); web doğrulaması bekliyor.`;
+  } else if (brandMedium) {
+    productFit = "LIKELY";
+    productFitTier = "MEDIUM";
+    productFitNote = `Wikidata kaydı markayı ilgili ürün grubuna bağlıyor (${opts.brandFacts!.produces.join(", ") || opts.brandFacts!.industry.join(", ")}); doğrudan eşleşme değil.`;
+  } else if (isSpecificShop || nameStrong) {
     productFit = "LIKELY";
     productFitTier = "STRONG";
     productFitNote = nameStrong

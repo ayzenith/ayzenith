@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/server/auth";
 import { getSearch, listCompaniesForSearch } from "@/server/leads/leads";
-import { applyLeadFilters, parseLeadFilters, distinctCities, summarize, priorityOf, sortByRelevance, relevanceRank } from "@/server/leads/filter";
+import { applyLeadFilters, parseLeadFilters, distinctCities, summarize, priorityOf, sortByRelevance, relevanceRank, pickDeepDiveTargets } from "@/server/leads/filter";
 import { PRIORITY_LABELS } from "@/config/leads";
 import { PageHeader } from "@/components/admin/page-header";
 import { LeadCard } from "@/components/admin/leads/lead-card";
@@ -15,6 +15,8 @@ import { LeadFilters } from "@/components/admin/leads/filters";
 import { buildWhyLead, positiveWhy } from "@/components/admin/leads/why";
 import { flagEmoji } from "@/components/admin/leads/ui";
 import { ContinueVerify } from "@/components/admin/leads/continue-verify";
+import { DeepDive } from "@/components/admin/leads/deep-dive";
+import { getDeepDiveReports } from "@/server/leads/deepdive";
 import { countPending } from "@/server/leads/reverify";
 
 export const metadata: Metadata = { title: "Sonuçlar · Lead Finder", robots: { index: false, follow: false } };
@@ -93,6 +95,17 @@ export default async function LeadResultsPage({
         }),
       ),
     }));
+  // Deep dive (§V3.12). The SAME pure picker the server action uses, so the
+  // button names exactly the firms it will actually go and read. Reports are
+  // loaded for those firms only — the screen must be able to tell "not analysed
+  // yet" apart from "analysed, and this is genuinely all there is".
+  const deepTargets = pickDeepDiveTargets(all, 3);
+  const deepReports = await getDeepDiveReports(deepTargets.map((c) => c.id));
+  const deepDone = deepTargets
+    .map((c) => ({ c, report: deepReports.get(c.id) }))
+    .filter((x): x is { c: typeof x.c; report: NonNullable<typeof x.report> } => Boolean(x.report))
+    .map(({ c, report }) => ({ c, verdict: report.verdict, contacts: report.contacts }));
+
   const osmStat = search.sourceStats?.osm;
   const discoveryFailed = search.discoveryStatus === "FAILED";
   const discoveryPartial = search.discoveryStatus === "PARTIAL";
@@ -324,6 +337,58 @@ export default async function LeadResultsPage({
               </li>
             ))}
           </ol>
+
+          {/* Deep dive (§V3.12) — the search stays fast; this is where the owner
+              spends real reading time, on the few firms actually worth a call. */}
+          <DeepDive searchId={search.id} targets={deepTargets.map((c) => c.name)} />
+
+          {deepDone.length > 0 ? (
+            <div className="mt-4 grid gap-3 lg:grid-cols-3">
+              {deepDone.map(({ c, verdict, contacts }) => (
+                <div key={c.id} className="rounded-xl border border-border bg-surface p-4">
+                  <h3 className="truncate text-small font-semibold text-foreground">{c.name}</h3>
+                  {c.legalName && c.legalName !== c.name ? (
+                    <p className="text-caption text-subtle">{c.legalName}</p>
+                  ) : null}
+
+                  {contacts.length > 0 ? (
+                    <ul className="mt-2 flex flex-col gap-1">
+                      {contacts.map((k) => (
+                        <li key={k.id} className="text-caption text-muted">
+                          <b className="font-medium text-foreground">
+                            {[k.firstName, k.lastName].filter(Boolean).join(" ")}
+                          </b>
+                          {k.role ? ` — ${k.role}` : null}
+                          {k.corporateEmail ? ` · ${k.corporateEmail}` : null}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="mt-2 text-caption text-subtle">
+                      İsimli muhatap yayınlanmamış — kurumsal kanallardan gidilir.
+                    </p>
+                  )}
+
+                  {/* How to reach, strongest channel first. */}
+                  <p className="mt-2 text-caption text-muted">
+                    {[
+                      contacts.length > 0 ? "isimli kişi" : null,
+                      c.email ? c.email : null,
+                      c.phone ? c.phone : null,
+                      c.websiteStatus === "ACTIVE" && c.website ? "website" : null,
+                      c.socialMatchStatus === "VERIFIED" ? "LinkedIn/Instagram" : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || "Ulaşım kanalı bulunamadı."}
+                  </p>
+
+                  {verdict ? (
+                    <p className="mt-2 border-t border-border pt-2 text-caption text-subtle">{verdict}</p>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+          ) : null}
         </div>
       ) : null}
 

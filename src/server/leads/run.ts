@@ -290,6 +290,21 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
     ];
     if (dc.candidate.address) sources.push({ dataField: "address", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl });
     if (dc.candidate.website) sources.push({ dataField: "website", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl });
+    // Wikidata brand record — cited whenever it told us anything (§V3.11). This is
+    // provenance first, but it is also how the deep dive later recovers the brand
+    // id: a chain with no website in OSM still has an official site on Wikidata,
+    // and this row is where that trail starts.
+    {
+      const qid = dc.candidate.brandWikidataId;
+      if (qid && brandFacts.has(qid)) {
+        sources.push({
+          dataField: "brand",
+          sourceType: "OTHER_FREE_SOURCE",
+          label: `Wikidata marka kaydı — ${brandFacts.get(qid)!.label || dc.candidate.name}`,
+          sourceUrl: `https://www.wikidata.org/wiki/${qid}`,
+        });
+      }
+    }
     for (const es of outcome.extraSources) {
       sources.push({ dataField: es.dataField, sourceType: es.sourceType, label: es.label, sourceUrl: es.sourceUrl });
     }

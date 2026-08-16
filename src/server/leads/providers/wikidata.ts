@@ -36,6 +36,11 @@ export type BrandFacts = {
   produces: string[];
   /** Labels of P452 "industry" — includes explicit wholesale/B2B classifications. */
   industry: string[];
+  /** P856 "official website". The reason this is here: OSM lists no website at all
+   *  for most chain outlets — Calzedonia, Intimissimi and Yamamay all arrive with
+   *  nothing to read — while Wikidata carries the official address for every one
+   *  of them. It is what lets a deep dive open a firm we otherwise could not. */
+  officialWebsite?: string;
 };
 
 /** Wikidata's own wording for a B2B wholesale industry, e.g. Calzedonia's
@@ -62,13 +67,26 @@ const MAX_BRANDS = 150;
 
 const QID_RE = /^Q\d+$/;
 
-type Snak = { mainsnak?: { datavalue?: { value?: { id?: string } } } };
+type Snak = { mainsnak?: { datavalue?: { value?: { id?: string } | string } } };
 type Entity = { labels?: Record<string, { value: string }>; claims?: Record<string, Snak[]> };
 
 function claimIds(e: Entity, prop: string): string[] {
   return (e.claims?.[prop] ?? [])
-    .map((c) => c.mainsnak?.datavalue?.value?.id)
+    .map((c) => {
+      const v = c.mainsnak?.datavalue?.value;
+      return typeof v === "object" ? v?.id : undefined;
+    })
     .filter((id): id is string => Boolean(id && QID_RE.test(id)));
+}
+
+/** First value of a STRING-valued claim (P856 official website is one of these —
+ *  a plain URL, not an entity reference). */
+function claimString(e: Entity, prop: string): string | undefined {
+  for (const c of e.claims?.[prop] ?? []) {
+    const v = c.mainsnak?.datavalue?.value;
+    if (typeof v === "string" && v.trim()) return v.trim();
+  }
+  return undefined;
 }
 
 function labelOf(e: Entity | undefined): string {
@@ -106,6 +124,65 @@ async function fetchEntities(ids: string[]): Promise<Record<string, Entity>> {
 }
 
 /**
+ * Find a brand's Wikidata id by NAME, for firms OSM never tagged with one.
+ *
+ * Needed because `brand:wikidata` is present on roughly a third of outlets, and
+ * the deep dive should still be able to open a chain that OSM simply did not
+ * annotate. It also rescues every company discovered before the brand source row
+ * existed.
+ *
+ * DELIBERATELY STRICT, because a fuzzy match here would attach the wrong
+ * company's website to a lead — a fabricated fact in everything but intent. The
+ * label must match the firm's name EXACTLY once case and accents are normalised,
+ * and short names are refused outright: "Viola" or "End" would collide with
+ * dozens of unrelated entities, while "Calzedonia" or "Intimissimi" will not.
+ */
+export async function findBrandQidByName(name: string): Promise<string | undefined> {
+  const norm = (s: string) =>
+    s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+  // Wikidata records companies under their registered name, so a search for
+  // "Calzedonia" comes back as "Calzedonia S.p.A". Dropping a trailing legal form
+  // before comparing keeps the match exact where it counts. This can only ever
+  // cause a MISS, never a wrong match: equality is still required afterwards.
+  const LEGAL_SUFFIX =
+    /(spa|srls|srl|snc|sasu|sas|sarl|eurl|slu|sl|sau|sa|bvba|bv|nv|vof|gmbh|ag|kg|ohg|ug|gbr|ltd|inc|plc|llc|aps|ab|oyj|oy|lda|kft|zrt|sro|doo|sti)$/;
+  const bare = (s: string) => norm(s).replace(LEGAL_SUFFIX, "");
+
+  const target = norm(name);
+  if (target.length < 6) return undefined;
+
+  const url =
+    `https://www.wikidata.org/w/api.php?action=wbsearchentities&format=json` +
+    `&language=en&uselang=en&type=item&limit=8&search=${encodeURIComponent(name)}`;
+  try {
+    const res = await cachedLeadFetch({
+      provider: "wikidata",
+      query: { search: name.toLowerCase() },
+      url,
+      parse: (t) => JSON.parse(t) as { search?: Array<{ id?: string; label?: string }> },
+      timeoutMs: 15_000,
+      ttlDays: TTL_DAYS,
+    });
+    const hits =
+      (res.payload as { search?: Array<{ id?: string; label?: string; match?: { text?: string } }> })
+        ?.search ?? [];
+    for (const h of hits) {
+      if (!h.id || !QID_RE.test(h.id)) continue;
+      // Accept an exact hit on the LABEL or on the alias that actually matched.
+      // Groups rename themselves and Wikidata follows: searching "Calzedonia"
+      // returns the entity now labelled "Oniverse", with Calzedonia as the
+      // matched alias. Requiring the label alone silently dropped a real firm,
+      // while the alias is still an exact string match, not a fuzzy one.
+      const candidates = [h.label, h.match?.text].filter(Boolean) as string[];
+      if (candidates.some((c) => norm(c) === target || bare(c) === target)) return h.id;
+    }
+  } catch {
+    /* A name lookup that fails simply means we keep what we already knew. */
+  }
+  return undefined;
+}
+
+/**
  * Resolve OSM `brand:wikidata` ids to what those brands actually sell.
  *
  * Two rounds, because Wikidata answers in ids: the first resolves the brands and
@@ -125,16 +202,22 @@ export async function resolveBrandFacts(qids: string[]): Promise<Map<string, Bra
   }
 
   const conceptIds = new Set<string>();
-  const raw = new Map<string, { label: string; produces: string[]; industry: string[] }>();
+  const raw = new Map<
+    string,
+    { label: string; produces: string[]; industry: string[]; officialWebsite?: string }
+  >();
   for (const qid of unique) {
     const e = brands[qid];
     if (!e) continue;
     const produces = claimIds(e, "P1056");
     const industry = claimIds(e, "P452");
-    if (produces.length === 0 && industry.length === 0) continue;
+    const officialWebsite = claimString(e, "P856");
+    // An official website alone is worth keeping even with no product claim — it
+    // is what a deep dive needs in order to go and read the firm for itself.
+    if (produces.length === 0 && industry.length === 0 && !officialWebsite) continue;
     produces.forEach((c) => conceptIds.add(c));
     industry.forEach((c) => conceptIds.add(c));
-    raw.set(qid, { label: labelOf(e), produces, industry });
+    raw.set(qid, { label: labelOf(e), produces, industry, officialWebsite });
   }
   if (raw.size === 0) return out;
 
@@ -152,6 +235,7 @@ export async function resolveBrandFacts(qids: string[]): Promise<Map<string, Bra
       label: r.label,
       produces: toLabels(r.produces),
       industry: toLabels(r.industry),
+      officialWebsite: r.officialWebsite,
     });
   }
   return out;

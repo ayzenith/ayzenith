@@ -7,6 +7,7 @@ import { canManageSettings } from "@/lib/auth/roles";
 import { logActivity } from "@/server/activity";
 import { runDiscovery } from "@/server/leads/run";
 import { verifyPendingBatch } from "@/server/leads/reverify";
+import { runDeepDive } from "@/server/leads/deepdive";
 import { COUNTRY_LABELS } from "@/config/leads";
 
 /**
@@ -121,5 +122,40 @@ export async function continueVerificationAction(
     return { attempted: r.attempted, reachable: r.reachable, remaining: r.remaining };
   } catch (e) {
     return { error: `Doğrulama sürdürülemedi: ${(e as Error).message}` };
+  }
+}
+
+/**
+ * Deep dive on the few leads worth a phone call (§V3.12).
+ *
+ * Kept off the search path deliberately: a search must stay under a minute, so
+ * it reads a homepage and moves on. This spends real time on three firms instead
+ * — the ones with a genuine product connection AND a way in — and is therefore a
+ * button the owner presses when the list already exists.
+ */
+export type DeepDiveState = {
+  error?: string;
+  attempted?: number;
+  read?: number;
+  named?: number;
+  unreachable?: number;
+};
+
+export async function deepDiveAction(
+  _prev: DeepDiveState,
+  formData: FormData,
+): Promise<DeepDiveState> {
+  const user = await requireAdmin();
+  if (!user) return { error: "Bu işlem için yetkiniz yok." };
+
+  const searchId = String(formData.get("searchId") ?? "").trim();
+  if (!searchId) return { error: "Arama bulunamadı." };
+
+  try {
+    const r = await runDeepDive(searchId);
+    revalidatePath(`/admin/lead-finder/${searchId}`);
+    return r;
+  } catch (e) {
+    return { error: `Derin analiz tamamlanamadı: ${(e as Error).message}` };
   }
 }

@@ -226,6 +226,61 @@ export function relevanceRank(c: LeadCompanyView): number {
   return 2; // nothing known about the product at all
 }
 
+// ---------------------------------------------------------------------------
+// Deep-dive selection (§V3.12)
+// ---------------------------------------------------------------------------
+
+/**
+ * How close we already are to a HUMAN at this firm.
+ *
+ * Deliberately not the lead score: the score measures how completely we have
+ * documented a company, which is a different question from whether anyone there
+ * can be approached. A firm with a named purchasing manager and an email is a
+ * warmer target than a better-documented one reachable only through a switchboard.
+ */
+export function reachabilityRank(c: LeadCompanyView): number {
+  let n = 0;
+  if (c.contactCount > 0) n += 4; // a named person beats every other channel
+  if (c.email) n += 3;
+  if (c.websiteStatus === "ACTIVE") n += 2; // more pages we can still read
+  if (c.phone) n += 1;
+  if (c.socialMatchStatus === "VERIFIED") n += 1;
+  return n;
+}
+
+/**
+ * The handful of firms worth spending a deep read on.
+ *
+ * Ordered by relevance first and reachability second, because a perfectly
+ * reachable firm that sells something else is not a lead. Anything with no
+ * product connection at all is excluded outright — a deep dive would only
+ * document a stranger in detail.
+ *
+ * PURE, and exported, so the results screen and the server action pick the SAME
+ * firms. If the screen offered to analyse three companies and the action then
+ * analysed three others, the feature would be lying about what it did.
+ */
+export function pickDeepDiveTargets(companies: LeadCompanyView[], limit = 3): LeadCompanyView[] {
+  return companies
+    .filter((c) => c.productFit !== "NOT_RELEVANT" && c.modelFit !== "NOT_SUITABLE")
+    .filter((c) => relevanceRank(c) >= 3) // some product signal, however weak
+    // A firm with no website, no email, no phone and no named contact cannot be
+    // deep-dived — there is nothing to open and nobody to call, so the read would
+    // return "hiçbir şey bulunamadı" by construction. The first live run picked
+    // exactly such a firm (Paris Lingerie: top relevance, zero reachability) and
+    // spent a slot proving it knew nothing. Relevance decides the ORDER; being
+    // reachable at all is the entry condition.
+    .filter((c) => reachabilityRank(c) > 0)
+    .sort(
+      (a, b) =>
+        relevanceRank(b) - relevanceRank(a) ||
+        reachabilityRank(b) - reachabilityRank(a) ||
+        (b.leadScore ?? -1) - (a.leadScore ?? -1) ||
+        a.name.localeCompare(b.name, "tr"),
+    )
+    .slice(0, limit);
+}
+
 /** Order for the results list: relevance first, then the score within it. */
 export function sortByRelevance(companies: LeadCompanyView[]): LeadCompanyView[] {
   return [...companies].sort(

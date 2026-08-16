@@ -385,8 +385,25 @@ const CSV_HEADER = [
   "Source", "Source URL", "Collected At", "Verified At", "Last Checked At", "Status",
 ];
 
+/**
+ * Values Excel reads as the start of a formula rather than as text.
+ *
+ * This is not a theoretical hardening: measured on production, 1349 of 3784
+ * companies have a phone stored in international form (`+39 02 …`), and Excel
+ * renders every one of them as `#NAME?` — the phone column of the CSV export was
+ * broken for most of the list. Names, addresses, e-mails and legal names hit it
+ * too, and those arrive from OpenStreetMap, which anyone may edit, so a crafted
+ * entry could put a live formula into a customer's spreadsheet.
+ *
+ * The fix is the standard one: a leading apostrophe, which Excel and Sheets both
+ * consume as "treat the rest as text" and do not display. The XLSX export needs
+ * nothing — ExcelJS writes these as typed strings, which are never evaluated.
+ */
+const FORMULA_START = /^[=+\-@\t\r]/;
+
 function csvCell(v: string | number | null | undefined): string {
-  const s = v == null ? "" : String(v);
+  let s = v == null ? "" : String(v);
+  if (FORMULA_START.test(s)) s = `'${s}`;
   return `"${s.replace(/"/g, '""')}"`;
 }
 

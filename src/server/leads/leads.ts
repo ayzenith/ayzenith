@@ -1,6 +1,8 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { freshnessFor } from "@/config/leads";
+import { getLeadSettings } from "./settings";
 
 /**
  * AYZENITH LEAD FINDER — read repository (UI-facing).
@@ -137,11 +139,15 @@ export async function getSearch(id: string): Promise<LeadSearchView | null> {
 
 /** All companies for a search, strongest score first, with contact counts. */
 export async function listCompaniesForSearch(searchId: string): Promise<LeadCompanyView[]> {
-  const rows = await db.leadCompany.findMany({
-    where: { searchId },
-    orderBy: [{ leadScore: "desc" }, { name: "asc" }],
-    include: { _count: { select: { contacts: true } } },
-  });
+  const [rows, settings] = await Promise.all([
+    db.leadCompany.findMany({
+      where: { searchId },
+      orderBy: [{ leadScore: "desc" }, { name: "asc" }],
+      include: { _count: { select: { contacts: true } } },
+    }),
+    getLeadSettings(),
+  ]);
+  const recheckDays = settings.recheckDays;
   return rows.map((c) => ({
     id: c.id,
     name: c.name,
@@ -187,7 +193,8 @@ export async function listCompaniesForSearch(searchId: string): Promise<LeadComp
     leadConfidence: c.leadConfidence,
     scoreBreakdown: c.scoreBreakdown,
     status: c.status,
-    freshness: c.freshness,
+    // Derived, not read from the column: see freshnessFor.
+    freshness: freshnessFor(c.lastCheckedAt, recheckDays),
     radarSnapshotId: c.radarSnapshotId,
     discoveredVia: c.discoveredVia,
     lastCheckedAt: c.lastCheckedAt,
@@ -196,17 +203,24 @@ export async function listCompaniesForSearch(searchId: string): Promise<LeadComp
 }
 
 export async function getCompany(id: string) {
-  return db.leadCompany.findUnique({
-    where: { id },
-    include: {
-      contacts: { orderBy: { confidence: "desc" } },
-      sources: { orderBy: { collectedAt: "asc" } },
-      signals: true,
-      verifications: true,
-      locations: true,
-      search: true,
-    },
-  });
+  const [row, settings] = await Promise.all([
+    db.leadCompany.findUnique({
+      where: { id },
+      include: {
+        contacts: { orderBy: { confidence: "desc" } },
+        sources: { orderBy: { collectedAt: "asc" } },
+        signals: true,
+        verifications: true,
+        locations: true,
+        search: true,
+      },
+    }),
+    getLeadSettings(),
+  ]);
+  if (!row) return null;
+  // Same derived age the list uses, so a company cannot read "Güncel" on its own
+  // page while the list that linked to it says otherwise.
+  return { ...row, freshness: freshnessFor(row.lastCheckedAt, settings.recheckDays) };
 }
 
 // ---------------------------------------------------------------------------
@@ -224,11 +238,15 @@ export type LeadDataHealth = {
 
 export async function getDataHealth(): Promise<LeadDataHealth> {
   try {
+    const { recheckDays } = await getLeadSettings();
+    const day = 86_400_000;
+    const freshFrom = new Date(Date.now() - recheckDays * day);
+    const staleBefore = new Date(Date.now() - recheckDays * 2 * day);
     const [total, fresh, recheck, stale, searches, last] = await Promise.all([
       db.leadCompany.count(),
-      db.leadCompany.count({ where: { freshness: "FRESH" } }),
-      db.leadCompany.count({ where: { freshness: "RECHECK" } }),
-      db.leadCompany.count({ where: { freshness: "STALE" } }),
+      db.leadCompany.count({ where: { lastCheckedAt: { gte: freshFrom } } }),
+      db.leadCompany.count({ where: { lastCheckedAt: { lt: freshFrom, gte: staleBefore } } }),
+      db.leadCompany.count({ where: { lastCheckedAt: { lt: staleBefore } } }),
       db.leadSearch.count(),
       db.leadSearch.findFirst({ orderBy: { createdAt: "desc" }, select: { createdAt: true } }),
     ]);

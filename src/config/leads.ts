@@ -148,6 +148,29 @@ export const FRESHNESS_META: Record<string, { dot: string; label: string }> = {
   STALE: { dot: "🔴", label: "Eski / doğrulanamadı" },
 };
 
+/**
+ * How old a record is, derived from when it was last checked.
+ *
+ * The stored `freshness` column was only ever written as FRESH — nothing in the
+ * codebase set RECHECK or STALE — so the data-health panel's amber and red
+ * counters were structurally always zero and every card claimed "Güncel"
+ * regardless of age. A system that shows the age of its data must let that age
+ * advance, so freshness is computed from `lastCheckedAt` instead of stored.
+ *
+ * One re-check window means "due for re-verification"; two means the record is
+ * old enough that it should not be relied on without a fresh look.
+ */
+export function freshnessFor(
+  lastCheckedAt: Date,
+  recheckDays: number = DEFAULT_RECHECK_DAYS,
+  now: Date = new Date(),
+): "FRESH" | "RECHECK" | "STALE" {
+  const days = (now.getTime() - lastCheckedAt.getTime()) / 86_400_000;
+  if (days <= recheckDays) return "FRESH";
+  if (days <= recheckDays * 2) return "RECHECK";
+  return "STALE";
+}
+
 // ---------------------------------------------------------------------------
 // Deterministic scoring (§14). Weights sum to 100 and are the owner-approved V1
 // defaults; they are overridable in LeadSetting and central here so tuning never

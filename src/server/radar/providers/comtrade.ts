@@ -491,12 +491,21 @@ export async function getSubcategorySeries(
   const result = [...byHs.entries()].map(([hs6, inner]) => {
     const ordered = [...inner.entries()].sort((a, b) => a[0] - b[0]);
     const latest = inner.get(latestYear) ?? ordered[ordered.length - 1]?.[1] ?? 0;
-    const pos = ordered.map(([, v]) => v).filter((v) => v > 0);
+    // Compound growth is measured over ELAPSED YEARS, not over the number of
+    // data points. Dropping the years here (`.map(([, v]) => v)`) and dividing by
+    // `pos.length - 1` silently treated a gap in the series as if no time had
+    // passed — and Comtrade series do have gaps, because countries skip
+    // reporting years. Measured on a cached series (HS 851821) whose reported
+    // years span three but hold only two positive points, the old formula
+    // returned −54.2% where the true rate is −40.6%. The main demand series
+    // above always used the year span; this is the same arithmetic.
+    const pos = ordered.filter(([, v]) => v > 0);
     const first = pos[0];
     const last = pos[pos.length - 1];
     let cagr: number | null = null;
-    if (first != null && last != null && pos.length >= 2) {
-      cagr = (Math.pow(last / first, 1 / (pos.length - 1)) - 1) * 100;
+    if (first && last) {
+      const span = last[0] - first[0];
+      if (span >= 1) cagr = (Math.pow(last[1] / first[1], 1 / span) - 1) * 100;
     }
     return { hs6, latest, cagrPct: cagr };
   });

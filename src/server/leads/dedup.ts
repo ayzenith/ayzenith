@@ -135,6 +135,50 @@ export function dedupeCandidates(candidates: LeadCandidate[]): DedupedCandidate[
     if (c.sourceUrl) existing.urls.add(c.sourceUrl);
   }
 
+  // SECOND PASS — reunite a chain that OSM tagged inconsistently.
+  //
+  // Identity switches key depending on whether a branch happens to carry a
+  // website tag, so one chain splits in two: in the live Milano search OVS came
+  // back twice — once as `d:ovs.it` (score 78, site + e-mail + social) and once
+  // as `n:ovs` (score 59, phone only) — and METRO did the same. To the reader
+  // these are two firms with two different verdicts, and the weaker row is the
+  // same company with its evidence stripped off.
+  //
+  // A name group is folded into a domain group only when the canonical names
+  // match exactly and only when that target is UNAMBIGUOUS: if two different
+  // domains carry the same name they are more likely two firms than one, and
+  // guessing which to merge into would invent a fact. This adds no risk the name
+  // key does not already carry, since those branches were merged with each other
+  // on the same name a moment ago.
+  const byName = new Map<string, { key: string; count: number }>();
+  for (const [key, g] of groups) {
+    if (!key.startsWith("d:")) continue;
+    const nameKey = `${canonicalOf(g.best)}|${normalizeProduct(g.best.country ?? "")}`;
+    const seen = byName.get(nameKey);
+    if (seen) seen.count++;
+    else byName.set(nameKey, { key, count: 1 });
+  }
+  for (const [key, g] of Array.from(groups)) {
+    if (!key.startsWith("n:")) continue;
+    const target = byName.get(key.slice(2));
+    if (!target || target.count !== 1) continue;
+    const into = groups.get(target.key);
+    if (!into) continue;
+    if (richness(g.best) > richness(into.best)) into.best = g.best;
+    for (const h of g.roleHints) into.roleHints.add(h);
+    for (const u of g.urls) into.urls.add(u);
+    // locKeys and locations are appended together on every path, so they stay
+    // index-aligned.
+    const gKeys = Array.from(g.locKeys);
+    for (let i = 0; i < g.locations.length; i++) {
+      const lk = gKeys[i];
+      if (lk == null || into.locKeys.has(lk)) continue;
+      into.locKeys.add(lk);
+      into.locations.push(g.locations[i]!);
+    }
+    groups.delete(key);
+  }
+
   const out: DedupedCandidate[] = [];
   for (const g of groups.values()) {
     out.push({

@@ -187,6 +187,26 @@ export async function runDeepDive(searchId: string, limit = 3): Promise<DeepDive
           },
         }),
       ),
+      // The search wrote "Website bulunamadı." for every firm OSM listed without
+      // one. The deep dive has just read that firm's site, so leaving the old row
+      // in place makes the profile contradict itself: "Website durumu: Aktif"
+      // directly above "Website mevcut — Website bulunamadı."
+      db.leadVerification.deleteMany({ where: { companyId: row.id, check: "website-present" } }),
+      db.leadVerification.create({
+        data: {
+          companyId: row.id,
+          check: "website-present",
+          passed: true,
+          evidence:
+            websiteFrom === "WIKIDATA"
+              ? "Resmi website Wikidata marka kaydından bulundu ve okundu."
+              : "Website okundu ve yanıt verdi.",
+          sourceUrl: intel.finalUrl,
+        },
+      }),
+      // One source row per firm, replaced on each run: without this a second deep
+      // dive leaves the profile citing the same page twice.
+      db.leadSource.deleteMany({ where: { companyId: row.id, dataField: "deep-dive" } }),
       db.leadSource.create({
         data: {
           companyId: row.id,

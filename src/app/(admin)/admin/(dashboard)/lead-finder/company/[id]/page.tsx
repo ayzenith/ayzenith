@@ -301,7 +301,9 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
             {c.contacts.length === 0 ? (
               <p className="mt-3 flex items-start gap-2 rounded-lg bg-surface-sunken px-4 py-3 text-caption text-subtle">
                 <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                Karar verici keşfi sonraki aşamada devreye girecek. Yalnızca kamuya açık, kurumsal iletişim bilgileri toplanır; kişisel/özel veri toplanmaz.
+                {c.verifications.some((v) => v.check === "deep-dive")
+                  ? "Derin analiz yapıldı: bu firma sitesinde isimli bir muhatap yayınlamıyor — büyük zincirlerde olağandır. Kurumsal kanallar yukarıda listelenir; isim tahmin edilmez."
+                  : "Karar verici keşfi henüz çalıştırılmadı — arama sonuçları ekranındaki derin analiz butonuyla başlatılır. Yalnızca kamuya açık, kurumsal iletişim bilgileri toplanır; kişisel/özel veri toplanmaz."}
               </p>
             ) : (
               <ul className="mt-4 space-y-3">

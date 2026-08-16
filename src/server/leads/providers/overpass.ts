@@ -94,7 +94,17 @@ function hasResults(payload: unknown): boolean {
   return Array.isArray(p.elements) && p.elements.length > 0;
 }
 
-type Target = { kind: "city" | "country"; value: string };
+/**
+ * Where to search.
+ *
+ * `countryIso` is carried on a CITY target because a city name alone does not
+ * identify a place: a search for Germany with the city "milano" used to match
+ * Milano, Italy — OSM's area index does not care which country was asked for —
+ * and then every result was stamped with the SEARCHED country's label, so 133
+ * Italian firms were reported as German ones, each with an Italian +39 number
+ * beside the German flag. Constraining the query is what makes the label true.
+ */
+type Target = { kind: "city" | "country"; value: string; countryIso?: string };
 
 // Small connector words that stay lowercase inside a multi-word city name so a
 // normalised value matches OSM exactly (e.g. "Frankfurt am Main", "Den Haag").
@@ -117,9 +127,28 @@ export function normalizeCity(s: string): string {
 }
 
 function areaLine(target: Target): string {
-  return target.kind === "city"
-    ? `area["name"="${esc(normalizeCity(target.value))}"]["boundary"="administrative"]->.a;`
-    : `area["ISO3166-1"="${esc(target.value)}"][admin_level=2]->.a;`;
+  if (target.kind !== "city") {
+    return `area["ISO3166-1"="${esc(target.value)}"][admin_level=2]->.a;`;
+  }
+  const city = `area["name"="${esc(normalizeCity(target.value))}"]["boundary"="administrative"]->.a;`;
+  if (!target.countryIso) return city;
+  return `area["ISO3166-1"="${esc(target.countryIso)}"][admin_level=2]->.c;\n${city}`;
+}
+
+/**
+ * Add the country constraint to a clause that already filters by the city area.
+ *
+ * Two area filters on the same statement INTERSECT, which is the only form
+ * Overpass actually honours here. Filtering the city area itself —
+ * `area[...](area.c)->.a` — parses and is then silently ignored: measured live,
+ * Milano-in-Germany and Milano-in-Italy both returned the same 1842 shops.
+ * With the intersection the same pair returns 0 and 1842.
+ *
+ * The substitution is safe because every clause is written in this file and the
+ * `(area.a)` marker is ours; a clause without one is left untouched.
+ */
+function constrainToCountry(clause: string): string {
+  return clause.replaceAll("(area.a)", "(area.a)(area.c)");
 }
 
 type QueryGroup = {
@@ -193,11 +222,12 @@ function buildGroups(shops: string[], nameTerms: string[], model: string): Query
 }
 
 function buildQuery(target: Target, clauses: string[]): string {
+  const constrain = target.kind === "city" && Boolean(target.countryIso);
   return [
     `[out:json][timeout:${SERVER_TIMEOUT}];`,
     areaLine(target),
     `(`,
-    ...clauses.map((c) => `  ${c}`),
+    ...clauses.map((c) => `  ${constrain ? constrainToCountry(c) : c}`),
     `);`,
     `out center tags ${PER_QUERY_LIMIT};`,
   ].join("\n");
@@ -341,6 +371,28 @@ function toCandidate(el: OverpassElement, countryLabel: string, fallbackCity: st
   };
 }
 
+/**
+ * Does this city exist inside this country at all?
+ *
+ * Only ever asked to EXPLAIN an empty result, never to gate a search — a failed
+ * probe returns undefined and the run says nothing rather than accusing the user
+ * of a typo because Overpass was busy.
+ */
+async function cityExistsInCountry(city: string, countryIso: string): Promise<boolean | undefined> {
+  const ql = [
+    `[out:json][timeout:40];`,
+    `area["ISO3166-1"="${esc(countryIso)}"][admin_level=2]->.c;`,
+    `rel["name"="${esc(normalizeCity(city))}"]["boundary"="administrative"](area.c);`,
+    `out ids 1;`,
+  ].join("\n");
+  try {
+    const els = await fetchOverpass(ql, { probe: "city-in-country", city: normalizeCity(city), iso: countryIso }, 0, 0.4);
+    return els.length > 0;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function discoverOsm(opts: {
   countryIso: string;
   countryLabel: string;
@@ -360,11 +412,13 @@ export async function discoverOsm(opts: {
   // Targets: given city → that city; else major cities; else country area.
   let targets: Target[];
   if (opts.city) {
-    targets = [{ kind: "city", value: opts.city }];
+    targets = [{ kind: "city", value: opts.city, countryIso: opts.countryIso }];
   } else {
     const cities = MAJOR_CITIES[opts.countryIso] ?? [];
     targets = cities.length > 0
-      ? cities.slice(0, CITY_EXPANSION_CAP).map((c) => ({ kind: "city" as const, value: c }))
+      ? cities
+          .slice(0, CITY_EXPANSION_CAP)
+          .map((c) => ({ kind: "city" as const, value: c, countryIso: opts.countryIso }))
       : [{ kind: "country", value: opts.countryIso }];
   }
   // Bound the total fan-out (targets × groups) to the query budget.
@@ -456,6 +510,21 @@ export async function discoverOsm(opts: {
     } else {
       queriesFailed++;
       if (slot.error) errors.push(slot.error);
+    }
+  }
+
+  // An empty city search has two very different causes, and saying which one it
+  // was costs a single query — but only when it has already gone wrong, so the
+  // normal path pays nothing. Without this the screen shows a bare "0 lead" for
+  // a city that is not in the selected country at all, which reads as "there is
+  // nothing there" rather than "you asked the wrong question".
+  if (opts.city && queriesOk > 0 && rawResults === 0) {
+    const found = await cityExistsInCountry(opts.city, opts.countryIso);
+    if (found === false) {
+      errors.push(
+        `${opts.countryLabel} içinde "${normalizeCity(opts.city)}" adında bir şehir bulunamadı — ` +
+          `şehir adını kontrol edin veya ülkeyi değiştirin.`,
+      );
     }
   }
 

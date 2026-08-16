@@ -6,6 +6,7 @@ import { fetchSiteIntel } from "./providers/website";
 import { resolveBrandFacts, findBrandQidByName } from "./providers/wikidata";
 import { checkVatId } from "./providers/vies";
 import { pickDeepDiveTargets } from "./filter";
+import { normalizeDomain } from "./dedup";
 import { listCompaniesForSearch } from "./leads";
 
 /**
@@ -158,6 +159,9 @@ export async function runDeepDive(searchId: string, limit = 3): Promise<DeepDive
         where: { id: row.id },
         data: {
           website,
+          // Without this the card falls back to printing the whole URL, so a
+          // deep-dived firm reads "https://www.calzedonia.it/" beside "ovs.it".
+          domain: normalizeDomain(website) ?? undefined,
           websiteStatus: "ACTIVE",
           legalName: intel.legalName ?? row.legalName ?? null,
           email: row.email ?? intel.emails[0] ?? null,

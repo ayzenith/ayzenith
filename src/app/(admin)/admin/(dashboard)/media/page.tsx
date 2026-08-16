@@ -7,8 +7,7 @@ import { MediaLibrary } from "@/components/admin/media/media-library";
 export const metadata: Metadata = { title: "Medya · AYZENITH" };
 
 export default async function MediaPage() {
-  await requireUser();
-  const media = await listMedia();
+  const [, media] = await Promise.all([requireUser(), listMedia()]);
 
   return (
     <>

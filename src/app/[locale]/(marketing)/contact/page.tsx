@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Clock, Mail, MapPin, Phone, ShieldCheck, type LucideIcon } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -25,7 +25,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default async function ContactPage() {
+export default async function ContactPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Declaring the locale is what keeps this page statically rendered.
+  setRequestLocale((await params).locale);
   const t = await getTranslations("contactPage");
   const settings = await getSiteSettings();
 

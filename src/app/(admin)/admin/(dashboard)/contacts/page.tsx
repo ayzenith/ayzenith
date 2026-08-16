@@ -42,10 +42,12 @@ export default async function ContactsPage({
 }: {
   searchParams: Promise<{ status?: string }>;
 }) {
-  await requireUser();
   const { status } = await searchParams;
   const active = FILTERS.find((f) => f.key === status) ?? FILTERS[0]!;
-  const messages = await listContactMessages(active.status);
+  const [, messages] = await Promise.all([
+    requireUser(),
+    listContactMessages(active.status),
+  ]);
 
   return (
     <>

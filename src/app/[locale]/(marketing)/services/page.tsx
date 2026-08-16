@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Info } from "lucide-react";
 import type { AssetKey } from "@/config/assets";
 import { Container } from "@/components/ui/container";
@@ -50,7 +50,13 @@ const groups: ReadonlyArray<{
   },
 ];
 
-export default async function ServicesPage() {
+export default async function ServicesPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Declaring the locale is what keeps this page statically rendered.
+  setRequestLocale((await params).locale);
   const t = await getTranslations("services");
 
   return (

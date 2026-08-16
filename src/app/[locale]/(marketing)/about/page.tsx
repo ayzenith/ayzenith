@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Check } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Section } from "@/components/ui/section";
@@ -44,7 +44,13 @@ const missionFields = [
   "dental",
 ] as const;
 
-export default async function AboutPage() {
+export default async function AboutPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Declaring the locale is what keeps this page statically rendered.
+  setRequestLocale((await params).locale);
   const t = await getTranslations("about");
 
   return (

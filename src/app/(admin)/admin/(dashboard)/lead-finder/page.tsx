@@ -10,8 +10,11 @@ export const metadata: Metadata = { title: "Lead Finder · AYZENITH", robots: { 
 export const dynamic = "force-dynamic";
 
 export default async function LeadFinderPage() {
-  await requireRole("ADMIN");
-  const [searches, health] = await Promise.all([listSearches(), getDataHealth()]);
+  const [, searches, health] = await Promise.all([
+    requireRole("ADMIN"),
+    listSearches(),
+    getDataHealth(),
+  ]);
 
   return (
     <>

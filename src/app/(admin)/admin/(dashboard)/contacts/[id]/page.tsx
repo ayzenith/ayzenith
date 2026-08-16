@@ -28,9 +28,8 @@ export default async function ContactDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireUser();
   const { id } = await params;
-  const message = await getContactMessage(id);
+  const [, message] = await Promise.all([requireUser(), getContactMessage(id)]);
   if (!message) notFound();
 
   // Opening a NEW inquiry marks it read.

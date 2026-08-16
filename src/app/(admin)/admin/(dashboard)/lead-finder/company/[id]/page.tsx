@@ -31,9 +31,8 @@ type BreakdownComponent = {
 };
 
 export default async function LeadDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireRole("ADMIN");
   const { id } = await params;
-  const c = await getCompany(id);
+  const [, c] = await Promise.all([requireRole("ADMIN"), getCompany(id)]);
   if (!c) notFound();
 
   const band = LEAD_BAND[scoreBand(c.leadScore)];

@@ -53,8 +53,8 @@ function StatCard({
 }
 
 export default async function DashboardPage() {
-  const user = await requireUser();
-  const [stats, activity] = await Promise.all([
+  const [user, stats, activity] = await Promise.all([
+    requireUser(),
     getDashboardStats(),
     recentActivity(6),
   ]);

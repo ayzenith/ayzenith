@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { hasLocale, NextIntlClientProvider } from "next-intl";
-import { getMessages } from "next-intl/server";
+import { getMessages, setRequestLocale } from "next-intl/server";
 import { fontVariables } from "@/lib/fonts";
 import { buildMetadata, structuredData } from "@/lib/seo";
 import { siteConfig } from "@/config/site";
@@ -15,6 +15,20 @@ import "../globals.css";
  * message context, default metadata (with locale-aware canonical + hreflang)
  * and site-wide Organization structured data. Server Component; no client JS.
  */
+
+/**
+ * Pre-render every locale at build time.
+ *
+ * Without this the whole public site is rendered per request: measured on
+ * production, the homepage took ~950ms to first byte and came back
+ * `Cache-Control: no-store, X-Vercel-Cache: MISS` — a page with no per-user
+ * content, re-rendered on a server on another continent for every visitor.
+ * Enumerating the locales (with `setRequestLocale` below) lets Next render them
+ * once and serve them from the edge.
+ */
+export function generateStaticParams() {
+  return routing.locales.map((locale) => ({ locale }));
+}
 
 export async function generateMetadata(): Promise<Metadata> {
   const base = await buildMetadata();
@@ -54,6 +68,9 @@ export default async function LocaleLayout({
   if (!hasLocale(routing.locales, locale)) {
     notFound();
   }
+  // Opts this subtree into static rendering; without it next-intl falls back to
+  // dynamic rendering for every request.
+  setRequestLocale(locale);
 
   const messages = await getMessages();
 

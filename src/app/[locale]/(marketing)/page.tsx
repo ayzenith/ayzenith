@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Hero } from "@/components/sections/hero";
 import { Belief } from "@/components/sections/belief";
 import { Capabilities } from "@/components/sections/capabilities";
@@ -27,7 +27,13 @@ export async function generateMetadata(): Promise<Metadata> {
   });
 }
 
-export default function HomePage() {
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Declaring the locale is what keeps this page statically rendered.
+  setRequestLocale((await params).locale);
   return (
     <>
       {/* 01 · Hero — The Statement */}

@@ -743,3 +743,818 @@ model LeadSetting {
   recheckDays Int? // when a lead becomes "re-verify recommended" (default 30)
   updatedAt   DateTime @updatedAt
 }
+
+// =============================================================================
+// AYZENITH BUSINESS OS — V1
+// =============================================================================
+//
+// Everything below this line is ADDITIVE. Not one existing model, column or
+// index is touched: the CMS, RADAR and Lead Finder schemas are identical to what
+// they were before this block existed, and dropping every table below would
+// leave them untouched.
+//
+// Three rules govern this half of the schema:
+//
+//  1. MONEY IS `Decimal`, NEVER `Float`. Every monetary row also carries its own
+//     `currency` + `fxRate` + `fxRateDate`, because a sale invoiced in EUR and a
+//     cost paid in TRY can only be compared through the rate that applied on the
+//     day each happened. One global rate applied retroactively makes every
+//     margin in the system quietly wrong.
+//
+//  2. STOCK IS A LEDGER, NOT A NUMBER. There is no mutable `quantity` column on
+//     a location. On-hand is the SUM of signed StockMovement rows, so every unit
+//     can be traced to the document that moved it — the stock counterpart of the
+//     "every figure has a source" rule RADAR and Lead Finder already follow.
+//
+//  3. LINKS TO LEAD FINDER / RADAR ARE PLAIN STRINGS, NOT FOREIGN KEYS. A re-run
+//     of a lead search may rewrite or delete its own rows; a real FK from here
+//     could block that or cascade into operational data. Business OS COPIES what
+//     it needs and remembers where it came from. The coupling is one-way and
+//     severable.
+//
+// Tax is RECORDED, never COMPUTED (see TaxRecord).
+// =============================================================================
+
+/// The hat a firm wears in a relationship. A firm may wear several at once —
+/// that is the whole point of keeping roles in their own table instead of typing
+/// the company itself. One `Party` row, many `PartyRelation` rows.
+enum PartyRoleType {
+  CUSTOMER
+  SUPPLIER
+  DEALER
+  DISTRIBUTOR
+  STORE
+  PARTNER
+  CARRIER
+  SERVICE_PROVIDER
+  OTHER
+}
+
+/// How business is actually done with that firm.
+enum TradeModel {
+  WHOLESALE
+  RETAIL
+  DROPSHIP
+  CONSIGNMENT
+  MARKETPLACE
+  AGENCY
+  OTHER
+}
+
+enum RelationStatus {
+  PROSPECT
+  ACTIVE
+  PAUSED
+  ENDED
+}
+
+enum ChannelType {
+  MARKETPLACE
+  OWN_WEBSITE
+  PHYSICAL_STORE
+  B2B
+  DEALER
+  DISTRIBUTOR
+  MANUAL
+  OTHER
+}
+
+enum StockLocationType {
+  WAREHOUSE
+  STORE
+  CHANNEL
+  CONSIGNMENT
+  TRANSIT
+  OTHER
+}
+
+/// Why stock moved. Every movement has one — an unexplained quantity change is
+/// exactly the thing this ledger exists to make impossible.
+enum StockMoveReason {
+  OPENING
+  PURCHASE
+  SALE
+  TRANSFER
+  RETURN
+  ADJUSTMENT
+  DAMAGE
+}
+
+/// Document lifecycle. DRAFT has NO side effects: no stock, no payable, no
+/// receivable. CONFIRMED posts them atomically. CANCELLED reverses them and
+/// keeps the record — financial history is voided, never deleted.
+enum DocStatus {
+  DRAFT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentDirection {
+  IN
+  OUT
+}
+
+enum PaymentStatus {
+  PENDING
+  PARTIAL
+  PAID
+  CANCELLED
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  CASH
+  CARD
+  CHEQUE
+  LETTER_OF_CREDIT
+  PLATFORM
+  OTHER
+}
+
+/// Direct costs that attach to a document and become part of landed cost.
+enum CostKind {
+  FREIGHT
+  CUSTOMS
+  COMMISSION
+  PACKAGING
+  INSURANCE
+  BANK
+  MARKETING
+  OTHER
+}
+
+/// How a CostLine spreads over the lines of its document.
+enum CostAllocation {
+  BY_VALUE
+  BY_QUANTITY
+  NONE
+}
+
+/// Overheads — the costs that are NOT attached to one shipment.
+enum ExpenseKind {
+  RENT
+  SALARY
+  SOFTWARE
+  UTILITIES
+  ACCOUNTING
+  MARKETING
+  BANK
+  LOGISTICS
+  TRAVEL
+  TAX
+  OTHER
+}
+
+enum RecurrenceFreq {
+  WEEKLY
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+enum TaxStatus {
+  PLANNED
+  DUE
+  PAID
+  CANCELLED
+}
+
+// ---------------------------------------------------------------------------
+// Firms and people
+// ---------------------------------------------------------------------------
+
+/// A firm — ONE row per real-world company, whatever it does for you.
+///
+/// This is deliberately NOT `LeadCompany`. That model is a discovery artefact:
+/// scoped to a search, re-writable on a re-run, and semantically "an unverified
+/// candidate". Putting an invoice against it would mean a search re-run could
+/// silently overwrite a customer. `leadCompanyId` below records provenance for a
+/// firm that ARRIVED from Lead Finder, as a plain string with no FK.
+model Party {
+  id        String  @id @default(cuid())
+  name      String
+  legalName String?
+
+  taxNumber  String?
+  taxOffice  String?
+  country    String  @default("TR")
+  city       String?
+  address    String?
+  postalCode String?
+
+  website String?
+  phone   String?
+  email   String?
+
+  /// The currency this firm is normally invoiced in — a default for new
+  /// documents, never a constraint on them.
+  currency        String  @default("TRY")
+  paymentTermDays Int?
+  notes           String?
+  active          Boolean @default(true)
+
+  /// One-way provenance from Lead Finder. Intentionally NOT a relation.
+  leadCompanyId String?
+  leadSearchId  String?
+  importedAt    DateTime?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  relations         PartyRelation[]
+  contacts          PartyContact[]
+  purchases         Purchase[]
+  sales             Sale[]
+  payments          Payment[]
+  channels          Channel[]
+  stockLocations    StockLocation[]
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+
+  @@index([name])
+  @@index([country])
+  @@index([active])
+  @@index([leadCompanyId])
+}
+
+/// One commercial relationship with a firm. The unique key is (party, role), so
+/// "ABC GmbH" can be CUSTOMER and SUPPLIER and DISTRIBUTOR at the same time
+/// without ever being entered three times.
+model PartyRelation {
+  id      String @id @default(cuid())
+  partyId String
+  party   Party  @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  role       PartyRoleType
+  tradeModel TradeModel?
+  status     RelationStatus @default(ACTIVE)
+  startedAt  DateTime?
+  endedAt    DateTime?
+  note       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([partyId, role])
+  @@index([role])
+  @@index([status])
+}
+
+/// An operational contact at a firm — the person you actually write to. Separate
+/// from `LeadContact`, which is a sourced discovery record and may only contain
+/// what a public page proved.
+model PartyContact {
+  id      String @id @default(cuid())
+  partyId String
+  party   Party  @relation(fields: [partyId], references: [id], onDelete: Cascade)
+
+  firstName String
+  lastName  String?
+  title     String?
+  email     String?
+  phone     String?
+  isPrimary Boolean @default(false)
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partyId])
+}
+
+// ---------------------------------------------------------------------------
+// Goods, channels, stock
+// ---------------------------------------------------------------------------
+
+/// A traded good. NOT the CMS `Product`, which is website content and carries no
+/// cost, price, unit or stock. `cmsProductId` optionally points at the catalogue
+/// entry that shows this SKU on the public site.
+model Item {
+  id      String  @id @default(cuid())
+  sku     String  @unique
+  name    String
+  barcode String?
+
+  category String?
+  brand    String?
+  unit     String  @default("adet")
+
+  purchasePrice    Decimal? @db.Decimal(18, 4)
+  purchaseCurrency String   @default("TRY")
+  salePrice        Decimal? @db.Decimal(18, 4)
+  saleCurrency     String   @default("TRY")
+  /// Recorded for the document, not used to compute a tax liability.
+  vatRate          Decimal? @db.Decimal(6, 3)
+
+  minStock Decimal? @db.Decimal(18, 3)
+  active   Boolean  @default(true)
+
+  description String?
+  notes       String?
+
+  cmsProductId String?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  channelPrices ItemChannelPrice[]
+  movements     StockMovement[]
+  purchaseLines PurchaseLine[]
+  saleLines     SaleLine[]
+
+  @@index([name])
+  @@index([category])
+  @@index([active])
+}
+
+/// Where you sell. A channel may BE a firm (a dealer, a distributor), in which
+/// case `partyId` points at it — still one Party row, wearing another hat.
+model Channel {
+  id   String      @id @default(cuid())
+  name String      @unique
+  type ChannelType @default(OTHER)
+
+  /// Percent, e.g. 21.500 — recorded per channel and applied as a CostLine on
+  /// the sale, so it lands in margin rather than hiding in the price.
+  commissionRate Decimal? @db.Decimal(6, 3)
+  currency       String   @default("TRY")
+
+  partyId String?
+  party   Party?  @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  /// Reserved for a future marketplace integration (store id / seller id). Never
+  /// read by V1 — it exists so adding an integration is not a migration.
+  externalKey String?
+
+  active Boolean @default(true)
+  note   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  prices         ItemChannelPrice[]
+  sales          Sale[]
+  stockLocations StockLocation[]
+
+  @@index([type])
+  @@index([active])
+}
+
+/// The same SKU at a different price per channel — Trendyol TRY 1.499, own site
+/// TRY 1.399, B2B TRY 1.100.
+model ItemChannelPrice {
+  id        String  @id @default(cuid())
+  itemId    String
+  item      Item    @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  price    Decimal @db.Decimal(18, 4)
+  currency String  @default("TRY")
+  active   Boolean @default(true)
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([itemId, channelId])
+  @@index([channelId])
+}
+
+/// A place stock can sit: the main warehouse, a shop floor, a marketplace's
+/// fulfilment centre, goods on consignment at a partner.
+model StockLocation {
+  id   String            @id @default(cuid())
+  name String            @unique
+  type StockLocationType @default(WAREHOUSE)
+
+  channelId String?
+  channel   Channel? @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  partyId   String?
+  party     Party?   @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  country   String?
+  city      String?
+  isDefault Boolean @default(false)
+  active    Boolean @default(true)
+  note      String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  movements StockMovement[]
+  purchases Purchase[]
+  sales     Sale[]
+
+  @@index([type])
+  @@index([active])
+}
+
+/// One signed movement of one SKU in or out of one location. Positive = in,
+/// negative = out; a transfer is TWO rows sharing a `transferGroup`. On-hand is
+/// never stored — it is `SUM(quantity)`, which is why it can always be explained.
+model StockMovement {
+  id         String        @id @default(cuid())
+  itemId     String
+  item       Item          @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  locationId String
+  location   StockLocation @relation(fields: [locationId], references: [id], onDelete: Cascade)
+
+  quantity Decimal         @db.Decimal(18, 3)
+  reason   StockMoveReason
+
+  /// Landed unit cost carried by this movement, in base currency. Populated for
+  /// inbound movements; consumed by sales to value COGS.
+  unitCost Decimal? @db.Decimal(18, 6)
+
+  occurredAt DateTime @default(now())
+
+  purchaseId    String?
+  purchase      Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  saleId        String?
+  sale          Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  transferGroup String?
+
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([itemId, locationId])
+  @@index([occurredAt])
+  @@index([purchaseId])
+  @@index([saleId])
+  @@index([transferGroup])
+}
+
+// ---------------------------------------------------------------------------
+// Buying
+// ---------------------------------------------------------------------------
+
+/// A purchase from a supplier. Confirming it posts stock in, spreads its cost
+/// lines over the goods, and creates the payable.
+model Purchase {
+  id         String @id @default(cuid())
+  code       String @unique
+  supplierId String
+  supplier   Party  @relation(fields: [supplierId], references: [id])
+
+  locationId String?
+  location   StockLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  issuedAt        DateTime  @default(now())
+  dueDate         DateTime?
+  paymentTermDays Int?
+
+  currency String @default("TRY")
+  /// Units of BASE currency per 1 unit of `currency`, on `fxRateDate`. Frozen at
+  /// the document — never recomputed from a later rate.
+  fxRate     Decimal   @default(1) @db.Decimal(18, 8)
+  fxRateDate DateTime?
+
+  status DocStatus @default(DRAFT)
+
+  /// All three are derived from the lines and cost lines, in document currency.
+  subtotal  Decimal @default(0) @db.Decimal(18, 4)
+  costTotal Decimal @default(0) @db.Decimal(18, 4)
+  total     Decimal @default(0) @db.Decimal(18, 4)
+
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines     PurchaseLine[]
+  costs     CostLine[]
+  payments  Payment[]
+  movements StockMovement[]
+
+  @@index([supplierId])
+  @@index([issuedAt])
+  @@index([status])
+}
+
+model PurchaseLine {
+  id         String   @id @default(cuid())
+  purchaseId String
+  purchase   Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  itemId     String
+  item       Item     @relation(fields: [itemId], references: [id])
+
+  quantity     Decimal @db.Decimal(18, 3)
+  unitPrice    Decimal @db.Decimal(18, 4)
+  discountRate Decimal @default(0) @db.Decimal(6, 3)
+  vatRate      Decimal @default(0) @db.Decimal(6, 3)
+  lineTotal    Decimal @default(0) @db.Decimal(18, 4)
+
+  /// Landed unit cost in BASE currency: goods + the line's share of freight,
+  /// customs and other cost lines. DERIVED on confirm — never typed by hand,
+  /// which is what stops two different "real cost" numbers existing at once.
+  landedUnitCost Decimal? @db.Decimal(18, 6)
+
+  note String?
+
+  @@index([purchaseId])
+  @@index([itemId])
+}
+
+// ---------------------------------------------------------------------------
+// Selling
+// ---------------------------------------------------------------------------
+
+/// A sale to a customer, through a channel. Confirming it posts stock out at the
+/// weighted-average landed cost, applies the channel commission as a cost line,
+/// and creates the receivable.
+model Sale {
+  id         String @id @default(cuid())
+  code       String @unique
+  customerId String?
+  customer   Party? @relation(fields: [customerId], references: [id])
+
+  channelId  String?
+  channel    Channel?       @relation(fields: [channelId], references: [id], onDelete: SetNull)
+  locationId String?
+  location   StockLocation? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
+  issuedAt        DateTime  @default(now())
+  dueDate         DateTime?
+  paymentTermDays Int?
+
+  currency   String    @default("TRY")
+  fxRate     Decimal   @default(1) @db.Decimal(18, 8)
+  fxRateDate DateTime?
+
+  status DocStatus @default(DRAFT)
+  /// DROPSHIP marks a sale that must NOT draw down own stock — the goods are
+  /// shipped by the supplier. Stock posting is skipped for these.
+  tradeModel TradeModel?
+
+  subtotal  Decimal @default(0) @db.Decimal(18, 4)
+  costTotal Decimal @default(0) @db.Decimal(18, 4)
+  total     Decimal @default(0) @db.Decimal(18, 4)
+  /// Cost of goods and gross profit, in BASE currency — derived on confirm.
+  cogsTotal Decimal @default(0) @db.Decimal(18, 4)
+  profit    Decimal @default(0) @db.Decimal(18, 4)
+
+  /// Which market analysis this sale came out of. Plain string by design.
+  radarSnapshotId String?
+
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines     SaleLine[]
+  costs     CostLine[]
+  payments  Payment[]
+  movements StockMovement[]
+
+  @@index([customerId])
+  @@index([channelId])
+  @@index([issuedAt])
+  @@index([status])
+}
+
+model SaleLine {
+  id     String @id @default(cuid())
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  itemId String
+  item   Item   @relation(fields: [itemId], references: [id])
+
+  quantity     Decimal @db.Decimal(18, 3)
+  unitPrice    Decimal @db.Decimal(18, 4)
+  discountRate Decimal @default(0) @db.Decimal(6, 3)
+  vatRate      Decimal @default(0) @db.Decimal(6, 3)
+  lineTotal    Decimal @default(0) @db.Decimal(18, 4)
+
+  /// Snapshot of landed unit cost at the moment of sale, in BASE currency.
+  unitCost  Decimal? @db.Decimal(18, 6)
+  costTotal Decimal  @default(0) @db.Decimal(18, 4)
+  profit    Decimal  @default(0) @db.Decimal(18, 4)
+
+  note String?
+
+  @@index([saleId])
+  @@index([itemId])
+}
+
+/// A direct cost attached to one document: freight, customs, marketplace
+/// commission, packaging. Carries its own currency and rate because freight is
+/// routinely paid in a different money from the goods.
+model CostLine {
+  id    String   @id @default(cuid())
+  kind  CostKind @default(OTHER)
+  label String?
+
+  amount     Decimal        @db.Decimal(18, 4)
+  currency   String         @default("TRY")
+  fxRate     Decimal        @default(1) @db.Decimal(18, 8)
+  fxRateDate DateTime?
+  allocation CostAllocation @default(BY_VALUE)
+
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  saleId     String?
+  sale       Sale?     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  occurredAt DateTime @default(now())
+  note       String?
+  createdAt  DateTime @default(now())
+
+  @@index([purchaseId])
+  @@index([saleId])
+}
+
+// ---------------------------------------------------------------------------
+// Money in, money out
+// ---------------------------------------------------------------------------
+
+/// One expected or settled movement of money. Direction IN is a receivable, OUT
+/// a payable. Several rows against the same document ARE the instalment plan, so
+/// no separate schedule model is needed. This one table drives the whole
+/// 30-day / 1-6 / 6-12 / 12+ finance calendar.
+model Payment {
+  id        String           @id @default(cuid())
+  direction PaymentDirection
+
+  partyId String?
+  party   Party?  @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  purchaseId  String?
+  purchase    Purchase?  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  saleId      String?
+  sale        Sale?      @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  expenseId   String?
+  expense     Expense?   @relation(fields: [expenseId], references: [id], onDelete: Cascade)
+  taxRecordId String?
+  taxRecord   TaxRecord? @relation(fields: [taxRecordId], references: [id], onDelete: Cascade)
+
+  amount     Decimal   @db.Decimal(18, 4)
+  paidAmount Decimal   @default(0) @db.Decimal(18, 4)
+  currency   String    @default("TRY")
+  fxRate     Decimal   @default(1) @db.Decimal(18, 8)
+  fxRateDate DateTime?
+
+  dueDate DateTime
+  paidAt  DateTime?
+
+  /// PENDING/PARTIAL/PAID/CANCELLED only. "Overdue" is NOT stored — it is
+  /// `dueDate < today AND status <> PAID`, so it can never go stale.
+  status PaymentStatus  @default(PENDING)
+  method PaymentMethod?
+
+  reference String?
+  note      String?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([direction, status, dueDate])
+  @@index([dueDate])
+  @@index([partyId])
+  @@index([purchaseId])
+  @@index([saleId])
+}
+
+/// An overhead — rent, salary, software, accountancy. Not attached to a shipment
+/// (those are CostLine). Creating one creates its OUT payment.
+model Expense {
+  id    String      @id @default(cuid())
+  title String
+  kind  ExpenseKind @default(OTHER)
+
+  partyId String?
+  party   Party?  @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  amount     Decimal   @db.Decimal(18, 4)
+  currency   String    @default("TRY")
+  fxRate     Decimal   @default(1) @db.Decimal(18, 8)
+  fxRateDate DateTime?
+
+  occurredAt DateTime  @default(now())
+  dueDate    DateTime?
+
+  /// Set when this row was materialised from a RecurringExpense. `periodKey`
+  /// ("2026-09") makes generation idempotent — running it twice cannot create
+  /// September's rent twice.
+  recurringId String?
+  recurring   RecurringExpense? @relation(fields: [recurringId], references: [id], onDelete: SetNull)
+  periodKey   String?
+
+  note        String?
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  payments Payment[]
+
+  @@unique([recurringId, periodKey])
+  @@index([kind])
+  @@index([occurredAt])
+}
+
+/// A standing cost. Defined once; the finance calendar materialises the next
+/// twelve months of Expense + Payment rows from it, so future months are visible
+/// in cash flow without anyone re-typing the rent every month.
+model RecurringExpense {
+  id    String      @id @default(cuid())
+  title String
+  kind  ExpenseKind @default(OTHER)
+
+  partyId String?
+  party   Party?  @relation(fields: [partyId], references: [id], onDelete: SetNull)
+
+  amount   Decimal @db.Decimal(18, 4)
+  currency String  @default("TRY")
+
+  frequency RecurrenceFreq @default(MONTHLY)
+  /// 1-28 only, so the same day exists in every month including February.
+  dayOfMonth Int            @default(1)
+  startsAt   DateTime
+  endsAt     DateTime?
+  active     Boolean        @default(true)
+
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  expenses Expense[]
+
+  @@index([active])
+}
+
+/// A tax or statutory obligation as a DIARY ENTRY.
+///
+/// Business OS deliberately has NO tax engine. It never applies legislation, and
+/// never tells the owner what they owe — an accountant does that. What it does
+/// is remember what was declared, when it is due, and whether it was paid, so
+/// the obligation shows up in cash flow next to everything else.
+model TaxRecord {
+  id     String @id @default(cuid())
+  kind   String
+  period String
+
+  amount   Decimal? @db.Decimal(18, 4)
+  currency String   @default("TRY")
+
+  dueDate DateTime
+  status  TaxStatus @default(PLANNED)
+  paidAt  DateTime?
+
+  note      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  payments Payment[]
+
+  @@unique([kind, period])
+  @@index([dueDate, status])
+}
+
+// ---------------------------------------------------------------------------
+// Plumbing
+// ---------------------------------------------------------------------------
+
+/// Single-row Business OS configuration (id = "os"), mirroring RadarSetting and
+/// LeadSetting. `fxRates` holds the manually-entered rate table used as the
+/// DEFAULT when a document is created; once saved, a document keeps its own rate.
+model OsSetting {
+  id             String @id @default("os")
+  baseCurrency   String @default("TRY")
+  defaultCountry String @default("TR")
+  /// Off by default: a sale that would drive a location negative is refused
+  /// rather than silently creating stock that does not exist.
+  allowNegativeStock Boolean   @default(false)
+  fxRates            Json? // { "EUR": 47.2, "USD": 40.1 }
+  fxUpdatedAt        DateTime?
+  updatedAt          DateTime  @updatedAt
+}
+
+/// Per-year document counters (key = "PURCHASE-2026"), incremented inside the
+/// same transaction that creates the document, so two documents can never share
+/// a code.
+model OsSequence {
+  key   String @id
+  value Int    @default(0)
+}
+
+/// The audit record of one Excel import: how many rows landed, how many failed,
+/// and why — so the failed rows can be re-downloaded as a spreadsheet and fixed.
+model OsImportBatch {
+  id       String  @id @default(cuid())
+  entity   String
+  fileName String?
+
+  totalRows   Int  @default(0)
+  createdRows Int  @default(0)
+  updatedRows Int  @default(0)
+  failedRows  Int  @default(0)
+  errors      Json @default("[]")
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+}

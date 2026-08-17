@@ -7,6 +7,8 @@ import {
 } from "lucide-react";
 import { requireRole } from "@/server/auth";
 import { getCompany } from "@/server/leads/leads";
+import { findPartyForLead } from "@/server/os/leadbridge";
+import { transferLeadAction } from "@/app/(business)/os/companies/actions";
 import {
   LEAD_ROLE_LABELS, SIZE_LABELS, LEAD_COMPONENT_LABELS, SOURCE_TYPE_LABELS,
   FRESHNESS_META, scoreBand, qualifiedPriority, PRIORITY_LABELS,
@@ -34,6 +36,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
   const { id } = await params;
   const [, c] = await Promise.all([requireRole("ADMIN"), getCompany(id)]);
   if (!c) notFound();
+  const existingParty = await findPartyForLead(id);
 
   const band = LEAD_BAND[scoreBand(c.leadScore)];
   const fit = FIT_STYLE[c.productFit] ?? FIT_STYLE.UNVERIFIED!;
@@ -93,6 +96,28 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
           </span>
         }
       />
+
+      <div className="mb-2 flex justify-end">
+        {existingParty ? (
+          <Link
+            href={`/os/companies/${existingParty.id}`}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3.5 py-2 text-small font-medium text-foreground transition-colors hover:bg-surface-sunken"
+          >
+            Business OS&apos;ta görüntüle
+          </Link>
+        ) : (
+          <form action={transferLeadAction}>
+            <input type="hidden" name="leadCompanyId" value={c.id} />
+            <input type="hidden" name="role" value="CUSTOMER" />
+            <button
+              type="submit"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-navy-950 px-3.5 py-2 text-small font-semibold text-white transition-colors hover:bg-navy-900"
+            >
+              Business OS&apos;a Aktar
+            </button>
+          </form>
+        )}
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Left: profile */}

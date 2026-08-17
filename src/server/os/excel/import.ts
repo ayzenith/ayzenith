@@ -238,6 +238,24 @@ const int = (v: Cellish): number | null => {
 const date = (v: Cellish): Date | null => (v instanceof Date ? v : null);
 const arr = (v: Cellish): string[] => (Array.isArray(v) ? v : []);
 
+/**
+ * Narrow an update payload to the columns the file actually carried.
+ *
+ * `buildRow` only writes keys that were mapped, so "absent from `values`" means
+ * "the spreadsheet had no such column". Prisma reads an explicit `null` as *set
+ * this to null*, so passing the whole payload would let a two-column file (SKU
+ * and name, to correct some product names) blank out barcode, both prices,
+ * minimum stock and category on every row it touches. Master data is the one
+ * thing an import must never quietly destroy.
+ */
+function presentOnly<T extends Record<string, unknown>>(data: T, values: RowValues): Partial<T> {
+  const out: Partial<T> = {};
+  for (const key of Object.keys(data) as Array<keyof T & string>) {
+    if (key in values) out[key] = data[key];
+  }
+  return out;
+}
+
 // ---------------------------------------------------------------------------
 // The runner
 // ---------------------------------------------------------------------------
@@ -360,7 +378,7 @@ async function importParties(parsed: Array<{ rowNumber: number; values: RowValue
       const roles = arr(values.roles);
 
       if (existing) {
-        await db.party.update({ where: { id: existing.id }, data });
+        await db.party.update({ where: { id: existing.id }, data: presentOnly(data, values) });
         result.updated += 1;
         for (const role of roles) {
           await db.partyRelation.upsert({
@@ -408,7 +426,7 @@ async function importItems(parsed: Array<{ rowNumber: number; values: RowValues 
       };
       const existing = await db.item.findUnique({ where: { sku }, select: { id: true } });
       if (existing) {
-        await db.item.update({ where: { id: existing.id }, data });
+        await db.item.update({ where: { id: existing.id }, data: presentOnly(data, values) });
         result.updated += 1;
       } else {
         await db.item.create({ data: { sku, ...data, createdById: userId ?? null } });

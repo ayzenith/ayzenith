@@ -15,6 +15,7 @@ import {
   Table2,
   SlidersHorizontal,
   Crosshair,
+  Briefcase,
 } from "lucide-react";
 import type { Role } from "@prisma/client";
 
@@ -83,6 +84,14 @@ export const navGroups: NavGroup[] = [
     heading: "Lead Finder",
     items: [
       { label: "Lead Finder", href: "/admin/lead-finder", icon: Crosshair, status: "live", minRole: "ADMIN" },
+    ],
+  },
+  {
+    // A separate application behind the same login, not a CMS section — but with
+    // no link here the only way in was typing the URL by hand.
+    heading: "Business OS",
+    items: [
+      { label: "Business OS", href: "/os", icon: Briefcase, status: "live", minRole: "ADMIN" },
     ],
   },
   {

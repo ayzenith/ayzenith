@@ -22,11 +22,18 @@ const schema = z.object({
 export type LoginState = { error?: string };
 
 // Only allow same-app redirect targets — never an attacker-supplied absolute URL.
+// Both surfaces behind this one login are allowed: the CMS (/admin) and Business
+// OS (/os). A leading "//" would be protocol-relative and leave the site, so the
+// prefix check alone is not enough.
 function safeDestination(from: string | undefined): string {
-  if (from && from.startsWith("/admin") && !from.startsWith("/admin/login")) {
-    return from;
-  }
-  return "/admin";
+  if (!from || from.startsWith("//")) return "/admin";
+  const allowed =
+    (from === "/admin" || from.startsWith("/admin/")) && !from.startsWith("/admin/login")
+      ? from
+      : from === "/os" || from.startsWith("/os/")
+        ? from
+        : null;
+  return allowed ?? "/admin";
 }
 
 export async function loginAction(

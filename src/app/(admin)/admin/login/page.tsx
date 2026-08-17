@@ -17,10 +17,19 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ from?: string }>;
 }) {
-  const existing = await getCurrentUser();
-  if (existing) redirect("/admin");
-
   const { from } = await searchParams;
+
+  // An already-signed-in visitor still gets sent where they were headed — the
+  // desktop app opens /os, and bouncing that to the CMS dashboard would strand
+  // the user in the wrong application.
+  const existing = await getCurrentUser();
+  if (existing) {
+    const target =
+      from && !from.startsWith("//") && (from === "/os" || from.startsWith("/os/"))
+        ? from
+        : "/admin";
+    redirect(target);
+  }
 
   return (
     <main className="flex min-h-dvh items-center justify-center bg-surface-sunken px-4">

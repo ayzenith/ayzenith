@@ -71,8 +71,20 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
   const browser = await launchBrowser();
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: "networkidle0", timeout: 30_000 });
-    await page.evaluateHandle("document.fonts.ready");
+    try {
+      await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
+    } catch (err) {
+      throw new Error(`Failed to load ${url}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+
+    try {
+      await Promise.race([
+        page.evaluateHandle("document.fonts.ready"),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("fonts timeout")), 5_000)),
+      ]);
+    } catch {
+      // Font loading timed out or failed — continue with default fonts
+    }
 
     const footerTemplate = opts.footerLeft
       ? `<div style="width:100%;font-size:8px;color:#8B98A4;font-family:Helvetica,Arial,sans-serif;padding:0 22mm;display:flex;justify-content:space-between;">

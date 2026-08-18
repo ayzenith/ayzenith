@@ -12,8 +12,14 @@ export function ReportTemplate({ data }: { data: ReportData }) {
         <div className="min-w-0">
           {company.companyLogoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={company.companyLogoUrl} alt={company.companyTradingName ?? "AYZENITH"} className="mb-2 h-10 max-w-[180px] object-contain object-left" />
-          ) : (
+            <img
+              src={company.companyLogoUrl}
+              alt={company.companyTradingName ?? "AYZENITH"}
+              className="mb-2 h-10 max-w-[180px] object-contain object-left"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : null}
+          {!company.companyLogoUrl && (
             <p className="font-serif text-2xl font-medium tracking-tight text-navy-950">{company.companyTradingName}</p>
           )}
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">{COMPANY_TAGLINE}</p>

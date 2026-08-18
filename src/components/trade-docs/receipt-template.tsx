@@ -20,8 +20,14 @@ export function ReceiptTemplate({ data }: { data: ReceiptData }) {
         <div className="min-w-0">
           {company.companyLogoUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={company.companyLogoUrl} alt={company.companyTradingName ?? "AYZENITH"} className="mb-2 h-11 max-w-[190px] object-contain object-left" />
-          ) : (
+            <img
+              src={company.companyLogoUrl}
+              alt={company.companyTradingName ?? "AYZENITH"}
+              className="mb-2 h-11 max-w-[190px] object-contain object-left"
+              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+            />
+          ) : null}
+          {!company.companyLogoUrl && (
             <p className="font-serif text-2xl font-medium tracking-tight text-navy-950">{company.companyTradingName}</p>
           )}
           <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">{COMPANY_TAGLINE}</p>
@@ -75,8 +81,14 @@ export function ReceiptTemplate({ data }: { data: ReceiptData }) {
             <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-gold-700">Yetkili İmza</p>
             {data.signatory.signatureUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={data.signatory.signatureUrl} alt={data.signatory.name} className="ml-auto mb-1 h-12 object-contain object-right" />
-            ) : (
+              <img
+                src={data.signatory.signatureUrl}
+                alt={data.signatory.name}
+                className="ml-auto mb-1 h-12 object-contain object-right"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
+            ) : null}
+            {!data.signatory.signatureUrl && (
               <div className="mb-3 h-8" />
             )}
             <p className="font-medium text-navy-950">{data.signatory.name}</p>

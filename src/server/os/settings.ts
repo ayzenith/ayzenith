@@ -1,9 +1,10 @@
 import "server-only";
 
 import { cache } from "react";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, TradeDocLanguage } from "@prisma/client";
 import { db } from "@/lib/db";
 import { DEFAULT_BASE_CURRENCY } from "@/config/os";
+import { DEFAULT_COMPANY_PROFILE } from "@/config/trade-documents";
 import { D, type Dec } from "./money";
 
 /**
@@ -12,12 +13,15 @@ import { D, type Dec } from "./money";
  * the module works before anyone has visited the settings screen.
  */
 
+export type CompanyProfile = typeof DEFAULT_COMPANY_PROFILE;
+
 export type OsSettings = {
   baseCurrency: string;
   defaultCountry: string;
   allowNegativeStock: boolean;
   fxRates: Record<string, number>;
   fxUpdatedAt: Date | null;
+  company: CompanyProfile;
 };
 
 const DEFAULTS: OsSettings = {
@@ -26,6 +30,7 @@ const DEFAULTS: OsSettings = {
   allowNegativeStock: false,
   fxRates: {},
   fxUpdatedAt: null,
+  company: DEFAULT_COMPANY_PROFILE,
 };
 
 export const getOsSettings = cache(async (): Promise<OsSettings> => {
@@ -42,6 +47,23 @@ export const getOsSettings = cache(async (): Promise<OsSettings> => {
       allowNegativeStock: row.allowNegativeStock,
       fxRates: rates,
       fxUpdatedAt: row.fxUpdatedAt,
+      company: {
+        companyLegalName: row.companyLegalName || DEFAULT_COMPANY_PROFILE.companyLegalName,
+        companyTradingName: row.companyTradingName || DEFAULT_COMPANY_PROFILE.companyTradingName,
+        companyAddress: row.companyAddress || DEFAULT_COMPANY_PROFILE.companyAddress,
+        companyCountry: row.companyCountry || DEFAULT_COMPANY_PROFILE.companyCountry,
+        companyCity: row.companyCity || DEFAULT_COMPANY_PROFILE.companyCity,
+        companyPostalCode: row.companyPostalCode ?? DEFAULT_COMPANY_PROFILE.companyPostalCode,
+        companyPhone: row.companyPhone || DEFAULT_COMPANY_PROFILE.companyPhone,
+        companyEmail: row.companyEmail || DEFAULT_COMPANY_PROFILE.companyEmail,
+        companyWebsite: row.companyWebsite || DEFAULT_COMPANY_PROFILE.companyWebsite,
+        companyTaxNumber: row.companyTaxNumber ?? DEFAULT_COMPANY_PROFILE.companyTaxNumber,
+        companyVatNumber: row.companyVatNumber ?? DEFAULT_COMPANY_PROFILE.companyVatNumber,
+        companyChamberReg: row.companyChamberReg ?? DEFAULT_COMPANY_PROFILE.companyChamberReg,
+        companyLogoUrl: row.companyLogoUrl ?? DEFAULT_COMPANY_PROFILE.companyLogoUrl,
+        defaultDocLanguage: row.defaultDocLanguage || DEFAULT_COMPANY_PROFILE.defaultDocLanguage,
+        defaultDocFooterNote: row.defaultDocFooterNote ?? DEFAULT_COMPANY_PROFILE.defaultDocFooterNote,
+      },
     };
   } catch {
     return DEFAULTS;
@@ -72,6 +94,39 @@ export async function saveOsSettings(input: {
       fxRates: (input.fxRates ?? {}) as Prisma.InputJsonValue,
       fxUpdatedAt: input.fxRates ? new Date() : null,
     },
+    update: data,
+  });
+}
+
+/** Saves the issuing-company profile used on trade documents. Every field
+ *  optional — an empty string clears back to the compiled default. */
+export async function saveCompanyProfile(input: Partial<CompanyProfile>): Promise<void> {
+  const data: Prisma.OsSettingUpdateInput = {};
+  const set = (key: keyof CompanyProfile, dbKey: string) => {
+    if (!(key in input)) return;
+    const v = input[key];
+    (data as Record<string, unknown>)[dbKey] = v === "" ? null : v;
+  };
+  set("companyLegalName", "companyLegalName");
+  set("companyTradingName", "companyTradingName");
+  set("companyAddress", "companyAddress");
+  set("companyCountry", "companyCountry");
+  set("companyCity", "companyCity");
+  set("companyPostalCode", "companyPostalCode");
+  set("companyPhone", "companyPhone");
+  set("companyEmail", "companyEmail");
+  set("companyWebsite", "companyWebsite");
+  set("companyTaxNumber", "companyTaxNumber");
+  set("companyVatNumber", "companyVatNumber");
+  set("companyChamberReg", "companyChamberReg");
+  set("companyLogoUrl", "companyLogoUrl");
+  set("defaultDocFooterNote", "defaultDocFooterNote");
+  if (input.defaultDocLanguage) data.defaultDocLanguage = input.defaultDocLanguage as TradeDocLanguage;
+
+  const plain = data as Record<string, string | null | undefined>;
+  await db.osSetting.upsert({
+    where: { id: "os" },
+    create: { id: "os", ...plain, defaultDocLanguage: input.defaultDocLanguage ?? undefined },
     update: data,
   });
 }

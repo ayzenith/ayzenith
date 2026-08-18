@@ -72,6 +72,7 @@ export default async function Tax() {
                   <Td><StatusBadge status={x.status} /></Td>
                   <Td align="right">
                     <div className="flex justify-end gap-2">
+                      <a className={btn.ghost} href={`/os/receipts/tax/${x.id}/pdf`} target="_blank" rel="noreferrer">Belge</a>
                       {x.status !== "PAID" && x.status !== "CANCELLED" ? (
                         <form action={markTaxPaidAction}>
                           <input type="hidden" name="id" value={x.id} />

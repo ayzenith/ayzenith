@@ -88,6 +88,11 @@ export default async function Payments({ searchParams }: { searchParams: SP }) {
                     <Td align="right"><Money value={x.open} currency={x.currency} /></Td>
                     <Td><StatusBadge status={x.status} /></Td>
                     <Td align="right">
+                      {x.paidAmount > 0 ? (
+                        <a className={`${btn.ghost} mb-1 ml-auto w-fit`} href={`/os/receipts/payment/${x.id}/pdf`} target="_blank" rel="noreferrer">
+                          Makbuz
+                        </a>
+                      ) : null}
                       {x.status === "PENDING" || x.status === "PARTIAL" ? (
                         <details key={`${x.id}-${x.status}-${x.open}`} className="inline-block w-72 text-left">
                           <summary className={`${btn.secondary} cursor-pointer`}>

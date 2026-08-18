@@ -285,31 +285,31 @@ model RadarRawCache {
 /// the AI interpretation text. Sub-category (HS-6) breakdown scores are stored
 /// too. `watchId` links snapshots produced by a tracked market.
 model RadarSnapshot {
-  id           String        @id @default(cuid())
+  id           String @id @default(cuid())
   categoryKey  String
   geoScope     String // "country" | "region"
   countryCode  String // ISO code, or the region key when geoScope = region
   countryLabel String // display label at time of analysis
-  supplyMarket String        @default("TR")
-  tradeModel   String        @default("B2B")
+  supplyMarket String @default("TR")
+  tradeModel   String @default("B2B")
 
   // V1.1 — analysis scope. "category" analyses the whole verified HS set for a
   // category (the original behaviour); "product" analyses ONE confirmed HS-6.
   // Additive + backward compatible: existing snapshots default to "category" and
   // keep productName/hsCode null — their frozen scores are never recomputed.
-  analysisType String        @default("category") // "category" | "product"
+  analysisType String  @default("category") // "category" | "product"
   productName  String? // natural-language product name (product scope only)
   hsCode       String? // the single HS-6 analysed (product scope only)
 
-  resolvedHs   Json // [{ hs6, productGroup }] actually used
-  criteria     Json // [{ key, score, weight, rawInputs, explanation }]
-  finalScore   Int? // null when decision = INSUFFICIENT_DATA
-  decision     RadarDecision
-  weightsUsed  Json // { demand, growth, supplyAdvantage, entry, competition }
-  confidence   Int // 0–100, share of criteria backed by real data
+  resolvedHs       Json // [{ hs6, productGroup }] actually used
+  criteria         Json // [{ key, score, weight, rawInputs, explanation }]
+  finalScore       Int? // null when decision = INSUFFICIENT_DATA
+  decision         RadarDecision
+  weightsUsed      Json // { demand, growth, supplyAdvantage, entry, competition }
+  confidence       Int // 0–100, share of criteria backed by real data
   measuredCriteria Int // how many of the 5 criteria had data
-  subCategories Json     @default("[]") // [{ hs6, productGroup, score, trendPct }]
-  aiSummary    String? // AI interpretation (sourced-data-only); null until generated
+  subCategories    Json          @default("[]") // [{ hs6, productGroup, score, trendPct }]
+  aiSummary        String? // AI interpretation (sourced-data-only); null until generated
 
   watchId   String?
   watch     RadarWatch?     @relation(fields: [watchId], references: [id], onDelete: SetNull)
@@ -328,7 +328,7 @@ model RadarSnapshot {
 /// raw value + unit, the source URL and when it was fetched — enough to click
 /// through and audit.
 model RadarCitation {
-  id         String   @id @default(cuid())
+  id         String        @id @default(cuid())
   snapshotId String
   snapshot   RadarSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
 
@@ -348,15 +348,15 @@ model RadarCitation {
 /// comparing it to the previous one. `lastScore`/`lastSnapshotId` cache the most
 /// recent result for the dashboard; the full history lives in RadarSnapshot.
 model RadarWatch {
-  id             String   @id @default(cuid())
-  categoryKey    String
-  countryCode    String
-  label          String // display label, e.g. "Almanya · Tüketici Elektroniği"
-  active         Boolean  @default(true)
-  lastScore      Int?
-  lastSnapshotId String?
+  id              String    @id @default(cuid())
+  categoryKey     String
+  countryCode     String
+  label           String // display label, e.g. "Almanya · Tüketici Elektroniği"
+  active          Boolean   @default(true)
+  lastScore       Int?
+  lastSnapshotId  String?
   lastRefreshedAt DateTime?
-  createdAt      DateTime @default(now())
+  createdAt       DateTime  @default(now())
 
   snapshots RadarSnapshot[]
 
@@ -370,14 +370,14 @@ model RadarWatch {
 /// table means "use the defaults". Weights/thresholds changes affect only FUTURE
 /// analyses — existing snapshots keep the weights they were frozen with.
 model RadarSetting {
-  id                   String   @id @default("radar")
-  weights              Json? // { demand, growth, supplyAdvantage, entry, competition } summing to 100
-  thresholds           Json? // { worth: 80, monitor: 60 }
-  certificationBurden  Json? // { categoryKey: "low"|"medium"|"high"|"very-high" }
-  regions              Json? // { "europe": ["DE","NL",...] }
-  cacheTtlDays         Int? // how long raw data stays fresh (default 30)
-  alertThreshold       Int? // score delta that raises a watch alert (default 5)
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default("radar")
+  weights             Json? // { demand, growth, supplyAdvantage, entry, competition } summing to 100
+  thresholds          Json? // { worth: 80, monitor: 60 }
+  certificationBurden Json? // { categoryKey: "low"|"medium"|"high"|"very-high" }
+  regions             Json? // { "europe": ["DE","NL",...] }
+  cacheTtlDays        Int? // how long raw data stays fresh (default 30)
+  alertThreshold      Int? // score delta that raises a watch alert (default 5)
+  updatedAt           DateTime @updatedAt
 }
 
 // ============================================================================
@@ -482,14 +482,14 @@ enum LeadSourceType {
 /// back to the snapshot + the band that motivated it. Independent runs simply
 /// leave the radar* fields null (§3).
 model LeadSearch {
-  id            String   @id @default(cuid())
+  id            String  @id @default(cuid())
   country       String // ISO alpha-2 (target market)
   countryLabel  String // display label at run time
   city          String? // optional city focus
   productQuery  String // natural-language product, e.g. "kadın iç giyim"
-  businessModel String   @default("B2B") // "B2B" | "B2C" (kept a string, mirrors RADAR)
-  leadTypes     Json     @default("[]") // string[] of LeadRole keys, [] = all
-  searchTerms   Json     @default("[]") // the multilingual terms actually used (audit)
+  businessModel String  @default("B2B") // "B2B" | "B2C" (kept a string, mirrors RADAR)
+  leadTypes     Json    @default("[]") // string[] of LeadRole keys, [] = all
+  searchTerms   Json    @default("[]") // the multilingual terms actually used (audit)
 
   // RADAR linkage (§2) — null for a standalone run (§3).
   radarSnapshotId String?
@@ -498,17 +498,17 @@ model LeadSearch {
   radarScore      Int? // the RADAR score that motivated this search (context)
   radarDecision   String? // the RADAR band label (context)
 
-  status         LeadStatus @default(DISCOVERED)
-  totalDiscovered Int       @default(0)
+  status          LeadStatus @default(DISCOVERED)
+  totalDiscovered Int        @default(0)
   // Discovery reliability (V2 fix): whether the free source(s) actually answered.
   // "OK" = source responded; "PARTIAL" = some queries failed; "FAILED" = the
   // source could not be reached — so a 0 result is NOT a "no leads" verdict.
-  discoveryStatus String   @default("OK")
-  sourceStats     Json     @default("{}") // { osm: { status, queriesRun, queriesOk, queriesFailed, rawResults } }
-  errors         Json       @default("[]") // string[] — provider outages, surfaced never masked
-  createdById    String?
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  discoveryStatus String     @default("OK")
+  sourceStats     Json       @default("{}") // { osm: { status, queriesRun, queriesOk, queriesFailed, rawResults } }
+  errors          Json       @default("[]") // string[] — provider outages, surfaced never masked
+  createdById     String?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   companies LeadCompany[]
   exports   LeadExport[]
@@ -526,16 +526,16 @@ model LeadSearch {
 /// Dedup keys (domain, name+city) are indexed so the same firm is not stored
 /// twice across searches (§13).
 model LeadCompany {
-  id       String     @id @default(cuid())
+  id       String      @id @default(cuid())
   searchId String?
   search   LeadSearch? @relation(fields: [searchId], references: [id], onDelete: SetNull)
 
-  name       String
-  legalName  String? // e.g. "ABC Handels GmbH" from an Impressum (verified only)
-  domain     String? // normalised registrable domain — the primary dedup key
-  website    String?
-  phone      String?
-  email      String?
+  name      String
+  legalName String? // e.g. "ABC Handels GmbH" from an Impressum (verified only)
+  domain    String? // normalised registrable domain — the primary dedup key
+  website   String?
+  phone     String?
+  email     String?
 
   country    String
   city       String?
@@ -544,18 +544,18 @@ model LeadCompany {
   latitude   Float?
   longitude  Float?
 
-  businessModel   String            @default("B2B")
-  commercialRoles Json              @default("[]") // LeadRole[] (array — multi-role)
-  size            LeadSize          @default(UNKNOWN)
-  sizeSignals     Json              @default("[]") // [{ label, value, source }] used for size (or [])
-  productFit      LeadProductFit    @default(UNVERIFIED)
+  businessModel   String         @default("B2B")
+  commercialRoles Json           @default("[]") // LeadRole[] (array — multi-role)
+  size            LeadSize       @default(UNKNOWN)
+  sizeSignals     Json           @default("[]") // [{ label, value, source }] used for size (or [])
+  productFit      LeadProductFit @default(UNVERIFIED)
   productFitNote  String? // short, sourced reason — never an AI guess presented as fact
 
   // V2 — website intelligence (all additive + nullable; a null means "not
   // determined", never a negative fact). Populated by the verification stage.
   detectedModel     String? // "B2B" | "B2C" | "BOTH" — detected from the site, not the search
   websiteStatus     String? // "ACTIVE" | "UNREACHABLE" | "NONE"
-  productCategories Json    @default("[]") // string[] of categories evidenced on the site
+  productCategories Json      @default("[]") // string[] of categories evidenced on the site
   storeCount        Int? // physical stores/branches, only if the site stated it
   employeeCount     Int? // only if the company publicly stated it
   matchStatus       String? // "UNCERTAIN_MATCH" when dedup was ambiguous (§14)
@@ -582,7 +582,7 @@ model LeadCompany {
 
   leadScore      Int? // deterministic 0–100; null until scored / when insufficient
   leadConfidence Int? // 0–100, how verified the underlying data is (≠ score, §15)
-  scoreBreakdown Json      @default("{}") // { components: [{ key, weight, score, available }], ... }
+  scoreBreakdown Json @default("{}") // { components: [{ key, weight, score, available }], ... }
 
   status    LeadStatus    @default(DISCOVERED)
   freshness LeadFreshness @default(FRESH)
@@ -667,12 +667,12 @@ model LeadSource {
   companyId String
   company   LeadCompany @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
-  dataField   String // which field this backs, e.g. "address", "website", "productFit"
-  sourceType  LeadSourceType
-  label       String? // human label, e.g. "OpenStreetMap — Berlin"
-  sourceUrl   String?
-  collectedAt DateTime @default(now())
-  lastCheckedAt DateTime @default(now())
+  dataField     String // which field this backs, e.g. "address", "website", "productFit"
+  sourceType    LeadSourceType
+  label         String? // human label, e.g. "OpenStreetMap — Berlin"
+  sourceUrl     String?
+  collectedAt   DateTime       @default(now())
+  lastCheckedAt DateTime       @default(now())
 
   @@index([companyId])
 }
@@ -718,9 +718,9 @@ model LeadVerification {
 /// An export event (§27/§28) — a durable record of what was exported, with the
 /// exact filters in force, so an export is reproducible and auditable.
 model LeadExport {
-  id        String      @id @default(cuid())
-  searchId  String?
-  search    LeadSearch? @relation(fields: [searchId], references: [id], onDelete: SetNull)
+  id       String      @id @default(cuid())
+  searchId String?
+  search   LeadSearch? @relation(fields: [searchId], references: [id], onDelete: SetNull)
 
   format      String // "xlsx" | "csv"
   filterJson  Json     @default("{}") // the active filter set applied
@@ -1206,7 +1206,7 @@ model Purchase {
   dueDate         DateTime?
   paymentTermDays Int?
 
-  currency String @default("TRY")
+  currency   String    @default("TRY")
   /// Units of BASE currency per 1 unit of `currency`, on `fxRateDate`. Frozen at
   /// the document — never recomputed from a later rate.
   fxRate     Decimal   @default(1) @db.Decimal(18, 8)
@@ -1266,10 +1266,10 @@ model PurchaseLine {
 /// weighted-average landed cost, applies the channel commission as a cost line,
 /// and creates the receivable.
 model Sale {
-  id         String @id @default(cuid())
-  code       String @unique
+  id         String  @id @default(cuid())
+  code       String  @unique
   customerId String?
-  customer   Party? @relation(fields: [customerId], references: [id])
+  customer   Party?  @relation(fields: [customerId], references: [id])
 
   channelId  String?
   channel    Channel?       @relation(fields: [channelId], references: [id], onDelete: SetNull)
@@ -1284,7 +1284,7 @@ model Sale {
   fxRate     Decimal   @default(1) @db.Decimal(18, 8)
   fxRateDate DateTime?
 
-  status DocStatus @default(DRAFT)
+  status     DocStatus   @default(DRAFT)
   /// DROPSHIP marks a sale that must NOT draw down own stock — the goods are
   /// shipped by the supplier. Stock posting is skipped for these.
   tradeModel TradeModel?
@@ -1308,6 +1308,7 @@ model Sale {
   costs     CostLine[]
   payments  Payment[]
   movements StockMovement[]
+  documents TradeDocument[]
 
   @@index([customerId])
   @@index([channelId])
@@ -1334,6 +1335,8 @@ model SaleLine {
   profit    Decimal  @default(0) @db.Decimal(18, 4)
 
   note String?
+
+  documentLines TradeDocumentLine[]
 
   @@index([saleId])
   @@index([itemId])
@@ -1469,7 +1472,7 @@ model RecurringExpense {
   amount   Decimal @db.Decimal(18, 4)
   currency String  @default("TRY")
 
-  frequency RecurrenceFreq @default(MONTHLY)
+  frequency  RecurrenceFreq @default(MONTHLY)
   /// 1-28 only, so the same day exists in every month including February.
   dayOfMonth Int            @default(1)
   startsAt   DateTime
@@ -1520,16 +1523,41 @@ model TaxRecord {
 /// Single-row Business OS configuration (id = "os"), mirroring RadarSetting and
 /// LeadSetting. `fxRates` holds the manually-entered rate table used as the
 /// DEFAULT when a document is created; once saved, a document keeps its own rate.
+///
+/// The `company*` fields below are the legal entity that ISSUES trade documents
+/// (quotation/proforma/invoice/packing list) — deliberately separate from the
+/// unrelated `SiteSetting` model, which holds the public marketing site's
+/// contact block. All nullable; the Trade Document System falls back to
+/// compiled AYZENITH defaults (src/config/trade-documents.ts) until an admin
+/// fills these in on Settings → Company Profile.
 model OsSetting {
-  id             String @id @default("os")
-  baseCurrency   String @default("TRY")
-  defaultCountry String @default("TR")
+  id                 String    @id @default("os")
+  baseCurrency       String    @default("TRY")
+  defaultCountry     String    @default("TR")
   /// Off by default: a sale that would drive a location negative is refused
   /// rather than silently creating stock that does not exist.
   allowNegativeStock Boolean   @default(false)
   fxRates            Json? // { "EUR": 47.2, "USD": 40.1 }
   fxUpdatedAt        DateTime?
-  updatedAt          DateTime  @updatedAt
+
+  companyLegalName   String?
+  companyTradingName String?
+  companyAddress     String?
+  companyCountry     String?
+  companyCity        String?
+  companyPostalCode  String?
+  companyPhone       String?
+  companyEmail       String?
+  companyWebsite     String?
+  companyTaxNumber   String?
+  companyVatNumber   String?
+  companyChamberReg  String?
+  companyLogoUrl     String?
+
+  defaultDocLanguage   TradeDocLanguage @default(EN)
+  defaultDocFooterNote String?
+
+  updatedAt DateTime @updatedAt
 }
 
 /// Per-year document counters (key = "PURCHASE-2026"), incremented inside the
@@ -1557,4 +1585,200 @@ model OsImportBatch {
   createdAt   DateTime @default(now())
 
   @@index([createdAt])
+}
+
+// =============================================================================
+// AYZENITH TRADE DOCUMENT SYSTEM — V1
+// =============================================================================
+//
+// Additive on top of Business OS V1. Nothing above this line is touched.
+//
+// Two kinds of data, kept apart on purpose (see docs/BUSINESS-OS-DEVIR.md and
+// the Trade Document System brief):
+//
+//   BUSINESS DATA  — Sale / SaleLine / Party / Item / Payment. A document never
+//   forks a copy of a price or quantity; it always reads the live Sale through
+//   `saleId`. There is no "amount" field on TradeDocument to drift from it.
+//
+//   DOCUMENT DATA  — TradeDocument / TradeDocumentLine / CompanySignatory /
+//   CompanyBankAccount. Buyer-facing text, layout choices, logistics metadata
+//   (HS code, packages, weights) and which signatory/bank account to print.
+//   None of it is read back into Sale.
+//
+// Versioning: re-generating a document never deletes the old one. The new row
+// points `parentDocumentId` at the previous version and both keep `code`
+// unique via the printed number staying the same string across versions
+// (e.g. "PI-2026-0012") — `isLatest` marks which row is current. A CANCELLED
+// or superseded version is kept, never deleted: that is the audit trail a
+// customer revision needs.
+// =============================================================================
+
+enum TradeDocType {
+  QUOTATION
+  PROFORMA_INVOICE
+  COMMERCIAL_INVOICE
+  PACKING_LIST
+}
+
+enum TradeDocLanguage {
+  TR
+  EN
+  DE
+}
+
+enum TradeDocStatus {
+  DRAFT
+  FINAL
+  CANCELLED
+}
+
+/// A person authorised to sign outgoing trade documents. Title, department and
+/// signature image are all editable — "CEO & Founder" today, "Managing
+/// Director" tomorrow, without touching any past document (each document keeps
+/// its own copy of the printed name/title, see `TradeDocument.signatoryName`).
+model CompanySignatory {
+  id         String  @id @default(cuid())
+  firstName  String
+  lastName   String?
+  jobTitle   String?
+  department String?
+  email      String?
+  phone      String?
+
+  signatureUrl         String?
+  signatureDisplayName String?
+
+  active            Boolean        @default(true)
+  isDefault         Boolean        @default(false)
+  supportedDocTypes TradeDocType[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents TradeDocument[]
+
+  @@index([active])
+}
+
+/// One of possibly several bank accounts a document can quote — a EUR account
+/// for European buyers, a USD account for others.
+model CompanyBankAccount {
+  id            String  @id @default(cuid())
+  bankName      String
+  accountHolder String
+  iban          String?
+  swift         String?
+  currency      String
+  country       String?
+
+  active    Boolean @default(true)
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  documents TradeDocument[]
+
+  @@index([active])
+}
+
+/// One printed trade document. Reads its commercial content (customer, items,
+/// prices, totals) live from `sale`/`sale.lines` at render time — this row only
+/// carries what is specific to THIS piece of paper: language, layout choices,
+/// buyer-facing notes, and which version of the truth it is.
+model TradeDocument {
+  id      String       @id @default(cuid())
+  code    String // e.g. "PI-2026-0012" — stable across versions of the same document
+  docType TradeDocType
+
+  saleId String
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  language TradeDocLanguage @default(EN)
+  /// Independent of `language` — a German-language document can quote USD.
+  currency String
+  status   TradeDocStatus   @default(DRAFT)
+
+  version          Int             @default(1)
+  isLatest         Boolean         @default(true)
+  parentDocumentId String?
+  parent           TradeDocument?  @relation("TradeDocumentVersions", fields: [parentDocumentId], references: [id], onDelete: SetNull)
+  versions         TradeDocument[] @relation("TradeDocumentVersions")
+
+  issuedAt   DateTime  @default(now())
+  validUntil DateTime?
+
+  // --- Commercial terms (DOCUMENT OVERRIDE — never rewrites the Sale) -------
+  incoterm              String?
+  shippingMethod        String?
+  countryOfOrigin       String?
+  paymentTermsOverride  String?
+  deliveryTermsOverride String?
+
+  // --- Buyer-facing free text ------------------------------------------------
+  customerNote String?
+  paymentNote  String?
+  deliveryNote String?
+  specialTerms String?
+  footerNote   String?
+
+  // --- Ship-to override (packing lists / commercial invoices routinely ship
+  // to a different address than the invoiced party) -------------------------
+  shipToName    String?
+  shipToAddress String?
+  shipToCity    String?
+  shipToPostal  String?
+  shipToCountry String?
+
+  // --- Layout: which optional sections are visible on THIS document --------
+  showBankDetails   Boolean @default(true)
+  showVat           Boolean @default(true)
+  showHsCode        Boolean @default(false)
+  showCountryOrigin Boolean @default(false)
+  showSignature     Boolean @default(true)
+  showShipping      Boolean @default(false)
+
+  // --- Who signs it, printed as of THIS version (name/title copied at
+  // generation time so a later title change never rewrites an old PDF) ------
+  signatoryId    String?
+  signatory      CompanySignatory? @relation(fields: [signatoryId], references: [id], onDelete: SetNull)
+  signatoryName  String?
+  signatoryTitle String?
+
+  bankAccountId String?
+  bankAccount   CompanyBankAccount? @relation(fields: [bankAccountId], references: [id], onDelete: SetNull)
+
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  lines TradeDocumentLine[]
+
+  @@index([saleId])
+  @@index([docType])
+  @@index([status])
+  @@index([isLatest])
+  @@index([code])
+}
+
+/// Per-line logistics/customs metadata that has no home on `SaleLine` (HS code,
+/// country of origin, package count, weights) — keyed to the SaleLine it
+/// describes so quantity/price/description always come from the one source.
+model TradeDocumentLine {
+  id         String        @id @default(cuid())
+  documentId String
+  document   TradeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  saleLineId String
+  saleLine   SaleLine      @relation(fields: [saleLineId], references: [id], onDelete: Cascade)
+  sortOrder  Int           @default(0)
+
+  hsCode          String?
+  countryOfOrigin String?
+  packages        Int?
+  netWeight       Decimal? @db.Decimal(18, 3)
+  grossWeight     Decimal? @db.Decimal(18, 3)
+  dimensions      String?
+
+  @@unique([documentId, saleLineId])
+  @@index([documentId])
 }

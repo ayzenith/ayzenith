@@ -50,11 +50,14 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
       <FilterBar
         action="/os/products"
         right={
-          <ExcelTools
-            entity="item"
-            entityLabel="Ürünler"
-            exportHref={`/os/export?kind=items&${query.toString()}`}
-          />
+          <>
+            <ExcelTools
+              entity="item"
+              entityLabel="Ürünler"
+              exportHref={`/os/export?kind=items&${query.toString()}`}
+            />
+            <a className={btn.secondary} href="/os/report-pdf/products/pdf" target="_blank" rel="noreferrer">PDF</a>
+          </>
         }
       >
         <label className="flex flex-col gap-1">

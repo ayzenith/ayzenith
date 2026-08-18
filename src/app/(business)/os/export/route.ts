@@ -6,6 +6,7 @@ import {
   exportPayments, exportPurchases, exportReport, exportSales, exportStock, exportTax,
   type ExportResult,
 } from "@/server/os/excel/export";
+import { exportTradeDocument } from "@/server/os/excel/trade-documents-export";
 
 /**
  * Business OS — one download endpoint for every spreadsheet.
@@ -95,6 +96,12 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           currency: p.get("currency") ?? undefined,
         });
         break;
+      case "trade-document": {
+        const id = p.get("id");
+        if (!id) return new NextResponse("Belge id gerekli", { status: 400 });
+        result = await exportTradeDocument(id);
+        break;
+      }
       default:
         return new NextResponse("Bilinmeyen dışa aktarma türü", { status: 400 });
     }

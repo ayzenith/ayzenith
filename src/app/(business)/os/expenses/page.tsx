@@ -102,7 +102,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
                   <Td align="right"><Money value={x.amount} currency={x.currency} /></Td>
                   <Td>{x.paid ? "Ödendi" : "Bekliyor"}</Td>
                   <Td align="right">
-                    <form action={deleteExpenseAction}>
+                    <a className={btn.ghost} href={`/os/receipts/expense/${x.id}/pdf`} target="_blank" rel="noreferrer">Fiş</a>
+                    <form action={deleteExpenseAction} className="inline">
                       <input type="hidden" name="id" value={x.id} />
                       <button className={btn.ghost}>Sil</button>
                     </form>

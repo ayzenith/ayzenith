@@ -15,6 +15,11 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth/session";
  *   separate application surface with its own shell and navigation, but it
  *   deliberately shares ONE authentication system: a second sign-in flow would
  *   be a second thing to get wrong.
+ * - /doc/*    → Trade document print/preview view. NOT gated here with a
+ *   redirect-to-login: it authorizes itself (session cookie OR a short-lived
+ *   document-scoped token — see src/server/os/document-token.ts) because the
+ *   PDF pipeline's headless Chromium requests it with a token and no cookie.
+ *   It only needs to be excluded from next-intl, the same as /admin and /os.
  * - everything else → next-intl locale handling (default locale at the root,
  *   /tr and /de prefixed).
  */
@@ -28,6 +33,9 @@ export default async function middleware(
 
   const isAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const isOs = pathname === "/os" || pathname.startsWith("/os/");
+  const isDoc = pathname === "/doc" || pathname.startsWith("/doc/");
+
+  if (isDoc) return NextResponse.next();
 
   if (isAdmin || isOs) {
     if (pathname === "/admin/login") return NextResponse.next();
@@ -48,13 +56,15 @@ export default async function middleware(
 }
 
 export const config = {
-  // Match the admin app and Business OS plus all public pages; exclude the API,
-  // Next internals, the extensionless metadata route, and any file with an
-  // extension. `os` is in the negative lookahead for the same reason `admin` is:
-  // neither is localized, so next-intl must never rewrite those paths.
+  // Match the admin app, Business OS and the trade-document print view, plus
+  // all public pages; exclude the API, Next internals, the extensionless
+  // metadata route, and any file with an extension. `admin`/`os`/`doc` are all
+  // in the negative lookahead for the same reason: none of them are localized,
+  // so next-intl must never rewrite those paths.
   matcher: [
     "/admin/:path*",
     "/os/:path*",
-    "/((?!api|_next|_vercel|admin|os|opengraph-image|.*\\..*).*)",
+    "/doc/:path*",
+    "/((?!api|_next|_vercel|admin|os|doc|opengraph-image|.*\\..*).*)",
   ],
 };

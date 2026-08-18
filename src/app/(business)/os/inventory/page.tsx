@@ -45,7 +45,15 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
         <StatCard label="Ürün" value={String(sum.skuCount)} />
       </div>
 
-      <FilterBar action="/os/inventory" right={<ExcelTools entity="stock" entityLabel="Stok" exportHref="/os/export?kind=stock" />}>
+      <FilterBar
+        action="/os/inventory"
+        right={
+          <>
+            <ExcelTools entity="stock" entityLabel="Stok" exportHref="/os/export?kind=stock" />
+            <a className={btn.secondary} href="/os/report-pdf/inventory/pdf" target="_blank" rel="noreferrer">PDF</a>
+          </>
+        }
+      >
         <input name="q" defaultValue={q.q ?? ""} placeholder="SKU, ürün adı, barkod" className={input} />
       </FilterBar>
 

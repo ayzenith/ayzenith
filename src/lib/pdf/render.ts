@@ -68,13 +68,23 @@ export type PdfOptions = {
 
 /** Render one URL (already authorized — see document-token.ts) to a PDF buffer. */
 export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buffer> {
-  const browser = await launchBrowser();
+  let browser: Browser | null = null;
   try {
+    console.log(`[PDF] Starting render for ${url}`);
+    browser = await launchBrowser();
+    console.log(`[PDF] Browser launched`);
+
     const page = await browser.newPage();
+    console.log(`[PDF] Page created`);
+
     try {
+      console.log(`[PDF] Loading URL: ${url}`);
       await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
+      console.log(`[PDF] URL loaded successfully`);
     } catch (err) {
-      throw new Error(`Failed to load ${url}: ${err instanceof Error ? err.message : String(err)}`);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[PDF] Failed to load ${url}: ${msg}`);
+      throw new Error(`Failed to load ${url}: ${msg}`);
     }
 
     try {
@@ -82,8 +92,9 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
         page.evaluateHandle("document.fonts.ready"),
         new Promise((_, reject) => setTimeout(() => reject(new Error("fonts timeout")), 5_000)),
       ]);
-    } catch {
-      // Font loading timed out or failed — continue with default fonts
+      console.log(`[PDF] Fonts ready`);
+    } catch (err) {
+      console.warn(`[PDF] Font loading failed (continuing with defaults): ${err instanceof Error ? err.message : String(err)}`);
     }
 
     const footerTemplate = opts.footerLeft
@@ -93,6 +104,7 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
         </div>`
       : `<div></div>`;
 
+    console.log(`[PDF] Generating PDF...`);
     const pdf = await page.pdf({
       format: "A4",
       landscape: opts.orientation === "landscape",
@@ -103,9 +115,17 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
       footerTemplate,
       margin: opts.footerLeft ? { top: "0", bottom: "10mm", left: "0", right: "0" } : { top: 0, bottom: 0, left: 0, right: 0 },
     });
+    console.log(`[PDF] PDF generated successfully, size: ${pdf.length} bytes`);
     return Buffer.from(pdf);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Render failed: ${msg}`);
+    throw err;
   } finally {
-    await browser.close();
+    if (browser) {
+      console.log(`[PDF] Closing browser`);
+      await browser.close();
+    }
   }
 }
 

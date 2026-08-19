@@ -101,7 +101,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
           />
         ) : (
           <>
-            <Table>
+            <Table stacked>
               <thead>
                 <tr>
                   <Th>SKU</Th>
@@ -119,20 +119,20 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                   return (
                     <Tr key={i.id}>
                       <Td className="font-mono text-caption text-muted">{i.sku}</Td>
-                      <Td className="max-w-[20rem]">
+                      <Td label="Ürün" className="max-w-[20rem]">
                         <Link href={`/os/products/${i.id}`} className="font-medium text-foreground hover:underline">
                           {i.name}
                         </Link>
                         {i.category ? <span className="ml-2 text-caption text-subtle">{i.category}</span> : null}
                         {!i.active ? <Badge className="ml-2">Pasif</Badge> : null}
                       </Td>
-                      <Td align="right" numeric>
+                      <Td label="Stok" align="right" numeric>
                         <span className={low ? "text-warning" : undefined}>
                           <Qty value={i.onHand} unit={i.unit} />
                         </span>
                         {low ? <Badge tone="warning" className="ml-2">Düşük</Badge> : null}
                       </Td>
-                      <Td align="right" numeric>
+                      <Td label="Gerçek maliyet" align="right" numeric>
                         {i.avgCost == null ? (
                           <span className="text-subtle" title="Henüz maliyetli bir alış girilmedi">
                             ölçülmedi
@@ -141,13 +141,13 @@ export default async function ProductsPage({ searchParams }: { searchParams: SP 
                           <Money value={i.avgCost} currency={settings.baseCurrency} />
                         )}
                       </Td>
-                      <Td align="right" numeric>
+                      <Td label="Satış fiyatı" align="right" numeric>
                         <Money value={i.salePrice} currency={i.saleCurrency} tone={i.salePrice ? "none" : "muted"} />
                       </Td>
-                      <Td align="right" numeric>
+                      <Td label="Marj" align="right" numeric>
                         <Pct value={i.marginPct} />
                       </Td>
-                      <Td align="right" numeric>
+                      <Td label="Satılan" align="right" numeric>
                         <Qty value={i.soldQty} />
                       </Td>
                     </Tr>

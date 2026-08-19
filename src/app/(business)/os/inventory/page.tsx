@@ -58,7 +58,7 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
       </FilterBar>
 
       <Card padded={false}>
-        <Table>
+        <Table stacked>
           <thead>
             <tr>
               <Th>SKU</Th>
@@ -71,11 +71,11 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
             {d.rows.map((x) => (
               <Tr key={x.itemId} className={x.low ? "bg-warning/5" : ""}>
                 <Td>{x.sku}</Td>
-                <Td>
+                <Td label="Ürün">
                   <Link href={`/os/products/${x.itemId}?tab=stock`} className="hover:underline">{x.name}</Link>
                 </Td>
-                <Td align="right"><Qty value={x.onHand} unit={x.unit} /></Td>
-                <Td align="right">{x.avgCost == null ? "ölçülmedi" : <Money value={x.avgCost} currency={s.baseCurrency} />}</Td>
+                <Td label="Eldeki" align="right"><Qty value={x.onHand} unit={x.unit} /></Td>
+                <Td label="Ortalama maliyet" align="right">{x.avgCost == null ? "ölçülmedi" : <Money value={x.avgCost} currency={s.baseCurrency} />}</Td>
               </Tr>
             ))}
           </tbody>
@@ -136,7 +136,7 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
       </div>
 
       <Card className="mt-4" title="Son hareketler" padded={false}>
-        <Table>
+        <Table stacked>
           <thead>
             <tr>
               <Th>Tarih</Th>
@@ -151,11 +151,11 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
             {movements.rows.map((m) => (
               <Tr key={m.id}>
                 <Td>{m.occurredAt.toLocaleDateString("tr-TR")}</Td>
-                <Td>{m.item.sku}</Td>
-                <Td>{m.location.name}</Td>
-                <Td align="right"><Qty value={m.quantity} unit={m.item.unit} /></Td>
-                <Td>{STOCK_REASON_LABELS[m.reason] ?? m.reason}</Td>
-                <Td>{m.docHref ? <Link href={m.docHref} className="hover:underline">{m.docCode}</Link> : "—"}</Td>
+                <Td label="Ürün">{m.item.sku}</Td>
+                <Td label="Konum">{m.location.name}</Td>
+                <Td label="Miktar" align="right"><Qty value={m.quantity} unit={m.item.unit} /></Td>
+                <Td label="Sebep">{STOCK_REASON_LABELS[m.reason] ?? m.reason}</Td>
+                <Td label="Belge">{m.docHref ? <Link href={m.docHref} className="hover:underline">{m.docCode}</Link> : "—"}</Td>
               </Tr>
             ))}
           </tbody>

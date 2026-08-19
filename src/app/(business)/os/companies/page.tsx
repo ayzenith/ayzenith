@@ -101,7 +101,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: SP
           />
         ) : (
           <>
-            <Table>
+            <Table stacked>
               <thead>
                 <tr>
                   <Th>Firma</Th>
@@ -122,7 +122,7 @@ export default async function CompaniesPage({ searchParams }: { searchParams: SP
                       </Link>
                       {!p.active ? <Badge className="ml-2">Pasif</Badge> : null}
                     </Td>
-                    <Td>
+                    <Td label="İlişki">
                       <div className="flex flex-wrap gap-1">
                         {p.roles.length === 0 ? (
                           <span className="text-caption text-subtle">—</span>
@@ -135,20 +135,20 @@ export default async function CompaniesPage({ searchParams }: { searchParams: SP
                         )}
                       </div>
                     </Td>
-                    <Td className="text-muted">
+                    <Td label="Ülke / Şehir" className="text-muted">
                       {p.country}
                       {p.city ? ` · ${p.city}` : ""}
                     </Td>
-                    <Td align="right" numeric>
+                    <Td label="Toplam satış" align="right" numeric>
                       <Money value={p.salesTotal} currency={settings.baseCurrency} tone={p.salesTotal ? "none" : "muted"} />
                     </Td>
-                    <Td align="right" numeric>
+                    <Td label="Açık alacak" align="right" numeric>
                       <Money value={p.openReceivable} currency={settings.baseCurrency} tone={p.openReceivable ? "none" : "muted"} />
                     </Td>
-                    <Td align="right" numeric>
+                    <Td label="Açık borç" align="right" numeric>
                       <Money value={p.openPayable} currency={settings.baseCurrency} tone={p.openPayable ? "none" : "muted"} />
                     </Td>
-                    <Td align="right">
+                    <Td label="Son işlem" align="right">
                       <DateText value={p.lastActivityAt} />
                     </Td>
                   </Tr>

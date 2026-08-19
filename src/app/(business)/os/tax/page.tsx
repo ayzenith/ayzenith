@@ -53,7 +53,7 @@ export default async function Tax() {
 
       <Card className="mt-4" padded={false}>
         {rows.length ? (
-          <Table>
+          <Table stacked>
             <thead>
               <tr>
                 <Th>Tür / dönem</Th>
@@ -67,9 +67,9 @@ export default async function Tax() {
               {rows.map((x) => (
                 <Tr key={x.id} className={x.overdue ? "bg-error/5" : ""}>
                   <Td>{x.kind} · {x.period}</Td>
-                  <Td>{x.dueDate.toLocaleDateString("tr-TR")}</Td>
-                  <Td align="right">{x.amount == null ? "ölçülmedi" : <Money value={x.amount} currency={x.currency} />}</Td>
-                  <Td><StatusBadge status={x.status} /></Td>
+                  <Td label="Vade">{x.dueDate.toLocaleDateString("tr-TR")}</Td>
+                  <Td label="Tutar" align="right">{x.amount == null ? "ölçülmedi" : <Money value={x.amount} currency={x.currency} />}</Td>
+                  <Td label="Durum"><StatusBadge status={x.status} /></Td>
                   <Td align="right">
                     <div className="flex justify-end gap-2">
                       <a className={btn.ghost} href={`/os/receipts/tax/${x.id}/pdf`} target="_blank" rel="noreferrer">Belge</a>

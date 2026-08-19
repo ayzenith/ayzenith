@@ -84,7 +84,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
 
       <Card title="Giderler" padded={false}>
         {e.rows.length ? (
-          <Table>
+          <Table stacked>
             <thead>
               <tr>
                 <Th>Gider</Th>
@@ -98,9 +98,9 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
               {e.rows.map((x) => (
                 <Tr key={x.id}>
                   <Td>{x.title}{x.recurring ? " · tekrarlayan" : ""}</Td>
-                  <Td>{EXPENSE_KIND_LABELS[x.kind] ?? x.kind}</Td>
-                  <Td align="right"><Money value={x.amount} currency={x.currency} /></Td>
-                  <Td>{x.paid ? "Ödendi" : "Bekliyor"}</Td>
+                  <Td label="Tür">{EXPENSE_KIND_LABELS[x.kind] ?? x.kind}</Td>
+                  <Td label="Tutar" align="right"><Money value={x.amount} currency={x.currency} /></Td>
+                  <Td label="Durum">{x.paid ? "Ödendi" : "Bekliyor"}</Td>
                   <Td align="right">
                     <a className={btn.ghost} href={`/os/receipts/expense/${x.id}/pdf`} target="_blank" rel="noreferrer">Fiş</a>
                     <form action={deleteExpenseAction} className="inline">
@@ -120,7 +120,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
       <Card className="mt-4" title="Tekrarlayan giderler" description="Kira, maaş gibi düzenli giderler otomatik olarak takvime yansır.">
         <div className="flex flex-col gap-4">
           {recurring.length > 0 ? (
-            <Table>
+            <Table stacked>
               <thead>
                 <tr>
                   <Th>Başlık</Th>
@@ -133,8 +133,8 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
                 {recurring.map((r) => (
                   <Tr key={r.id}>
                     <Td>{r.title}</Td>
-                    <Td>{RECURRENCE_LABELS[r.frequency] ?? r.frequency}</Td>
-                    <Td align="right"><Money value={r.amount} currency={r.currency} /></Td>
+                    <Td label="Sıklık">{RECURRENCE_LABELS[r.frequency] ?? r.frequency}</Td>
+                    <Td label="Tutar" align="right"><Money value={r.amount} currency={r.currency} /></Td>
                     <Td align="right">
                       <form action={deleteRecurringAction}>
                         <input type="hidden" name="id" value={r.id} />

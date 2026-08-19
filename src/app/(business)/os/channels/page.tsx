@@ -55,7 +55,7 @@ export default async function Channels() {
 
       {rows.length > 0 ? (
         <Card padded={false}>
-          <Table>
+          <Table stacked>
             <thead>
               <tr>
                 <Th>Kanal</Th>
@@ -73,11 +73,11 @@ export default async function Channels() {
                 return (
                   <Tr key={x.id}>
                     <Td>{x.name}</Td>
-                    <Td>{CHANNEL_TYPE_LABELS[x.type] ?? x.type}</Td>
-                    <Td align="right"><Money value={a?.revenue} currency={s.baseCurrency} /></Td>
-                    <Td align="right"><Money value={a?.commissionCost} currency={s.baseCurrency} /></Td>
-                    <Td align="right"><Money value={a?.profit} currency={s.baseCurrency} /></Td>
-                    <Td>{x.active ? "Aktif" : "Pasif"}</Td>
+                    <Td label="Tür">{CHANNEL_TYPE_LABELS[x.type] ?? x.type}</Td>
+                    <Td label="Ciro" align="right"><Money value={a?.revenue} currency={s.baseCurrency} /></Td>
+                    <Td label="Komisyon" align="right"><Money value={a?.commissionCost} currency={s.baseCurrency} /></Td>
+                    <Td label="Kâr" align="right"><Money value={a?.profit} currency={s.baseCurrency} /></Td>
+                    <Td label="Durum">{x.active ? "Aktif" : "Pasif"}</Td>
                     <Td align="right">
                       <form action={deleteChannelAction}>
                         <input type="hidden" name="id" value={x.id} />

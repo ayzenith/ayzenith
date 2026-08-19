@@ -141,19 +141,19 @@ async function PurchasesTable({ filter, baseCurrency }: { filter: ReportFilter; 
 async function ProfitTable({ filter, baseCurrency }: { filter: ReportFilter; baseCurrency: string }) {
   const rows = await profitByItem(filter);
   return (
-    <Table>
+    <Table stacked>
       <thead>
         <tr><Th>SKU</Th><Th>Ürün</Th><Th align="right">Adet</Th><Th align="right">Gelir</Th><Th align="right">Maliyet</Th><Th align="right">Kâr</Th><Th align="right">Marj</Th></tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <Tr key={r.itemId}>
-            <Td>{r.sku}</Td><Td>{r.name}</Td>
-            <Td align="right"><Qty value={r.qty} unit={r.unit} /></Td>
-            <Td align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.cost} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
-            <Td align="right">{r.marginPct == null ? "—" : <Pct value={r.marginPct} />}</Td>
+            <Td>{r.sku}</Td><Td label="Ürün">{r.name}</Td>
+            <Td label="Adet" align="right"><Qty value={r.qty} unit={r.unit} /></Td>
+            <Td label="Gelir" align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
+            <Td label="Maliyet" align="right"><Money value={r.cost} currency={baseCurrency} /></Td>
+            <Td label="Kâr" align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
+            <Td label="Marj" align="right">{r.marginPct == null ? "—" : <Pct value={r.marginPct} />}</Td>
           </Tr>
         ))}
       </tbody>
@@ -164,17 +164,17 @@ async function ProfitTable({ filter, baseCurrency }: { filter: ReportFilter; bas
 async function CustomersTable({ filter, baseCurrency }: { filter: ReportFilter; baseCurrency: string }) {
   const rows = await customerReport(filter);
   return (
-    <Table>
+    <Table stacked>
       <thead>
         <tr><Th>Müşteri</Th><Th>Ülke</Th><Th align="right">Satış adedi</Th><Th align="right">Ciro</Th><Th align="right">Kâr</Th><Th align="right">Açık alacak</Th></tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <Tr key={r.partyId}>
-            <Td>{r.name}</Td><Td>{r.country}</Td><Td align="right">{r.salesCount}</Td>
-            <Td align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
-            <Td align="right"><Money value={r.openReceivable} currency={baseCurrency} /></Td>
+            <Td>{r.name}</Td><Td label="Ülke">{r.country}</Td><Td label="Satış adedi" align="right">{r.salesCount}</Td>
+            <Td label="Ciro" align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
+            <Td label="Kâr" align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
+            <Td label="Açık alacak" align="right"><Money value={r.openReceivable} currency={baseCurrency} /></Td>
           </Tr>
         ))}
       </tbody>
@@ -185,16 +185,16 @@ async function CustomersTable({ filter, baseCurrency }: { filter: ReportFilter; 
 async function SuppliersTable({ filter, baseCurrency }: { filter: ReportFilter; baseCurrency: string }) {
   const rows = await supplierReport(filter);
   return (
-    <Table>
+    <Table stacked>
       <thead>
         <tr><Th>Tedarikçi</Th><Th>Ülke</Th><Th align="right">Alış adedi</Th><Th align="right">Toplam</Th><Th align="right">Açık borç</Th></tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <Tr key={r.partyId}>
-            <Td>{r.name}</Td><Td>{r.country}</Td><Td align="right">{r.purchaseCount}</Td>
-            <Td align="right"><Money value={r.total} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.openPayable} currency={baseCurrency} /></Td>
+            <Td>{r.name}</Td><Td label="Ülke">{r.country}</Td><Td label="Alış adedi" align="right">{r.purchaseCount}</Td>
+            <Td label="Toplam" align="right"><Money value={r.total} currency={baseCurrency} /></Td>
+            <Td label="Açık borç" align="right"><Money value={r.openPayable} currency={baseCurrency} /></Td>
           </Tr>
         ))}
       </tbody>
@@ -205,18 +205,18 @@ async function SuppliersTable({ filter, baseCurrency }: { filter: ReportFilter; 
 async function ChannelsTable({ filter, baseCurrency }: { filter: ReportFilter; baseCurrency: string }) {
   const rows = await channelReport(filter);
   return (
-    <Table>
+    <Table stacked>
       <thead>
         <tr><Th>Kanal</Th><Th align="right">Satış adedi</Th><Th align="right">Ciro</Th><Th align="right">Komisyon</Th><Th align="right">Kâr</Th><Th align="right">Marj</Th></tr>
       </thead>
       <tbody>
         {rows.map((r) => (
           <Tr key={r.channelId ?? "none"}>
-            <Td>{r.name}</Td><Td align="right">{r.salesCount}</Td>
-            <Td align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.commission} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
-            <Td align="right">{r.marginPct == null ? "—" : <Pct value={r.marginPct} />}</Td>
+            <Td>{r.name}</Td><Td label="Satış adedi" align="right">{r.salesCount}</Td>
+            <Td label="Ciro" align="right"><Money value={r.revenue} currency={baseCurrency} /></Td>
+            <Td label="Komisyon" align="right"><Money value={r.commission} currency={baseCurrency} /></Td>
+            <Td label="Kâr" align="right"><Money value={r.profit} currency={baseCurrency} tone="auto" /></Td>
+            <Td label="Marj" align="right">{r.marginPct == null ? "—" : <Pct value={r.marginPct} />}</Td>
           </Tr>
         ))}
       </tbody>
@@ -227,7 +227,7 @@ async function ChannelsTable({ filter, baseCurrency }: { filter: ReportFilter; b
 async function CashflowTable({ filter, baseCurrency }: { filter: ReportFilter; baseCurrency: string }) {
   const rows = await cashflowReport(filter);
   return (
-    <Table>
+    <Table stacked>
       <thead>
         <tr><Th>Ay</Th><Th align="right">Girecek</Th><Th align="right">Çıkacak</Th><Th align="right">Net</Th></tr>
       </thead>
@@ -235,9 +235,9 @@ async function CashflowTable({ filter, baseCurrency }: { filter: ReportFilter; b
         {rows.map((r) => (
           <Tr key={r.month}>
             <Td>{r.month}</Td>
-            <Td align="right"><Money value={r.incoming} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.outgoing} currency={baseCurrency} /></Td>
-            <Td align="right"><Money value={r.net} currency={baseCurrency} tone="auto" /></Td>
+            <Td label="Girecek" align="right"><Money value={r.incoming} currency={baseCurrency} /></Td>
+            <Td label="Çıkacak" align="right"><Money value={r.outgoing} currency={baseCurrency} /></Td>
+            <Td label="Net" align="right"><Money value={r.net} currency={baseCurrency} tone="auto" /></Td>
           </Tr>
         ))}
       </tbody>

@@ -3,6 +3,7 @@ import { requireUser } from "@/server/auth";
 import { getDocument } from "@/server/os/trade-documents";
 import { signDocumentToken } from "@/server/os/document-token";
 import { renderUrlToPdf, selfBaseUrl } from "@/lib/pdf/render";
+import { asciiFilename } from "@/lib/pdf/filename";
 import { docOrientation, t } from "@/config/trade-documents";
 import { logActivity } from "@/server/activity";
 
@@ -51,7 +52,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="AYZENITH-${doc.code}.pdf"`,
+      "Content-Disposition": `attachment; filename="AYZENITH-${asciiFilename(doc.code, "belge")}.pdf"`,
       "Cache-Control": "no-store",
     },
   });

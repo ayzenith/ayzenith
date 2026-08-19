@@ -4,6 +4,11 @@
 .pnp.*
 .yarn/*
 
+# desktop app: source is tracked, installed deps and packaged output are not
+# (node_modules alone is ~580MB and is reinstalled with `npm install`)
+/electron-app/node_modules
+/electron-app/dist
+
 # testing
 /coverage
 

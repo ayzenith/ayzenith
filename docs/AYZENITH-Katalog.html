@@ -1,0 +1,714 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Elber Uzan · AYZENITH — Saç Ekimi ve Medikal Estetik</title>
+<style>
+  /* ————————————————————————————————————————————————————————————
+     A printed catalogue, not a web page.
+
+     The first version was built out of cards: rounded boxes, accent rails, chip
+     rows, a bordered container around every thought. That is interface
+     furniture, and on paper it reads as filler — which is exactly how the owner
+     read it. Print sets a page with type instead: a hanging label column,
+     hairlines rather than borders, real size contrast, and white space that is
+     placed on purpose instead of left over.
+     ———————————————————————————————————————————————————————————— */
+  :root{
+    --paper:#FFFFFF;
+    --ink:#131E29;          /* near-black with a blue cast, like printed ink */
+    --ink-2:#4A5A69;
+    --ink-3:#8B98A4;
+    --navy:#0E2439;
+    --gold:#9A7C18;
+    --gold-2:#C9A227;
+    --rule:#D9DEE3;
+    --rule-2:#EDF0F3;
+    --fd:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+    --fb:"Helvetica Neue",Helvetica,Arial,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--fd);
+       font-size:17.5px;line-height:1.58;-webkit-font-smoothing:antialiased;
+       text-rendering:optimizeLegibility}
+  .sheet{max-width:680px;margin:0 auto;padding:0 30px}
+
+  /* —— editorial type —— */
+  h1,h2,h3{font-family:var(--fd);font-weight:400;letter-spacing:-.012em;
+           color:var(--navy);text-wrap:balance}
+  h1{font-size:clamp(2.4rem,7vw,3.4rem);line-height:1.06}
+  h2{font-size:clamp(1.6rem,4.6vw,2.15rem);line-height:1.16}
+  h3{font-size:1.24rem;line-height:1.28}
+  p{margin:0 0 1.05em;color:var(--ink-2)}
+  p:last-child{margin-bottom:0}
+  .lede{font-size:1.14rem;line-height:1.5;color:var(--ink)}
+  em{font-style:italic}
+
+  /* The only sans in the document: labels. Small, spaced, quiet. */
+  .label{font-family:var(--fb);font-size:.635rem;font-weight:700;
+         letter-spacing:.22em;text-transform:uppercase;color:var(--gold);display:block}
+  .label.q{color:var(--ink-3)}
+
+  /* Hairlines carry the structure. No boxes anywhere. */
+  .hr-thick{height:2px;background:var(--navy);border:0;width:40px;margin:18px 0 22px}
+
+  section{padding:52px 0}
+  .sec-open{display:grid;gap:6px;margin-bottom:22px}
+  .numeral{font-family:var(--fd);font-size:3.3rem;line-height:.9;color:var(--rule);
+           letter-spacing:-.03em}
+
+  /* Asymmetric spread: a hanging label column beside the text. This one device
+     replaces every card the first version used. */
+  .spread{display:grid;gap:8px 26px;padding:20px 0;border-top:1px solid var(--rule-2)}
+  @media(min-width:620px){.spread{grid-template-columns:132px 1fr}}
+  .spread .k{padding-top:.3em}
+  .spread p{font-size:1.01rem}
+  .group > .spread:first-child{border-top:1px solid var(--rule)}
+
+  /* An opener is one object: numeral, heading, rule and opening sentence.
+     Nothing may fall between them. */
+  .opener{display:block}
+
+  /* —— cover —— */
+  .cover{padding:38px 0 0}
+  .crest{display:flex;align-items:center;gap:22px;padding-bottom:20px;
+         border-bottom:1px solid var(--rule)}
+  .crest img{max-height:58px;max-width:180px;display:block;object-fit:contain}
+  .crest .eu{background:#0A1A33;padding:7px 13px;display:flex}
+  .crest .eu img{max-height:52px}
+  .cover-head{padding:58px 0 0}
+  .cover h1{margin-top:16px}
+  .cover .say{font-size:1.2rem;color:var(--gold);margin-top:22px;font-style:italic}
+  .cover .intro{margin-top:24px;max-width:34em}
+  .index{margin-top:52px;border-top:1px solid var(--navy);padding-top:16px}
+  .index div{display:grid;grid-template-columns:2.2rem 1fr;gap:14px;
+             padding:10px 0;border-bottom:1px solid var(--rule-2);align-items:baseline}
+  .index dt{font-family:var(--fb);font-size:.68rem;font-weight:700;color:var(--gold);
+            letter-spacing:.1em}
+  .index dd{font-size:1.02rem;color:var(--ink)}
+  .index dd small{display:block;color:var(--ink-3);font-size:.86rem;font-style:italic}
+
+  /* —— numbered process, hanging indent —— */
+  .step{display:grid;gap:3px 26px;padding:18px 0;border-top:1px solid var(--rule-2)}
+  @media(min-width:620px){.step{grid-template-columns:132px 1fr}}
+  .step .n{font-family:var(--fb);font-size:.635rem;font-weight:700;letter-spacing:.22em;
+           text-transform:uppercase;color:var(--ink-3);padding-top:.45em}
+  .step b{display:block;font-family:var(--fd);font-weight:400;font-size:1.14rem;
+          color:var(--navy);margin-bottom:2px}
+  .step span{font-size:1rem;color:var(--ink-2)}
+
+  /* —— treatment entries —— */
+  .entry{padding:32px 0 4px;border-top:1px solid var(--rule)}
+  .entry-head{display:flex;align-items:center;gap:16px;margin-bottom:16px}
+  .mark{width:44px;height:44px;flex:none}
+
+  /* —— a pull quote does the work the coloured callout box used to —— */
+  .pull{margin:30px 0 0;padding-left:22px;border-left:2px solid var(--gold);
+        font-size:1.1rem;line-height:1.46;color:var(--navy);font-style:italic}
+
+  /* —— the dark spreads —— */
+  .dark{background:transparent;padding:30px 0}
+  .dark .sheet{background:linear-gradient(178deg,#143049 0%,#0E2439 45%,#0A1B2C 100%);
+               color:#E8EFF6;padding:40px 34px 42px;border-top:2px solid var(--gold-2);
+               max-width:680px}
+  .dark h2,.dark h3{color:#fff}
+  .dark p{color:#A9BFD2}
+  .dark .label{color:var(--gold-2)}
+  .dark .hr-thick{background:var(--gold-2)}
+  .dark .numeral{color:rgba(255,255,255,.2)}
+  .dark .spread{border-color:rgba(255,255,255,.13)}
+  .dark .group > .spread:first-child{border-color:rgba(255,255,255,.3)}
+  .dark .lede{color:#C6D7E5}
+  .reach-sec .sheet{background:linear-gradient(178deg,#0F2740 0%,#0A1B2C 60%,#071523 100%)}
+  .dark .fine{margin-top:24px;padding-top:15px;border-top:1px solid rgba(255,255,255,.18);
+              font-size:.92rem;color:#93AABF;font-style:italic}
+
+  /* —— reach —— */
+  .reach{display:grid;gap:30px;margin-top:6px}
+  @media(min-width:620px){.reach{grid-template-columns:200px 1fr}}
+  .globe{width:100%;max-width:200px;display:block}
+  .countries div{display:grid;grid-template-columns:1fr auto;gap:12px;
+                 padding:10px 0;border-bottom:1px solid rgba(255,255,255,.13);
+                 align-items:baseline}
+  .countries b{font-weight:400;font-size:1.05rem;color:#fff}
+  .countries span{font-family:var(--fb);font-size:.62rem;letter-spacing:.16em;
+                  text-transform:uppercase;color:#8FA8BE}
+  .tally{display:flex;gap:46px;margin-top:28px;flex-wrap:wrap}
+  .tally div{display:grid;gap:3px}
+  .tally b{font-family:var(--fd);font-size:2.5rem;line-height:1;color:var(--gold-2);
+           font-weight:400}
+  .tally span{font-family:var(--fb);font-size:.62rem;letter-spacing:.2em;
+              text-transform:uppercase;color:#8FA8BE}
+
+  /* —— plates —— */
+  .plates{display:grid;gap:14px;margin-top:22px}
+  @media(min-width:560px){.plates{grid-template-columns:1fr 1fr}}
+  .plate img{width:100%;display:block}
+  .plate figcaption{font-family:var(--fb);font-size:.62rem;letter-spacing:.16em;
+                    text-transform:uppercase;color:var(--ink-3);padding-top:7px}
+
+  /* —— contact —— */
+  .contact div{display:grid;grid-template-columns:100px 1fr;gap:18px;
+               padding:13px 0;border-bottom:1px solid var(--rule-2);align-items:baseline}
+  .contact dt{font-family:var(--fb);font-size:.635rem;font-weight:700;
+              letter-spacing:.2em;text-transform:uppercase;color:var(--ink-3)}
+  .contact dd{font-size:1.2rem;color:var(--navy);font-variant-numeric:tabular-nums}
+  .colophon{padding-top:22px;margin-top:40px;font-size:.82rem;color:var(--ink-3);
+            font-style:italic;border-top:1px solid var(--rule)}
+  .note{margin-top:22px;font-style:italic;color:var(--ink-3);font-size:.92rem}
+
+  @page{ size:A4 portrait; margin:16mm 15mm 14mm; }
+  @media print{
+    *{ -webkit-print-color-adjust:exact; print-color-adjust:exact }
+    body{ font-size:10.2pt; line-height:1.48 }
+    .sheet{ max-width:none; padding:0 }
+    section{ padding:20pt 0 }
+    /* Only the cover forces a page. Everything else flows, so no section can
+       leave a half-empty sheet behind it — which is what produced the gaps. */
+    .cover{ padding:0; break-after:page }
+    .cover-head{ padding-top:30pt }
+    .index{ margin-top:30pt }
+    h1{ font-size:29pt } h2{ font-size:17pt } h3{ font-size:12.5pt }
+    .lede{ font-size:11pt }
+    .numeral{ font-size:28pt }
+    .dark{ padding:18pt 0 }
+    .dark .sheet{ padding:22pt 20pt 24pt; max-width:none }
+    .spread,.step,.entry-head,.plate,.pull,.contact div,.colophon{ break-inside:avoid }
+    .index div,.countries div,.tally,.sec-open,figure,.opener{ break-inside:avoid }
+
+    /* Nothing that introduces something may be the last thing on a page. */
+    h1,h2,h3,.sec-open,.hr-thick,.entry-head,.label{ break-after:avoid }
+    .lede,.group,.pull{ break-before:avoid }
+    .entry-head + .group{ break-before:avoid }
+
+    /* No stranded single lines. */
+    p,.step span,.spread p{ orphans:3; widows:3 }
+
+    /* A section opener carries its heading, rule and opening sentence as one
+       block; splitting those three is what looked broken. */
+    .sec-open{ margin-bottom:14pt }
+    .plates{ grid-template-columns:1fr 1fr }
+    .reach{ grid-template-columns:190px 1fr }
+  }
+</style>
+</head>
+<body>
+
+<!-- ——————————————————— KAPAK ——————————————————— -->
+<section class="cover">
+  <div class="sheet">
+    <div class="crest">
+      <img src="katalog-gorseller/ayzenith-logo.png" alt="AYZENITH">
+      <span class="eu"><img src="katalog-gorseller/elber-uzan-logo.png" alt="Elber Uzan Saç Ekimi"></span>
+    </div>
+
+    <div class="cover-head">
+      <span class="label">Saç Ekimi · Medikal Saç Tedavileri · Yüz Gençleştirme</span>
+      <h1>Yeniden kendiniz<br>gibi görünün.</h1>
+      <p class="say">Doktor kontrolünde. Kendi ekibimiz, kendi ekipmanımız.</p>
+      <p class="intro">Saç ekimi bir görünüm değişikliği değil, uzun yıllar yaşayacağınız
+        bir karardır. Bu yüzden bizde her şey aynı yerden başlar: sizi tanımaktan,
+        ölçmekten ve gerçekçi olanı söylemekten.</p>
+    </div>
+
+    <dl class="index">
+      <div><dt>I</dt><dd>Neden biz<small>Görünmeyen tarafı görünür yapmak</small></dd></div>
+      <div><dt>II</dt><dd>Saç ekimi<small>FUE ve DHI · işlem günü</small></dd></div>
+      <div><dt>III</dt><dd>Medikal saç tedavileri<small>PRP · mezoterapi · exosome</small></dd></div>
+      <div><dt>IV</dt><dd>Yüz gençleştirme<small>Somon DNA</small></dd></div>
+      <div><dt>V</dt><dd>Ayrıcalıklı hizmet<small>Bulunduğunuz yerde uygulama</small></dd></div>
+      <div><dt>VI</dt><dd>Deneyimimiz<small>Üç kıta, altı ülke</small></dd></div>
+      <div><dt>VII</dt><dd>Sonuçlarımız<small>Hastalarımızdan</small></dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- ——————————————————— I · NEDEN BİZ ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">I</span>
+      <span class="label">Neden Biz</span>
+    </div>
+    <h2>Bu işte en önemli soru şudur:<br>karşınızdaki kim?</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Saç ekimi yaptıracak birinin asıl korkusu fiyat değildir — kötü bir
+      sonuçla yıllarca yaşamak zorunda kalmaktır. Biz bu yüzden işin görünmeyen
+      tarafını görünür yapıyoruz.</p>
+    </div>
+
+    <div class="group" style="margin-top:28px">
+      <div class="spread">
+        <div class="k"><span class="label q">Sorumluluk</span></div>
+        <p>Planlama ve uygulama hekim sorumluluğundadır. İşlemi kimin yaptığı
+          belirsiz kalmaz.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label q">Ekip</span></div>
+        <p>Dışarıdan ekip kiralamıyoruz. Aynı ekip, aynı standart, her hastada.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label q">Sterilizasyon</span></div>
+        <p>Her hasta için yeni set açılır — üstelik sizin gözünüzün önünde.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label q">Planlama</span></div>
+        <p>Herkese aynı paket uygulanmaz. Saç analizi yapılmadan işlem planı
+          çıkarılmaz.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label q">Takip</span></div>
+        <p>Operasyon bittiğinde ilişki bitmez. İyileşme boyunca ulaşabileceğiniz
+          bir muhatabınız olur.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label q">Uluslararası</span></div>
+        <p>Üç kıtadan gelen hastalarla çalışıyoruz; süreci uzaktan yönetmeye
+          alışkınız.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————— II · SAÇ EKİMİ ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">II</span>
+      <span class="label">Ana Hizmetimiz</span>
+    </div>
+    <h2>Saç Ekimi</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Saç ekimi saçınızı yeniden yaratmak değildir. Dökülmeye dirençli
+      kendi köklerinizi, seyrelen bölgeye taşımaktır. Yani ektiğimiz saç, sizin
+      kendi saçınızdır.</p>
+    </div>
+
+    <p class="pull">Ense ve kulak üstündeki kökler, saç dökülmesine yol açan hormonal
+      etkiye genetik olarak dirençlidir. Alnınıza taşındığında da bu direnci
+      korurlar — yeni yerinde de dökülmezler. Saç ekiminin kalıcı olmasının sebebi
+      budur.</p>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M6 40H58" stroke="#0E2439" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 40v9M25 40v9M35 40v9" stroke="#0E2439" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="15" cy="51" r="2.8" fill="#9A7C18"/><circle cx="25" cy="51" r="2.8" fill="#9A7C18"/>
+          <circle cx="35" cy="51" r="2.8" fill="#9A7C18"/>
+          <path d="M50 32v-9" stroke="#9A7C18" stroke-width="1.4" stroke-linecap="round"/>
+          <circle cx="50" cy="34" r="3" fill="#9A7C18"/>
+          <path d="M46.5 26.5 50 23l3.5 3.5" stroke="#9A7C18" stroke-width="1.4"
+            stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <div><span class="label q">Yöntem bir</span><h3>FUE</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Kökler mikro uçlarla tek tek alınır ve açılan kanallara yerleştirilir.
+            Dikiş izi bırakmaz, iyileşme hızlıdır.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Kime uygun</span></div>
+          <p>Ön saç çizgisi gerilemiş, tepe bölgesi açılmış, geniş alan ekimi
+            gereken kişiler.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M8 52H44" stroke="#0E2439" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M24 44 46 22" stroke="#0E2439" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M46 22 52 16" stroke="#0E2439" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M24 44 20 48" stroke="#9A7C18" stroke-width="1.9" stroke-linecap="round"/>
+          <circle cx="17" cy="51" r="3" fill="#9A7C18"/>
+          <path d="M31 51v-4M38 51v-4" stroke="#0E2439" stroke-width="1.3" stroke-linecap="round"/>
+        </svg>
+        <div><span class="label q">Yöntem iki</span><h3>DHI — Kalemle doğrudan ekim</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Özel kalem (Choi implanter) ile kanal açma ve yerleştirme tek adımda
+            yapılır. Kökün dışarıda kaldığı süre kısalır, çıkış açısı daha hassas
+            ayarlanır.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Kime uygun</span></div>
+          <p>Sıklaştırma isteyenler, mevcut saçların arasına ekim yapılacak durumlar
+            ve ön saç çizgisinin doğallığının kritik olduğu planlamalar.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <h3 style="margin-bottom:4px">İşlem günü nasıl geçer?</h3>
+      <div class="step"><span class="n">Bir</span><div>
+        <b>Muayene ve saç analizi</b>
+        <span>Dökülme tipiniz, kök yoğunluğunuz ve ekilecek alan ölçülür. Kaç köke
+          ihtiyacınız olduğu tahminle değil ölçümle belirlenir.</span></div></div>
+      <div class="step"><span class="n">İki</span><div>
+        <b>Saç çizgisi tasarımı</b>
+        <span>Yüz hatlarınıza ve yaşınıza uygun ön saç çizgisi birlikte çizilir.
+          Siz onaylamadan işleme başlanmaz.</span></div></div>
+      <div class="step"><span class="n">Üç</span><div>
+        <b>Lokal anestezi</b>
+        <span>Bölge uyuşturulur. İşlem boyunca ağrı hissetmezsiniz; uyutulmazsınız.</span></div></div>
+      <div class="step"><span class="n">Dört</span><div>
+        <b>Köklerin alınması</b>
+        <span>Donör bölgeden kökler tek tek alınır ve özel solüsyonda korunur.</span></div></div>
+      <div class="step"><span class="n">Beş</span><div>
+        <b>Ekim</b>
+        <span>Kökler doğal çıkış açısına uygun yerleştirilir. Doğal görünümü
+          belirleyen asıl aşama budur.</span></div></div>
+      <div class="step"><span class="n">Altı</span><div>
+        <b>Bakım ve takip</b>
+        <span>İlk yıkama, kullanacağınız ürünler ve dikkat edilecekler anlatılır;
+          süreç boyunca iletişimde kalırız.</span></div></div>
+    </div>
+
+    <p class="pull">Ekilen saçlar ilk haftalarda dökülür. Bu normaldir ve kökün kaybı
+      anlamına gelmez. Çıkış üçüncü aydan itibaren başlar, sonuç sekiz ile on iki ay
+      arasında oturur. Size bir gecede sonuç vaat eden hiç kimseye inanmayın.</p>
+  </div>
+</section>
+
+<!-- ——————————————————— III · MEDİKAL TEDAVİLER ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">III</span>
+      <span class="label">Medikal Saç Tedavileri</span>
+    </div>
+    <h2>Saç ekimi tek başına<br>yeterli olmayabilir.</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Ekim, açılan bölgeyi doldurur. Mevcut saçınızın korunması ve saçlı
+      derinizin sağlıklı olması ise ayrı bir iştir. Aşağıdaki tedaviler hem tek
+      başına hem de ekimin destekleyicisi olarak uygulanır.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <rect x="14" y="10" width="17" height="42" rx="8.5" stroke="#0E2439" stroke-width="1.5"/>
+          <path d="M15 34h15" stroke="#0E2439" stroke-width="1.3"/>
+          <path d="M15 34v9a7.5 7.5 0 0 0 15 0v-9z" fill="#9A7C18" opacity=".85"/>
+          <path d="M18 6h9" stroke="#0E2439" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M46 24c0 0-7 8-7 12a7 7 0 0 0 14 0c0-4-7-12-7-12z" stroke="#9A7C18"
+            stroke-width="1.5" stroke-linejoin="round"/>
+        </svg>
+        <div><span class="label q">Tedavi bir</span><h3>PRP</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Sizden alınan az miktarda kan özel bir cihazda ayrıştırılır; trombositten
+            zengin plazma elde edilir ve saçlı deriye mikro enjeksiyonlarla verilir.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Ne işe yarar</span></div>
+          <p>Trombositlerin taşıdığı büyüme faktörleri saç kökünün beslenmesini ve
+            canlanmasını destekler. Ekim sonrası iyileşme döneminde de sıkça tercih
+            edilir.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Neden güvenli</span></div>
+          <p>Uygulanan madde sizin kendi kanınızdır. Dışarıdan yabancı madde
+            verilmediği için alerjik reaksiyon riski düşüktür.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M6 48c8-10 18-15 28-15s18 3 24 8" stroke="#0E2439" stroke-width="1.5"
+            stroke-linecap="round"/>
+          <path d="M40 10 26 26" stroke="#0E2439" stroke-width="2.2" stroke-linecap="round"/>
+          <path d="M44 6 40 10l4 4 4-4z" stroke="#0E2439" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M26 26 20 33" stroke="#9A7C18" stroke-width="1.7" stroke-linecap="round"/>
+          <circle cx="16" cy="43" r="2.2" fill="#9A7C18"/><circle cx="28" cy="39" r="2.2" fill="#9A7C18"/>
+          <circle cx="41" cy="39" r="2.2" fill="#9A7C18"/><circle cx="52" cy="43" r="2.2" fill="#9A7C18"/>
+        </svg>
+        <div><span class="label q">Tedavi iki</span><h3>Saç mezoterapisi</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Saç köküne fayda sağlayan vitamin, mineral, amino asit ve iz elementlerden
+            oluşan karışımın saçlı deriye mikro enjeksiyonla verilmesidir.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Ne işe yarar</span></div>
+          <p>Kökün ihtiyacı olan besini doğrudan bölgeye ulaştırır; saçlı derideki kan
+            dolaşımını ve kök beslenmesini destekler.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Kime uygun</span></div>
+          <p>Dökülmenin erken evresindeki, saçı incelmeye başlamış ve henüz ekim
+            gerekmeyen kişiler için ilk adımdır.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <circle cx="30" cy="34" r="15" stroke="#0E2439" stroke-width="1.5"/>
+          <circle cx="25" cy="30" r="3" fill="#9A7C18"/><circle cx="35" cy="33" r="2.4" fill="#9A7C18"/>
+          <circle cx="29" cy="41" r="2" fill="#9A7C18"/>
+          <circle cx="52" cy="16" r="2.8" stroke="#9A7C18" stroke-width="1.4"/>
+          <circle cx="55" cy="30" r="2" stroke="#9A7C18" stroke-width="1.3"/>
+          <circle cx="47" cy="8" r="1.7" fill="#9A7C18"/>
+          <path d="M42 24 48 18" stroke="#9A7C18" stroke-width="1.2" stroke-dasharray="2 3"/>
+        </svg>
+        <div><span class="label q">Tedavi üç</span><h3>Exosome</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Exosome'lar, hücrelerin birbirine sinyal göndermek için kullandığı çok
+            küçük keseciklerdir; içlerinde hücre yenilenmesini yönlendiren haberci
+            moleküller taşırlar.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Ne işe yarar</span></div>
+          <p>Saç kökü çevresindeki hücrelere yenilenme sinyali taşıyarak kökün
+            canlanmasını destekler. Seans sayısı genellikle diğer yöntemlere göre
+            daha azdır.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Nasıl planlanır</span></div>
+          <p>Hastanın durumuna göre tek başına ya da PRP ile birlikte uygulanır.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————— IV · YÜZ GENÇLEŞTİRME ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">IV</span>
+      <span class="label">Yüz Gençleştirme</span>
+    </div>
+    <h2>Somon DNA</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Saç kadar dikkat çeken bir başka şey var: cildin kendisi. Somon DNA,
+      cildi doldurarak değil, <em>onararak</em> gençleştiren bir uygulamadır.</p>
+    </div>
+
+    <div class="entry">
+      <div class="entry-head">
+        <svg class="mark" viewBox="0 0 64 64" fill="none" aria-hidden="true">
+          <path d="M18 8C48 22 48 42 18 56" stroke="#0E2439" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M46 8C16 22 16 42 46 56" stroke="#0E2439" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M24 14h16M30 21h11M30 43h11M24 50h16" stroke="#9A7C18" stroke-width="1.6"
+            stroke-linecap="round"/>
+        </svg>
+        <div><span class="label q">Uygulama</span><h3>Polinükleotid tedavisi</h3></div>
+      </div>
+      <div class="group">
+        <div class="spread">
+          <div class="k"><span class="label q">Nedir</span></div>
+          <p>Somon balığından elde edilen ve insan DNA'sıyla yüksek uyum gösteren
+            polinükleotid moleküllerinin, cilde mikro enjeksiyonlarla verilmesidir.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Ne işe yarar</span></div>
+          <p>Cildin kendi onarım mekanizmasını ve nem tutma kapasitesini destekler.
+            Zamanla cilt tonu, esneklik ve doku kalitesinde iyileşme hedeflenir.</p>
+        </div>
+        <div class="spread">
+          <div class="k"><span class="label q">Hangi bölgeler</span></div>
+          <p>Yüz, göz çevresi, boyun ve el sırtı gibi incelmenin ve kuruluğun en
+            erken göründüğü bölgeler.</p>
+        </div>
+      </div>
+    </div>
+
+    <p class="pull">Dolgu hacim ekler ve şekil değiştirir. Somon DNA hacim eklemez;
+      cildin kendi kalitesini iyileştirmeyi amaçlar. Bu yüzden "yaptırdım" değil,
+      "dinlenmiş görünüyorsun" denen türden bir değişim yaratır.</p>
+
+    <p class="note">Hangi tedavinin size uygun olduğu muayene sonrasında belirlenir.
+      Herkese aynı paket uygulanmaz — gerekmeyen bir tedaviyi size satmayız.</p>
+  </div>
+</section>
+
+<!-- ——————————————————— V · VIP ——————————————————— -->
+<section class="dark">
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">V</span>
+      <span class="label">Ayrıcalıklı Hizmet</span>
+    </div>
+    <h2>Siz bize gelmeyin.<br>Biz size gelelim.</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Seans gerektiren tedavilerimizi — PRP, mezoterapi, exosome ve somon
+      DNA — bulunduğunuz yerde uyguluyoruz: evinizde, iş yerinizde ya da otelinizde.</p>
+    </div>
+
+    <div class="group" style="margin-top:28px">
+      <div class="spread">
+        <div class="k"><span class="label">Randevu</span></div>
+        <p>Size göre ayarlanır. Mesainizden çalmaz; akşam veya hafta sonu
+          planlanabilir.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label">Ekipman</span></div>
+        <p>Cihazlar, uygulama setleri ve steril malzeme bizimle gelir. Sizden
+          hiçbir şey istenmez.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label">Sterilizasyon</span></div>
+        <p>Her hastada yeni, tek kullanımlık set. Paketler uygulama sırasında
+          önünüzde açılır.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label">Atık</span></div>
+        <p>Tıbbi atık bizimle gider. Uygulama sonrası ortamda hiçbir iz kalmaz.</p>
+      </div>
+      <div class="spread">
+        <div class="k"><span class="label">Mahremiyet</span></div>
+        <p>Bekleme salonu yok, karşılaşma yok. Tedavi gördüğünüzü yalnızca siz
+          bilirsiniz.</p>
+      </div>
+    </div>
+
+    <p class="fine">Saç ekimi cerrahi bir işlem olduğu için yalnızca uygun klinik
+      ortamında yapılır. Bu bizim tercihimiz değil, güvenliğin şartıdır — ve size
+      bunu evde teklif eden hiç kimseye güvenmeyin.</p>
+  </div>
+</section>
+
+<!-- ——————————————————— VI · DENEYİM ——————————————————— -->
+<section class="dark reach-sec">
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">VI</span>
+      <span class="label">Deneyimimiz</span>
+    </div>
+    <h2>Hastalarımız üç kıtadan geliyor.</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Yurt dışından gelen bir hasta için süreç uçak biletiyle başlamaz;
+      aylar önce gönderilen bir fotoğrafla başlar. Ön değerlendirme, planlama,
+      konaklama, işlem ve dönüş sonrası takip — hepsini uzaktan yürütmeye alışkınız.</p>
+    </div>
+
+    <div class="reach">
+      <svg class="globe" viewBox="0 0 400 400" fill="none" role="img"
+           aria-label="Hasta gelen ülkeler">
+        <g stroke="#33587C" stroke-width="1">
+          <circle cx="200" cy="200" r="150"/>
+          <ellipse cx="200" cy="200" rx="150" ry="56"/>
+          <ellipse cx="200" cy="200" rx="150" ry="110"/>
+          <ellipse cx="200" cy="200" rx="56" ry="150"/>
+          <ellipse cx="200" cy="200" rx="110" ry="150"/>
+          <line x1="50" y1="200" x2="350" y2="200"/>
+          <line x1="200" y1="50" x2="200" y2="350"/>
+        </g>
+        <g stroke="#C9A227" stroke-width="1.3" opacity=".85" fill="none">
+          <path d="M138 118 Q180 148 214 186"/>
+          <path d="M165 104 Q195 145 214 186"/>
+          <path d="M120 150 Q170 170 214 186"/>
+          <path d="M300 246 Q258 218 220 194"/>
+          <path d="M150 300 Q185 250 216 198"/>
+        </g>
+        <g fill="#C9A227">
+          <circle cx="138" cy="118" r="4.5"/><circle cx="165" cy="104" r="4.5"/>
+          <circle cx="120" cy="150" r="4.5"/><circle cx="300" cy="246" r="4.5"/>
+          <circle cx="150" cy="300" r="4.5"/>
+        </g>
+        <circle cx="216" cy="190" r="7.5" fill="#fff"/>
+        <circle cx="216" cy="190" r="15" stroke="#fff" stroke-width="1" opacity=".45"/>
+      </svg>
+
+      <div class="countries">
+        <div><b>Almanya</b><span>Avrupa</span></div>
+        <div><b>Belçika</b><span>Avrupa</span></div>
+        <div><b>Hollanda</b><span>Avrupa</span></div>
+        <div><b>Birleşik Arap Emirlikleri · Dubai</b><span>Orta Doğu</span></div>
+        <div><b>Fas · Rabat</b><span>Afrika</span></div>
+        <div><b>Türkiye · İstanbul</b><span>Merkez</span></div>
+      </div>
+    </div>
+
+    <div class="tally">
+      <div><b>3</b><span>Kıta</span></div>
+      <div><b>6</b><span>Ülke</span></div>
+      <div><b>İstanbul</b><span>Operasyon merkezi</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ——————————————————— VII · SONUÇLAR ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <div class="sec-open">
+      <span class="numeral">VII</span>
+      <span class="label">Sonuçlarımız</span>
+    </div>
+    <h2>Hastalarımızdan.</h2>
+    <div class="hr-thick"></div>
+
+    <div class="plates">
+      <figure class="plate"><img src="katalog-gorseller/ref-1.jpg" alt="Saç ekimi sonucu, altıncı ay">
+        <figcaption>Altıncı ay</figcaption></figure>
+      <figure class="plate"><img src="katalog-gorseller/ref-2.jpg" alt="Saç ekimi sonucu, yedinci ay">
+        <figcaption>Yedinci ay</figcaption></figure>
+      <figure class="plate"><img src="katalog-gorseller/ref-3.jpg" alt="Saç ekimi sonucu, beş buçuk ay">
+        <figcaption>Beş buçuk ay · ön ve üst görünüm</figcaption></figure>
+      <figure class="plate"><img src="katalog-gorseller/ref-6.jpg" alt="Saç ekimi sonucu, beş buçuk ay">
+        <figcaption>Beş buçuk ay · ön ve üst görünüm</figcaption></figure>
+      <figure class="plate"><img src="katalog-gorseller/ref-4.jpg" alt="Saç ekimi sonucu, ön ve arka görünüm">
+        <figcaption>Ön ve arka görünüm</figcaption></figure>
+      <figure class="plate"><img src="katalog-gorseller/ref-5.jpg" alt="Saç ekimi öncesi ve sonrası">
+        <figcaption>Öncesi ve sonrası</figcaption></figure>
+    </div>
+
+    <p class="note">Görseller, izinleri alınarak paylaşılan gerçek hastalarımıza
+      aittir. Sonuçlar kişiden kişiye değişir.</p>
+  </div>
+</section>
+
+<!-- ——————————————————— İLETİŞİM ——————————————————— -->
+<section>
+  <div class="sheet">
+    <div class="opener">
+    <span class="label">İlk Adım</span>
+    <h2 style="margin-top:8px">Önce konuşalım.<br>Kararı sonra verirsiniz.</h2>
+    <div class="hr-thick"></div>
+    <p class="lede">Saçınızın fotoğrafını gönderin, ön değerlendirmeyi ücretsiz yapalım.
+      Size uygun yöntemi, gerçekçi beklentiyi ve süreci anlatalım — hiçbir şey satın
+      almak zorunda değilsiniz.</p>
+    </div>
+    </div>
+
+    <dl class="contact" style="margin-top:24px">
+      <div><dt>WhatsApp</dt><dd>0531 308 02 09</dd></div>
+      <div><dt>Telefon</dt><dd>0541 437 19 07</dd></div>
+      <div><dt>E-posta</dt><dd style="font-size:1.06rem">elberuzan@outlook.com</dd></div>
+      <div><dt>Adres</dt><dd>İstanbul · Ataşehir</dd></div>
+    </dl>
+
+    <p class="colophon">Bu katalogdaki bilgiler tanıtım amaçlıdır ve tıbbi tavsiye
+      yerine geçmez. Uygulanacak tedavi, muayene sonrasında hekim tarafından
+      belirlenir. &nbsp;·&nbsp; AYZENITH · Elber Uzan Saç Ekimi</p>
+  </div>
+</section>
+
+</body>
+</html>

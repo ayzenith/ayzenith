@@ -3,6 +3,7 @@ import { requireUser } from "@/server/auth";
 import { getCashflowReportPdf, getProductsReportPdf, getInventoryReportPdf } from "@/server/os/report-pdf";
 import { signResourceToken } from "@/server/os/document-token";
 import { renderUrlToPdf, selfBaseUrl } from "@/lib/pdf/render";
+import { asciiFilename } from "@/lib/pdf/filename";
 import { logActivity } from "@/server/activity";
 
 export const dynamic = "force-dynamic";
@@ -55,17 +56,10 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     summary: `Rapor PDF indirildi (${data.title})`,
   });
 
-  const safeTitle = data.title
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-")
-    .toLowerCase();
-
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="AYZENITH-${safeTitle}.pdf"`,
+      "Content-Disposition": `attachment; filename="AYZENITH-${asciiFilename(data.title, "rapor")}.pdf"`,
       "Cache-Control": "no-store",
     },
   });

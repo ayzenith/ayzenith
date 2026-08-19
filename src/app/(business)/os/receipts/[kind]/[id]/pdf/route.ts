@@ -3,6 +3,7 @@ import { requireUser } from "@/server/auth";
 import { getPaymentReceipt, getExpenseReceipt, getTaxReceipt } from "@/server/os/receipts";
 import { signResourceToken } from "@/server/os/document-token";
 import { renderUrlToPdf, selfBaseUrl } from "@/lib/pdf/render";
+import { asciiFilename } from "@/lib/pdf/filename";
 import { logActivity } from "@/server/activity";
 
 /**
@@ -62,7 +63,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="AYZENITH-${data.receiptNo}.pdf"`,
+      "Content-Disposition": `attachment; filename="AYZENITH-${asciiFilename(data.receiptNo, "makbuz")}.pdf"`,
       "Cache-Control": "no-store",
     },
   });

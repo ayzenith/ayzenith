@@ -78,20 +78,99 @@ export type PdfOptions = {
   pageOfLabel?: string; // e.g. "Page" / "Sayfa" / "Seite"
 };
 
+/**
+ * Warm-container browser reuse. Launching Chromium is by far the most expensive
+ * step in serverless — the binary has to be decompressed and booted — and it is
+ * pure overhead when the same container serves several downloads in a row.
+ * Kept ONLY on Vercel: locally the dev server hot-reloads this module on every
+ * edit, which would orphan a Chrome process each time.
+ */
+const reuseBrowser = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
+let browserPromise: Promise<Browser> | null = null;
+
+async function acquireBrowser(): Promise<{ browser: Browser; reused: boolean }> {
+  if (reuseBrowser && browserPromise) {
+    try {
+      const existing = await browserPromise;
+      if (existing.connected) return { browser: existing, reused: true };
+    } catch {
+      // Previous launch failed; fall through and start a fresh one.
+    }
+  }
+  const launched = launchBrowser();
+  browserPromise = reuseBrowser ? launched : null;
+  return { browser: await launched, reused: false };
+}
+
+async function releaseBrowser(browser: Browser): Promise<void> {
+  if (reuseBrowser && browserPromise) return; // keep it warm for the next request
+  await browser.close().catch(() => {});
+}
+
+async function discardBrowser(browser: Browser): Promise<void> {
+  browserPromise = null;
+  await browser.close().catch(() => {});
+}
+
 /** Render one URL (already authorized — see document-token.ts) to a PDF buffer. */
 export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buffer> {
-  let browser: Browser | null = null;
+  const { browser, reused } = await acquireBrowser();
   try {
-    console.log(`[PDF] Starting Puppeteer render for ${url}`);
-    browser = await launchBrowser();
-    console.log(`[PDF] Browser launched`);
+    return await renderPage(browser, url, opts);
+  } catch (err) {
+    // A container can be frozen or reaped between invocations, leaving a cached
+    // handle whose Chromium is gone. That shows up as a dead browser, not as a
+    // bad document — so retry once, but ONLY then. Any other failure is a real
+    // one and must surface immediately rather than costing a second render.
+    if (reused && !browser.connected) {
+      console.warn(`[PDF] Cached browser was dead; relaunching and retrying once`);
+      await discardBrowser(browser);
+      const fresh = await acquireBrowser();
+      try {
+        return await renderPage(fresh.browser, url, opts);
+      } catch (retryErr) {
+        await discardBrowser(fresh.browser);
+        throw retryErr;
+      }
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Puppeteer render failed: ${msg}`);
+    throw err;
+  } finally {
+    await releaseBrowser(browser);
+  }
+}
 
-    const page = await browser.newPage();
-    console.log(`[PDF] Page created`);
+/** Requests that never affect the printed sheet. Next.js injects the favicon and
+ *  web-manifest links into every page; fetching them only adds round trips the
+ *  renderer would otherwise wait on. Matched on exact same-origin paths so a
+ *  company logo that happens to be named icon.png is never blocked. */
+const IGNORED_PATHS = new Set(["/favicon.ico", "/icon.png", "/manifest.webmanifest"]);
+
+async function renderPage(browser: Browser, url: string, opts: PdfOptions): Promise<Buffer> {
+  const origin = new URL(url).origin;
+  const page = await browser.newPage();
+  try {
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      try {
+        const target = new URL(req.url());
+        if (target.origin === origin && IGNORED_PATHS.has(target.pathname)) {
+          void req.abort();
+          return;
+        }
+      } catch {
+        // Not a parseable URL (data:, blob:) — let it through untouched.
+      }
+      void req.continue();
+    });
 
     try {
       console.log(`[PDF] Loading URL: ${url}`);
-      await page.goto(url, { waitUntil: "networkidle0", timeout: 60_000 });
+      // networkidle0 waits for the network to go quiet for half a second — time
+      // spent idling rather than rendering. The printed sheet only depends on
+      // the document, its fonts and its images, so wait for exactly those below.
+      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
       console.log(`[PDF] URL loaded successfully`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -111,14 +190,31 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
       );
     }
 
+    // Wait for what actually lands on paper: webfonts (otherwise the sheet
+    // prints in a fallback face) and images (otherwise the company logo is
+    // missing). A stuck asset must not hold the document hostage, so this is
+    // capped — a slightly imperfect PDF beats a request that never returns.
     try {
       await Promise.race([
-        page.evaluateHandle("document.fonts.ready"),
-        new Promise((_, reject) => setTimeout(() => reject(new Error("fonts timeout")), 5_000)),
+        page.evaluate(async () => {
+          await document.fonts.ready;
+          await Promise.all(
+            Array.from(document.images)
+              .filter((img) => !img.complete)
+              .map(
+                (img) =>
+                  new Promise<void>((resolve) => {
+                    img.addEventListener("load", () => resolve(), { once: true });
+                    img.addEventListener("error", () => resolve(), { once: true });
+                  }),
+              ),
+          );
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error("assets timeout")), 8_000)),
       ]);
-      console.log(`[PDF] Fonts ready`);
+      console.log(`[PDF] Fonts and images ready`);
     } catch (err) {
-      console.warn(`[PDF] Font loading failed (continuing with defaults): ${err instanceof Error ? err.message : String(err)}`);
+      console.warn(`[PDF] Asset wait cut short (printing anyway): ${err instanceof Error ? err.message : String(err)}`);
     }
 
     const footerTemplate = opts.footerLeft
@@ -141,15 +237,10 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
     });
     console.log(`[PDF] PDF generated successfully, size: ${pdf.length} bytes`);
     return Buffer.from(pdf);
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[PDF] Puppeteer render failed: ${msg}`);
-    throw err;
   } finally {
-    if (browser) {
-      console.log(`[PDF] Closing browser`);
-      await browser.close();
-    }
+    // Close the tab, not the browser — the browser may be kept warm for the
+    // next request. Leaking tabs would grow memory across invocations.
+    await page.close().catch(() => {});
   }
 }
 

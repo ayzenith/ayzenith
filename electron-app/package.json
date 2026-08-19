@@ -1,0 +1,29 @@
+{
+  "name": "ayzenith-panel",
+  "productName": "AYZENITH Panel",
+  "version": "1.0.0",
+  "description": "AYZENITH Business OS masaüstü uygulaması",
+  "main": "main.js",
+  "author": "AYZENITH",
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder"
+  },
+  "devDependencies": {
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "directories": {
+      "output": "C:\\Users\\ayazkaya\\AppData\\Local\\Temp\\ayzenith-electron-build"
+    },
+    "appId": "com.ayzenith.panel",
+    "productName": "AYZENITH Panel",
+    "files": ["main.js", "icon.png"],
+    "win": {
+      "target": "portable",
+      "icon": "icon.ico"
+    }
+  }
+}

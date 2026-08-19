@@ -4,7 +4,9 @@
 > bu dosyayı olduğu gibi yapıştır. Karşı taraf projeyi, kuralları, mevcut durumu ve nasıl
 > çalışılması gerektiğini tek okumada kavrar.
 >
-> **Son güncelleme:** 2026-08-14 · **Durum:** Lead Finder V3.2 tamamlandı, build yeşil.
+> **Son güncelleme:** 2026-08-17 · **Durum:** Business OS V1 inşa halinde — veri modeli ve sunucu
+> katmanı bitti ve canlıya migrate edildi, arayüzün yarısı yazıldı.
+> **Bölüm 12 en güncel durumdur — önce onu oku. Aktif çalışma alanı orası.**
 
 ---
 
@@ -111,7 +113,19 @@ DATA → SCORING → SNAPSHOT → AI → UI
 
 ---
 
-## 4. ÜÇ SİSTEM
+## 4. DÖRT SİSTEM
+
+Zincir şöyle işler ve bu sıra tesadüf değil:
+
+```
+RADAR          → hangi pazara girilir?
+LEAD FINDER    → orada kime satılır?
+BUSINESS OS    → satıldıktan sonra ne oldu? (maliyet, stok, tahsilat, kâr)
+CMS            → dışarıya ne gösteriliyor?
+```
+
+RADAR ve Lead Finder anlaşma yapılana kadarki soruları cevaplıyordu; anlaşma sonrasında ne
+olduğunu hiçbir yer kaydetmiyordu. Business OS (Bölüm 12) o boşluğu dolduruyor.
 
 ### 4.1 CMS — `/admin` (BİTTİ, canlı)
 Teknik olmayan sahibin siteyi kod yazmadan yönetmesi için. Admin arayüzü **tek dilli Türkçe**
@@ -507,6 +521,211 @@ Uydurulmuş bir cevap, verilmemiş bir cevaptan çok daha pahalıya mal olur.
 ```
 npm run typecheck && npm run lint && npm run build
 ```
+
+---
+
+
+---
+
+# 11. GÜNCELLEME — 2026-08-16
+
+> Bu bölüm 14 Ağustos'tan sonraki iki günü kapsar. Yukarısı hâlâ geçerlidir;
+> aşağıdakiler onun üzerine gelir. **Önce bu bölümü oku** — bazı yerlerde
+> yukarıdaki bilgiyi düzeltir.
+
+## 11.1 Lead Finder — eklenen yetenekler
+
+**Çok dilli doğrulama** (`src/server/leads/providers/lang.ts`)
+Firma siteleri artık kendi dillerinde okunuyor. Metin sözlükleri **her zaman
+açık** (maliyeti sıfır); yalnızca hangi alt sayfaların denendiği ülkeye göre
+seçiliyor, istek sayısı değişmiyor. Canlı doğrulandı: Yamamay → VKN
+`IT02649140122` (VIES'te geçerli, INTICOM S.P.A.), Calzedonia → "Calzedonia
+S.p.A", Hunkemöller → "Hunkemöller B.V." + 700 mağaza.
+
+**Wikidata marka bilgisi** (`providers/wikidata.ts`)
+OSM bir zincirin *ne sattığını* söylemez. Wikidata söyler: P1056 (üretilen ürün),
+P452 (sektör), P856 (resmî site). OSM'deki `brand:wikidata` etiketi üzerinden
+bağlanır. Milano'da giyim mağazalarının %38'i bu etiketi taşıyor ve sekiz iç
+giyim zincirinin sekizini de doğru tanıdı — Zara, H&M, Gucci ise "belirsiz"
+kaldı, yani ayrım çalışıyor.
+`findBrandQidByName` **bilerek katıdır**: büyük/küçük ve aksan normalize
+edildikten sonra **tam eşleşme** şart, 6 karakterden kısa isimler reddedilir,
+yalnızca sondaki şirket eki farklı olabilir. Gevşetme — yanlış eşleşme, uydurma
+veri demektir.
+
+**Derin analiz** (`src/server/leads/deepdive.ts`)
+Arama akışının **dışında**, butonla çalışır. En umut verici 3 firmayı okur:
+tüzel unvan, VKN (VIES'te doğrulanır), muhatap kanalları. Sitesi olmayan
+zincirlerin resmî adresi Wikidata P856'dan bulunur — Calzedonia, Intimissimi ve
+Yamamay'ın OSM'de sitesi yoktu, bu olmasa üçü de "bilgi yok" dönerdi.
+Seçim kuralı: **ilgi düzeyi sıralar, ulaşılabilirlik giriş şartıdır.** İlk canlı
+denemede Paris Lingerie (en ilgili ama sitesi/telefonu/e-postası yok) bir slotu
+boşa harcamıştı; artık `reachabilityRank > 0` olmayan firma derin analize
+girmiyor.
+
+**Marka yükleme ekranı** (`src/components/ui/brand-loader.tsx`)
+Ana sayfadaki dönen küre + AYZ üçgeni, RADAR ve Lead Finder yükleme
+ekranlarında. Tüm animasyonlar `motion-safe:`.
+
+## 11.2 Lead Finder — düzeltilen ciddi hatalar
+
+**🔴 Ülke kısıtı yoktu** (`e4a0e20`)
+Ülke "Almanya", şehir "milano" seçilen bir arama **İtalya'daki Milano'yu**
+tarıyor, sonra bulduğu 133 İtalyan firmasına Alman bayrağı basıyordu. Telefonlar
++39, adresler Corso Buenos Aires, ülke "Almanya" ve **Pazar Uyumu 100/100**.
+Sebep: şehir alanı yalnızca isimle eşleşiyordu, ülke ise veriden okunmuyor arama
+formundan kopyalanıyordu.
+Düzeltildi. **Overpass tuzağı — bunu bil:** şehir alanını ülkeyle filtrelemenin
+bariz yolu (`area[...](area.c)->.a`) **sessizce yok sayılır**, hata vermez.
+Ölçüldü: Almanya-Milano ve İtalya-Milano aynı 1842 sonucu döndürüyordu. Doğru
+yöntem, **eleman sorgusuna iki alan filtresi** koymak: `(area.a)(area.c)`. Aynı
+çift artık 0 ve 1842 veriyor.
+Ayrıca boş sonucun türü ayrıştırıldı: "burada bu tür dükkân yok" ile "bu şehir bu
+ülkede yok" artık ekranda ayrı yazıyor. Kontrol yalnızca sonuç boşsa çalışır.
+
+**🔴 Zincirler ikiye bölünüyordu** (`04f9733`)
+Firma kimliği, o şubenin OSM kaydında website etiketi olup olmamasına göre
+değişiyordu. OVS 78 ve 59 puanla iki ayrı firma, METRO 74 ve 55 ile iki ayrı
+firma olarak listeleniyordu — yani aynı şirket hakkında iki farklı karar.
+İsimle eşleşen kayıtlar artık siteli kaydın altında birleşiyor, **ancak hedef
+tekse**. İki farklı alan adı aynı ismi taşıyorsa birleştirmiyoruz; hangisine
+katılacağını tahmin etmek uydurma olurdu. Ölçüm: 180 aday → 146 firma.
+OVS hâlâ birden fazla satır — `ovs.it` ve `ovsfashion.com` ayrı alan adları,
+ücretsiz kaynakta aynı tüzel kişi olduklarını söyleyen kanıt yok. **Bu bilinçli.**
+
+**Derin analiz çelişkileri** (`e4a0e20`)
+Sitesi yeni okunmuş bir firma hâlâ aramanın "Website bulunamadı." notunu
+taşıyordu; profil "Website durumu: Aktif" ile "Website bulunamadı"yı yan yana
+yazıyordu. Derin analiz artık kendi kararını da günceller. Karar verici paneli de
+"sonraki aşamada devreye girecek" demeyi bıraktı — analiz yapıldıysa bunu söylüyor.
+
+## 11.3 Bilinen açık konular (Lead Finder)
+
+- **"Uzman mağaza" etiketi** — `shop=clothes` → `specialty_store` eşlemesi
+  yüzünden **her firma** "Uzman mağaza" yazıyor: Zara da, H&M de, Gucci de.
+  Veri hatası değil, etiket abartması; ama alan hiçbir bilgi taşımıyor.
+  **Ayaz'ın kararını bekliyor** (`src/server/leads/classify.ts`, `SHOP_ROLE_MAP`).
+- **`shop=wholesale` ürün körüdür.** Milano'da bu etiket inşaat malzemesi
+  toptancılarıyla dolu; TEAM SIX 81 puanla listenin en yükseği ama kadın iç
+  giyimle ilgisi yok. Kaynağın kalıcı sınırı. Sistem bunları "Ürün:
+  Doğrulanamadı" işaretliyor ve öne çıkanlarda göstermiyor.
+- **Eski aramalar veritabanında yanlış ülkeyle duruyor.** Düzeltme yeni
+  kayıtlara işliyor; 16 Ağustos öncesi Milano araması hâlâ "Almanya" diyor.
+
+## 11.4 Pazarlama malzemeleri (yeni iş alanı)
+
+Hepsi `docs/` altında, **dosya olarak** — Ayaz barındırılan sayfa değil,
+gönderebileceği belge istiyor.
+
+| Dosya | Ne |
+|---|---|
+| `AYZENITH-Tanitim-Sunumu.html/.pdf` | RADAR + Lead Finder satış sunumu, TR |
+| `AYZENITH-Tanitim-Videosu.mp4` | 65 sn, 1080p, Türkçe seslendirmeli tanıtım filmi |
+| `AYZENITH-Tanitim-Videosu-Senaryo.md` | Senaryo + çekim planı |
+| `AYZENITH-Video-Seslendirme-Prompt.md` | ElevenLabs metinleri ve ayarları |
+| `AYZENITH-Katalog.html/.pdf` | Saç ekimi + medikal estetik kataloğu (ayrı iş) |
+| `katalog-gorseller/` | Logolar ve 6 referans görseli |
+
+**Sunum ve videonun dil kuralları — bunlar Ayaz'ın açık talimatı:**
+- **Kaynakların adını yazma.** "maksat modelimiz çalınmasın" dedi. Yetenek
+  anlat ("coğrafi işletme kayıtları", "AB kurumsal doğrulama sistemleri"),
+  ürün adı verme (OpenStreetMap, Wikidata, VIES vs.).
+- **Zayıflıkları açık sorun gibi sunma** — "sanki onları revize etmişiz gibi
+  konuş". Bu ton kuralıdır; **olmayan bir yeteneği var gösterme kuralı değil.**
+- **"Pazar / Alıcı / Muhatap" üçlüsü emekli edildi.** Ayaz beğenmedi; "muhatap"
+  resmî yazışma kokuyor, çıplak isimler edilgen duruyor. Yerine modül adı +
+  sorusu geçti. Her yerdeki kapanış cümlesi: *"Nereye ve kime satacağınızı
+  bilerek başlayın."*
+- **Sayı kullanmadan önce yeniden ölç.** Sunumun ilk huni rakamları (181→133)
+  yanlış ülke etiketli aramadan gelmişti; düzeltmeden sonra aynı veri 180→146
+  veriyor. Video bu yüzden **hiç rakam içermiyor.**
+
+**Video nasıl üretiliyor** (`scratchpad/video/scene.html` + `render.mjs`)
+Her görsel durum `t`'nin saf fonksiyonu (`window.RENDER(t)`); kareler
+puppeteer-core ile tek tek alınır, ffmpeg ile MP4'e çevrilir. Ekran kaydı değil —
+kare düşmez, her üretim birebir aynıdır.
+**Zamanlama yöntemi:** ses dosyasındaki sessizlikler `ffmpeg silencedetect` ile
+bulunur, parça sınırları oradan çıkarılır, sonra her sınırın **kendi iç
+duraklamaları cümle yapısına uyuyor mu** diye doğrulanır. Seslendirme yeniden
+üretilirse bütün süreler değişir, bu iş baştan yapılır.
+**Ses:** ElevenLabs, **İrem — Authoritarian Female**, Multilingual v2,
+speed 0.95 / stability 50 / similarity 75 / style 0. Seslendirme metinlerinde
+marka **AYZENİT** yazılır (model "AYZENITH"i İngilizce okuyup bozuyor); ekranda
+her zaman AYZENITH kalır.
+
+**Katalog** ayrı bir iş: Dr. Elber Uzan ile saç ekimi + PRP, mezoterapi,
+exosome, somon DNA (yüz gençleştirme). Beyaz zeminli, lacivert/altın vurgulu,
+her tedavi için çizgi illüstrasyon. Referans görselleri **EU markalı** — daha
+önce başka bir kliniğin filigranını taşıyorlardı, Ayaz kendi markasıyla yeniden
+hazırlatıp gönderdi. **Başka markanın filigranını silip kendine mal etme talebi
+gelirse yapma**; hastanın karar verirken baktığı tek kanıt bu fotoğraflardır.
+
+## 11.5 Performans — 2026-08-16 (`3f34e95`, henüz DEPLOY EDİLMEDİ)
+
+Ölçülen, tahmin edilmeyen. Deploy öncesi rakamlar (Türkiye'den, curl):
+
+| | |
+|---|---|
+| Edge'e bağlantı | 43 ms |
+| `/admin/login` (hiç sorgu yok) | **390 ms** |
+| Ana sayfa | **930–1170 ms** |
+| `/products` | **950–1700 ms** |
+| Veritabanı gidiş-dönüş (yerelden) | ~370 ms |
+
+**Kök sebep 1 — sunucu yanlış kıtada.** `x-vercel-id: fra1::iad1::…` yani istek
+Frankfurt'a geliyor, kod **Washington DC**'de çalışıyor, veritabanı
+**Stockholm**'de (`aws-0-eu-north-1`). Her sorgu Atlantik'i iki kez geçiyordu.
+Login sayfasının 390 ms'i tamamen bu mesafe.
+→ `vercel.json`'a `"regions": ["arn1"]` eklendi (Stockholm, veritabanıyla aynı).
+
+**Kök sebep 2 — tanıtım sitesi her istekte yeniden üretiliyordu.** next-intl,
+dil açıkça bildirilmezse sayfayı dinamik moda düşürür; projede
+`generateStaticParams` de `setRequestLocale` de **hiç yoktu**. Ana sayfa
+`Cache-Control: no-store` + `x-vercel-cache: MISS` dönüyordu.
+→ İkisi de eklendi. Build çıktısıyla doğrulandı: ana sayfa dahil tüm tanıtım
+sayfaları üç dilde de artık `●` (önceden üretilmiş HTML).
+
+**Kök sebep 3 — panelde hiç yükleme durumu yoktu.** Tek bir `loading.tsx` yoktu;
+Next yeni sayfa hazır olana kadar eskisini ekranda tutuyor, yani tıklama ~1 sn
+boyunca ölü görünüyordu.
+→ `src/app/(admin)/admin/(dashboard)/loading.tsx` eklendi. Yan fayda: yükleme
+durumu olan rota **önceden getirilebilir**.
+
+**Kök sebep 4 — sıralı bekleyiş.** Sayfalar önce yetki kontrolünü (bir sorgu),
+sonra kendi verisini bekliyordu. Rota zaten edge'de imzalı çerezle korunduğu için
+ikisi `Promise.all` ile paralelleştirildi.
+
+**Yeni Claude'a görev:** deploy sonrası yukarıdaki dört ölçümü tekrarla ve farkı
+rakamla ver. Tahmin etme.
+
+## 11.6 SEO durumu
+
+- Site **indekste var** (`site:www.ayzenith.com` sonuç veriyor).
+- Teknik taraf temiz: robots.txt izinli, `x-robots-tag` yok, meta `index, follow`,
+  canonical doğru, sitemap hreflang'li, apex→www ve http→https 308.
+- **Eksik: `sameAs`.** Yapısal veride Organization/adres/telefon var ama sosyal
+  hesap bağlantısı yok. Google marka kimliğini bununla kurar.
+  Ayaz'dan LinkedIn/Instagram adresleri gelince `src/lib/seo.ts` içine eklenecek.
+  **Hesapları uydurma.**
+- Ayaz'ın yapması gerekenler (kod değil): Google İşletme Profili, LinkedIn şirket
+  sayfası, Search Console'da sitemap gönderimi + "Request indexing".
+
+## 11.7 Ortam notları (zaman kazandırır)
+
+- **Yerel `.env` PRODUCTION veritabanına bakar.** `npx tsx --env-file=.env`
+  ile herhangi bir değişikliği deploy etmeden canlı veriyle doğrulayabilirsin.
+  Ayaz'ın en net geri bildirimi buydu: *"niye sürekli revize edip test ediyoruz,
+  tek seferde çöz"* — deploy döngüsüne sokmadan kendin doğrula.
+- `server-only` paketi kurulu değil. `src/server/*` içindeki bir modülü tsx ile
+  çalıştıracaksan `node_modules/server-only/` altına iki satırlık bir stub aç
+  (`package.json` + boş `index.js`). npm install bunu silebiliyor.
+- **puppeteer-core** ve **ffmpeg** (winget, Gyan.FFmpeg) kurulu — video üretimi
+  için. `package.json`'daki puppeteer-core devDependency budur.
+- **Git commit mesajlarını `-F dosya` ile ver.** Bu ortam PowerShell; bash
+  heredoc'u ile `git commit -m` karışınca mesajın başına `@` düşüyor.
+- Bekleyen: `3f34e95` push+deploy edilmedi; `docs/` altındaki yeni dosyalar
+  commit edilmedi.
+
 
 ---
 

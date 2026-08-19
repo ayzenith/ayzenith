@@ -98,17 +98,20 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
-  webpack: (config, { isServer }) => {
-    if (isServer) {
-      if (typeof config.externals === "object" && !Array.isArray(config.externals)) {
-        config.externals = { ...config.externals, "@sparticuz/chromium": "@sparticuz/chromium" };
-      } else if (Array.isArray(config.externals)) {
-        config.externals.push("@sparticuz/chromium");
-      } else {
-        config.externals = ["@sparticuz/chromium"];
-      }
-    }
-    return config;
+  // @sparticuz/chromium and puppeteer-core read their own binaries from disk
+  // at runtime (dlopen / spawn) — bundling them breaks that, so they must stay
+  // as real node_modules requires. serverExternalPackages does exactly that.
+  serverExternalPackages: ["@sparticuz/chromium", "puppeteer-core"],
+  // The Vercel build's file tracer only bundles files it can see imported/required
+  // in code. @sparticuz/chromium's brotli-compressed Chromium binary is loaded via
+  // a dynamic fs path it builds at runtime, so the tracer misses it entirely unless
+  // told explicitly — without this, PDF routes crash in production with
+  // "input directory .../chromium/bin does not exist" even though the package
+  // is installed correctly.
+  outputFileTracingIncludes: {
+    "/os/documents/[id]/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/os/receipts/[kind]/[id]/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
+    "/os/report-pdf/[kind]/pdf": ["./node_modules/@sparticuz/chromium/bin/**"],
   },
   async headers() {
     return [

@@ -1,17 +1,20 @@
 import "server-only";
 
 /**
- * PDF rendering strategy:
+ * Headless-Chromium PDF rendering.
  *
- * - Development: local Puppeteer + Chrome/Edge installed on system
- * - Production (Vercel): PDFShift API (no Chromium binary needed)
- * - Fallback: retry with alternative method if primary fails
+ * On Vercel (serverless, no system Chrome) we run puppeteer-core against the
+ * brotli-bundled binary from @sparticuz/chromium. Locally, puppeteer-core
+ * drives whatever desktop Chrome/Edge is already installed — no ~300MB
+ * Chromium download added to the repo just to develop this feature.
  *
- * All render the same /doc/[id]/print page (see src/components/trade-docs/document-template.tsx)
+ * Either way it is the SAME puppeteer-core API rendering the SAME
+ * /doc/[id]/print page (see src/components/trade-docs/document-template.tsx)
+ * — there is exactly one document template, this module only decides which
+ * binary drives it.
  */
 
 import type { Browser } from "puppeteer-core";
-import PDFShift from "pdfshift";
 
 async function resolveLocalExecutable(): Promise<string> {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
@@ -78,36 +81,6 @@ export type PdfOptions = {
 
 /** Render one URL (already authorized — see document-token.ts) to a PDF buffer. */
 export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buffer> {
-  const isDev = process.env.NODE_ENV === "development";
-  const usePdfShift = !isDev && process.env.PDFSHIFT_API_KEY;
-
-  if (usePdfShift) {
-    return renderWithPdfShift(url, opts);
-  }
-
-  return renderWithPuppeteer(url, opts);
-}
-
-async function renderWithPdfShift(url: string, opts: PdfOptions): Promise<Buffer> {
-  try {
-    console.log(`[PDF] Using PDFShift for ${url}`);
-    const client = new PDFShift(process.env.PDFSHIFT_API_KEY!);
-
-    const response = await client.convert({
-      source: url,
-      landscape: opts.orientation === "landscape",
-    });
-
-    console.log(`[PDF] PDFShift generated PDF, size: ${response.length} bytes`);
-    return response;
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error(`[PDF] PDFShift failed: ${msg}`);
-    throw new Error(`PDF generation with PDFShift failed: ${msg}`);
-  }
-}
-
-async function renderWithPuppeteer(url: string, opts: PdfOptions): Promise<Buffer> {
   let browser: Browser | null = null;
   try {
     console.log(`[PDF] Starting Puppeteer render for ${url}`);

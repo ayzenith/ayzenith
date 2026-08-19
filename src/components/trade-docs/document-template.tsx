@@ -63,7 +63,6 @@ export function DocumentTemplate({ data }: { data: TradeDocumentDTO }) {
                 src={company.companyLogoUrl}
                 alt={company.companyTradingName ?? "AYZENITH"}
                 className="mb-2 h-9 max-w-[180px] object-contain object-left"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             ) : null}
             {!company.companyLogoUrl && (

@@ -82,7 +82,6 @@ export function ReceiptTemplate({ data }: { data: ReceiptData }) {
                 src={data.signatory.signatureUrl}
                 alt={data.signatory.name}
                 className="ml-auto mb-1 h-12 object-contain object-right"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
               />
             ) : null}
             {!data.signatory.signatureUrl && (

@@ -165,17 +165,27 @@ async function renderPage(browser: Browser, url: string, opts: PdfOptions): Prom
       void req.continue();
     });
 
+    let response;
     try {
       console.log(`[PDF] Loading URL: ${url}`);
       // networkidle0 waits for the network to go quiet for half a second — time
       // spent idling rather than rendering. The printed sheet only depends on
       // the document, its fonts and its images, so wait for exactly those below.
-      await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
+      response = await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60_000 });
       console.log(`[PDF] URL loaded successfully`);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[PDF] Failed to load ${url}: ${msg}`);
       throw new Error(`Failed to load ${url}: ${msg}`);
+    }
+
+    // A print page that errored still renders HTML — Next.js's error page — and
+    // Chromium prints it happily. That ships a plausible-looking PDF containing
+    // an error screen instead of the invoice. Treat any error status as fatal.
+    const status = response?.status() ?? 0;
+    if (status >= 400) {
+      console.error(`[PDF] Print page returned HTTP ${status}`);
+      throw new Error(`Print page returned HTTP ${status} — refusing to print an error page.`);
     }
 
     // Never print a page we did not ask for. If something redirected us — a

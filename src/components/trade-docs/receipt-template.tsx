@@ -1,5 +1,4 @@
 import type { ReceiptData } from "@/server/os/receipts";
-import { COMPANY_TAGLINE } from "@/config/trade-documents";
 import { formatMoney, formatDate } from "@/config/os";
 
 /**
@@ -29,7 +28,6 @@ export function ReceiptTemplate({ data }: { data: ReceiptData }) {
           {!company.companyLogoUrl && (
             <p className="font-serif text-2xl font-medium tracking-tight text-navy-950">{company.companyTradingName}</p>
           )}
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">{COMPANY_TAGLINE}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="font-serif text-[1.5rem] font-medium leading-none tracking-tight text-navy-950">{data.title}</p>

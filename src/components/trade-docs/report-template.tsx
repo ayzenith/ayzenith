@@ -1,5 +1,4 @@
 import type { ReportData } from "@/server/os/report-pdf";
-import { COMPANY_TAGLINE } from "@/config/trade-documents";
 import { formatDate } from "@/config/os";
 
 /** A plain, logo-headed table dump of a list/report screen — Finans, Ürünler, Stok. */
@@ -21,7 +20,6 @@ export function ReportTemplate({ data }: { data: ReportData }) {
           {!company.companyLogoUrl && (
             <p className="font-serif text-2xl font-medium tracking-tight text-navy-950">{company.companyTradingName}</p>
           )}
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">{COMPANY_TAGLINE}</p>
         </div>
         <div className="shrink-0 text-right">
           <p className="font-serif text-[1.4rem] font-medium leading-none tracking-tight text-navy-950">{data.title}</p>

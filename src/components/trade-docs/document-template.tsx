@@ -7,7 +7,6 @@ import {
   formatDocMoney,
   formatDocDate,
   formatDocNumber,
-  COMPANY_TAGLINE,
 } from "@/config/trade-documents";
 
 /**
@@ -70,7 +69,6 @@ export function DocumentTemplate({ data }: { data: TradeDocumentDTO }) {
             {!company.companyLogoUrl && (
               <p className="font-serif text-2xl font-medium tracking-tight text-navy-950">{company.companyTradingName}</p>
             )}
-            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gold-700">{COMPANY_TAGLINE}</p>
           </div>
           <div className="shrink-0 text-right">
             <p className="font-serif text-[1.7rem] font-medium leading-none tracking-tight text-navy-950">{docTitle(lang, data.docType)}</p>

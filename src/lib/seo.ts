@@ -52,9 +52,22 @@ export async function buildMetadata({
       ? `${title} · ${siteConfig.name}`
       : `${siteConfig.name} — ${siteConfig.tagline}`);
 
-  const ogImages = image
-    ? [{ url: image.startsWith("http") ? image : `${siteConfig.url}${image}` }]
-    : undefined;
+  // Every page needs a share image. Without one, a link pasted into WhatsApp
+  // or LinkedIn renders as bare text — and the twitter card below promises
+  // "summary_large_image", so an absent image is a promise the page breaks.
+  // src/app/opengraph-image.tsx renders the branded 1200x630 card; it was
+  // already built and served, just never referenced, because this only filled
+  // in when a caller passed a page-specific image and none ever did.
+  const ogImages = [
+    image
+      ? { url: image.startsWith("http") ? image : `${siteConfig.url}${image}` }
+      : {
+          url: `${siteConfig.url}/opengraph-image`,
+          width: 1200,
+          height: 630,
+          alt: siteConfig.name,
+        },
+  ];
 
   return {
     title: resolvedTitle,

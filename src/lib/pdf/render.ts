@@ -58,7 +58,12 @@ async function launchBrowser(): Promise<Browser> {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[PDF] Serverless Chromium failed: ${msg}`);
-      throw err;
+      console.error(`[PDF] NODE_ENV: ${process.env.NODE_ENV}`);
+      console.error(`[PDF] VERCEL: ${process.env.VERCEL}`);
+      console.error(`[PDF] AWS_LAMBDA_FUNCTION_NAME: ${process.env.AWS_LAMBDA_FUNCTION_NAME}`);
+      throw new Error(
+        `PDF rendering requires Chromium binary. Install @sparticuz/chromium or configure a different PDF service. Error: ${msg}`
+      );
     }
   }
 

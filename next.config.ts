@@ -100,7 +100,13 @@ const nextConfig: NextConfig = {
   },
   webpack: (config, { isServer }) => {
     if (isServer) {
-      config.externals.push("@sparticuz/chromium");
+      if (typeof config.externals === "object" && !Array.isArray(config.externals)) {
+        config.externals = { ...config.externals, "@sparticuz/chromium": "@sparticuz/chromium" };
+      } else if (Array.isArray(config.externals)) {
+        config.externals.push("@sparticuz/chromium");
+      } else {
+        config.externals = ["@sparticuz/chromium"];
+      }
     }
     return config;
   },

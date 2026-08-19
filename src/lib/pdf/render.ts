@@ -46,12 +46,20 @@ async function launchBrowser(): Promise<Browser> {
   const isServerless = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
   if (isServerless) {
-    const chromium = (await import("@sparticuz/chromium")).default;
-    return puppeteer.launch({
-      args: chromium.args,
-      executablePath: await chromium.executablePath(),
-      headless: true,
-    });
+    try {
+      const chromium = (await import("@sparticuz/chromium")).default;
+      const execPath = await chromium.executablePath();
+      console.log(`[PDF] Serverless Chromium executablePath: ${execPath}`);
+      return puppeteer.launch({
+        args: chromium.args,
+        executablePath: execPath,
+        headless: true,
+      });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error(`[PDF] Serverless Chromium failed: ${msg}`);
+      throw err;
+    }
   }
 
   return puppeteer.launch({

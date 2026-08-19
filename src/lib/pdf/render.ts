@@ -15,6 +15,7 @@ import "server-only";
  */
 
 import type { Browser } from "puppeteer-core";
+import { siteConfig } from "@/config/site";
 
 async function resolveLocalExecutable(): Promise<string> {
   if (process.env.PUPPETEER_EXECUTABLE_PATH) return process.env.PUPPETEER_EXECUTABLE_PATH;
@@ -61,9 +62,7 @@ async function launchBrowser(): Promise<Browser> {
       console.error(`[PDF] NODE_ENV: ${process.env.NODE_ENV}`);
       console.error(`[PDF] VERCEL: ${process.env.VERCEL}`);
       console.error(`[PDF] AWS_LAMBDA_FUNCTION_NAME: ${process.env.AWS_LAMBDA_FUNCTION_NAME}`);
-      throw new Error(
-        `PDF rendering requires Chromium binary. Install @sparticuz/chromium or configure a different PDF service. Error: ${msg}`
-      );
+      throw new Error(`Serverless Chromium could not start: ${msg}`);
     }
   }
 
@@ -98,6 +97,18 @@ export async function renderUrlToPdf(url: string, opts: PdfOptions): Promise<Buf
       const msg = err instanceof Error ? err.message : String(err);
       console.error(`[PDF] Failed to load ${url}: ${msg}`);
       throw new Error(`Failed to load ${url}: ${msg}`);
+    }
+
+    // Never print a page we did not ask for. If something redirected us — a
+    // Vercel Deployment Protection SSO screen, or the app's own login page —
+    // the render "succeeds" and the user downloads a PDF of a login form. Fail
+    // loudly instead, so the cause is visible rather than shipped as a document.
+    const landed = page.url();
+    if (!landed.startsWith(new URL(url).origin) || /vercel\.com\/(sso|login)/.test(landed)) {
+      console.error(`[PDF] Redirected away from the print page: ${landed}`);
+      throw new Error(
+        `Print page redirected to ${landed} — the render target is not publicly reachable.`,
+      );
     }
 
     try {
@@ -147,10 +158,17 @@ function escapeHtml(s: string): string {
 }
 
 /** Base URL this server can reach itself at — used to build the print URL
- *  Puppeteer navigates to. */
+ *  Puppeteer navigates to.
+ *
+ *  On Vercel this MUST be the public production domain, never VERCEL_URL.
+ *  VERCEL_URL is the per-deployment hostname (ayzenith-<hash>.vercel.app), which
+ *  Deployment Protection guards with a Vercel SSO login page. Headless Chromium
+ *  has no Vercel session, so it would receive that login page and print IT into
+ *  the PDF — the document downloads fine but contains a Vercel login screen.
+ *  siteConfig.url resolves to NEXT_PUBLIC_SITE_URL, defaulting to the real
+ *  public domain, which serves the print page normally. */
 export function selfBaseUrl(): string {
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  if (process.env.NEXT_PUBLIC_SITE_URL && process.env.VERCEL) return process.env.NEXT_PUBLIC_SITE_URL;
+  if (process.env.VERCEL) return siteConfig.url;
   const port = process.env.PORT ?? "3000";
   return `http://127.0.0.1:${port}`;
 }

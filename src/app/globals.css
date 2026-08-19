@@ -340,3 +340,64 @@
     color: transparent;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Business OS: phone-readable financial tables.
+
+   Every list in /os is a wide table (min-width 40rem) that scrolls sideways
+   inside its own container. That is correct on a desk and unusable in the
+   field: on a 375px phone the reader drags horizontally to see whether a
+   figure is overdue. Tables marked `.os-stack` (see <Table stacked>) drop the
+   header row on small screens and lay each row out as a block, with every
+   value labelled by its column — the same data, read top to bottom.
+
+   Kept in CSS rather than utility classes because it has to restyle table
+   internals (thead/tr/td) from a single class on the <table>, without
+   threading a prop through every cell.
+   --------------------------------------------------------------------------- */
+.os-cell-label {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  table.os-stack {
+    display: block;
+    min-width: 0;
+  }
+  table.os-stack thead {
+    display: none;
+  }
+  table.os-stack tbody,
+  table.os-stack tr {
+    display: block;
+  }
+  table.os-stack tr {
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+  table.os-stack tr:last-child {
+    border-bottom: 0;
+  }
+  table.os-stack td {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border: 0;
+    padding: 0.2rem 1rem;
+    text-align: right;
+  }
+  /* A cell with no label is a full-width block (actions, wide descriptions). */
+  table.os-stack td:not(:has(.os-cell-label)) {
+    display: block;
+    text-align: left;
+  }
+  table.os-stack .os-cell-label {
+    display: inline;
+    flex: none;
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: left;
+  }
+}

@@ -70,7 +70,7 @@ export default async function Payments({ searchParams }: { searchParams: SP }) {
       <Card padded={false}>
         {d.rows.length ? (
           <>
-            <Table>
+            <Table stacked>
               <thead>
                 <tr>
                   <Th>Firma / belge</Th>
@@ -83,10 +83,10 @@ export default async function Payments({ searchParams }: { searchParams: SP }) {
               <tbody>
                 {d.rows.map((x) => (
                   <Tr key={x.id} className={x.overdue ? "bg-error/5" : ""}>
-                    <Td>{x.partyName ?? x.docCode ?? "—"}</Td>
-                    <Td>{x.dueDate.toLocaleDateString("tr-TR")}</Td>
-                    <Td align="right"><Money value={x.open} currency={x.currency} /></Td>
-                    <Td><StatusBadge status={x.status} /></Td>
+                    <Td className="max-md:font-medium">{x.partyName ?? x.docCode ?? "—"}</Td>
+                    <Td label="Vade">{x.dueDate.toLocaleDateString("tr-TR")}</Td>
+                    <Td label="Açık tutar" align="right"><Money value={x.open} currency={x.currency} /></Td>
+                    <Td label="Durum"><StatusBadge status={x.status} /></Td>
                     <Td align="right">
                       {x.paidAmount > 0 ? (
                         <a className={`${btn.ghost} mb-1 ml-auto w-fit`} href={`/os/receipts/payment/${x.id}/pdf`} target="_blank" rel="noreferrer">

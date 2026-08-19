@@ -140,12 +140,33 @@ export function EmptyState({
 
 export type Align = "left" | "right" | "center";
 
-export function Table({ children, className }: { children: React.ReactNode; className?: string }) {
+export function Table({
+  children,
+  className,
+  stacked,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  /**
+   * On phones, lay each row out as a stacked block instead of a 40rem-wide
+   * table the reader has to drag sideways through. Opt-in, because it only
+   * reads well once the row's <Td>s carry a `label` — without one a stacked
+   * cell is a number with nothing saying what it is.
+   */
+  stacked?: boolean;
+}) {
   // Wide financial tables scroll inside their own container; the page body must
   // never scroll sideways.
   return (
     <div className={cn("overflow-x-auto", className)}>
-      <table className="w-full min-w-[40rem] border-collapse text-small">{children}</table>
+      <table
+        className={cn(
+          "w-full min-w-[40rem] border-collapse text-small",
+          stacked && "os-stack",
+        )}
+      >
+        {children}
+      </table>
     </div>
   );
 }
@@ -181,12 +202,16 @@ export function Td({
   className,
   numeric,
   colSpan,
+  label,
 }: {
   children?: React.ReactNode;
   align?: Align;
   className?: string;
   numeric?: boolean;
   colSpan?: number;
+  /** Column name, shown beside the value only when the table is stacked on a
+   *  phone. Invisible on desktop, where the real header row carries it. */
+  label?: string;
 }) {
   return (
     <td
@@ -199,6 +224,7 @@ export function Td({
         className,
       )}
     >
+      {label ? <span className="os-cell-label">{label}</span> : null}
       {children}
     </td>
   );

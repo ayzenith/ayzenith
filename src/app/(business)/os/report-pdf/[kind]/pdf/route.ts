@@ -21,9 +21,18 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
   const loader = LOADERS[kind as keyof typeof LOADERS];
   if (!loader) return new NextResponse("Not found", { status: 404 });
 
-  const data = await loader();
+  let data;
+  try {
+    data = await loader();
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Report data loading failed (${kind}): ${msg}`);
+    return new NextResponse(`Report data loading failed: ${msg}`, { status: 500 });
+  }
+
   const token = await signResourceToken(`report:${kind}`);
   const url = `${selfBaseUrl()}/doc/report/${kind}/print?token=${token}`;
+  console.log(`[PDF] Generated URL for ${kind}: ${url}`);
 
   let pdf: Buffer;
   try {
@@ -33,8 +42,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
       pageOfLabel: "Sayfa",
     });
   } catch (err) {
-    console.error("Report PDF generation failed:", err);
-    return new NextResponse("PDF generation failed", { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Report PDF generation failed for ${kind}: ${msg}`);
+    return new NextResponse(`PDF generation failed: ${msg}`, { status: 500 });
   }
 
   await logActivity({
@@ -45,10 +55,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
     summary: `Rapor PDF indirildi (${data.title})`,
   });
 
+  const safeTitle = data.title
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^\w\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .toLowerCase();
+
   return new NextResponse(new Uint8Array(pdf), {
     headers: {
       "Content-Type": "application/pdf",
-      "Content-Disposition": `attachment; filename="AYZENITH-${data.title.replace(/\s+/g, "-")}.pdf"`,
+      "Content-Disposition": `attachment; filename="AYZENITH-${safeTitle}.pdf"`,
       "Cache-Control": "no-store",
     },
   });

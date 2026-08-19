@@ -25,6 +25,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
 
   const token = await signDocumentToken(id);
   const url = `${selfBaseUrl()}/doc/${id}/print?token=${token}`;
+  console.log(`[PDF] Generated URL for document ${id}: ${url}`);
 
   let pdf: Buffer;
   try {
@@ -34,8 +35,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ id: str
       pageOfLabel: t(doc.language, "page"),
     });
   } catch (err) {
-    console.error("PDF generation failed:", err);
-    return new NextResponse("PDF generation failed", { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Document PDF generation failed for ${id}: ${msg}`);
+    return new NextResponse(`PDF generation failed: ${msg}`, { status: 500 });
   }
 
   await logActivity({

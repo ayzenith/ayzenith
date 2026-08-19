@@ -24,7 +24,6 @@ export function ReceiptTemplate({ data }: { data: ReceiptData }) {
               src={company.companyLogoUrl}
               alt={company.companyTradingName ?? "AYZENITH"}
               className="mb-2 h-11 max-w-[190px] object-contain object-left"
-              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
             />
           ) : null}
           {!company.companyLogoUrl && (

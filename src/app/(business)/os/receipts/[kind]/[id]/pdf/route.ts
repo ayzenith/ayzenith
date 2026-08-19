@@ -24,11 +24,19 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
   const loader = LOADERS[kind as keyof typeof LOADERS];
   if (!loader) return new NextResponse("Not found", { status: 404 });
 
-  const data = await loader(id);
+  let data;
+  try {
+    data = await loader(id);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Receipt data loading failed (${kind}/${id}): ${msg}`);
+    return new NextResponse(`Receipt data loading failed: ${msg}`, { status: 500 });
+  }
   if (!data) return new NextResponse("Not found", { status: 404 });
 
   const token = await signResourceToken(`${kind}:${id}`);
   const url = `${selfBaseUrl()}/doc/receipt/${kind}/${id}/print?token=${token}`;
+  console.log(`[PDF] Generated URL for ${kind} receipt ${id}: ${url}`);
 
   let pdf: Buffer;
   try {
@@ -38,8 +46,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ kind: s
       pageOfLabel: "Sayfa",
     });
   } catch (err) {
-    console.error("Receipt PDF generation failed:", err);
-    return new NextResponse("PDF generation failed", { status: 500 });
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[PDF] Receipt PDF generation failed (${kind}/${id}): ${msg}`);
+    return new NextResponse(`PDF generation failed: ${msg}`, { status: 500 });
   }
 
   await logActivity({

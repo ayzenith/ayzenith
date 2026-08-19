@@ -98,6 +98,12 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "framer-motion"],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.externals.push("@sparticuz/chromium");
+    }
+    return config;
+  },
   async headers() {
     return [
       { source: "/:path*", headers: securityHeaders },

@@ -9,7 +9,11 @@ import { PageHero } from "@/components/ui/page-hero";
 import { Reveal } from "@/components/ui/reveal";
 import { Media } from "@/components/ui/media";
 import { CTASection } from "@/components/sections/cta-section";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildMetadata,
+  breadcrumbStructuredData,
+  serviceCatalogStructuredData,
+} from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -65,11 +69,41 @@ export default async function ServicesPage({
   params: Promise<{ locale: string }>;
 }) {
   // Declaring the locale is what keeps this page statically rendered.
-  setRequestLocale((await params).locale);
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("services");
+
+  // The page lists eleven distinct services in prose, which a crawler cannot
+  // reliably enumerate. Stating them as an ItemList of Service entities makes
+  // each one addressable in its own right. Built from the same `groups` table
+  // the page renders from, so the two can never disagree.
+  const catalogue = serviceCatalogStructuredData({
+    locale,
+    path: "/services",
+    name: t("groups.title"),
+    description: t("groups.intro"),
+    services: groups.flatMap((group) =>
+      group.services.map((service) => ({
+        name: t(`groups.${group.key}.services.${service}.title`),
+        description: t(`groups.${group.key}.services.${service}.description`),
+      })),
+    ),
+  });
+
+  const breadcrumbs = breadcrumbStructuredData(locale, [
+    { name: t("breadcrumb.home"), path: "/" },
+    { name: t("breadcrumb.self"), path: "/services" },
+  ]);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // Developer-authored payload built from the page's own translations.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([catalogue, breadcrumbs]),
+        }}
+      />
       <PageHero
         eyebrow={t("hero.eyebrow")}
         title={t("hero.title")}

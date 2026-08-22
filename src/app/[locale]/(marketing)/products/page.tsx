@@ -29,9 +29,11 @@ import { buildMetadata } from "@/lib/seo";
  * secondary so the brand never reads as a discount reseller).
  */
 
-// Product data is DB-backed and editable from the CMS — always render fresh so
-// published changes appear on the site immediately.
-export const revalidate = 0;
+// Product data is DB-backed and editable from the CMS. It is NOT opted out of
+// caching for that: `revalidate = 0` made every visitor wait on a fresh render,
+// and freshness is handled at the write instead — saving a product in the CMS
+// revalidates this path (see admin/products/actions.ts), so a published change
+// still appears immediately.
 
 export async function generateMetadata({
   params,
@@ -66,7 +68,16 @@ const engagements: ReadonlyArray<{ key: string; icon: LucideIcon }> = [
   { key: "marketplace", icon: ShoppingBag },
 ];
 
-export default async function ProductsPage() {
+export default async function ProductsPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  // Declaring the locale is what keeps this page statically rendered. This body
+  // was the last one on the site still missing it: the route reported as SSG in
+  // the build table but wrote no HTML, because getTranslations below fell back
+  // to reading request headers and bailed the render out to dynamic.
+  setRequestLocale((await params).locale);
   const t = await getTranslations("products");
   const products = await getActiveProducts();
 

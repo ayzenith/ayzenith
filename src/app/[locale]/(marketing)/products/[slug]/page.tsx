@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getLocale, getTranslations } from "next-intl/server";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Check, ChevronRight } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { CTASection } from "@/components/sections/cta-section";
 import { AvailableOn } from "@/components/products/available-on";
 import { ProductGallery, type GalleryImage } from "@/components/products/product-gallery";
 import { ProductGrid } from "@/components/products/product-grid";
-import { getProductBySlug, getRelatedProducts } from "@/server/products";
+import { getProductBySlug, getRelatedProducts, getActiveProductSlugs } from "@/server/products";
 import { pick, type Availability } from "@/config/products";
 import { siteConfig } from "@/config/site";
 import { buildMetadata, productStructuredData } from "@/lib/seo";
@@ -25,8 +25,18 @@ import { cn } from "@/lib/utils";
  * schema.org/Product structured data.
  */
 
-// DB-backed, CMS-editable — always render fresh (no build-time snapshot).
-export const revalidate = 0;
+/**
+ * DB-backed and CMS-editable, but no longer opted out of caching. `revalidate =
+ * 0` meant every visitor paid for a fresh render — measured elsewhere on this
+ * site at roughly 600ms to first byte against ~250ms once a page is served from
+ * the edge. Freshness is handled where it belongs instead: saving a product in
+ * the CMS revalidates these paths (see admin/products/actions.ts), so an edit
+ * still lands immediately without taxing every request in between.
+ */
+export async function generateStaticParams() {
+  const slugs = await getActiveProductSlugs();
+  return slugs.map((slug) => ({ slug }));
+}
 
 type Params = { locale: string; slug: string };
 
@@ -49,11 +59,17 @@ export async function generateMetadata({
 }: {
   params: Promise<Params>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  // Metadata is generated BEFORE the component body runs, so the locale has to
+  // be declared here as well. Without it next-intl falls back to reading request
+  // headers, which opts the whole route out of static rendering.
+  const { locale: requested, slug } = await params;
+  setRequestLocale(requested);
+  // The root layout 404s any locale outside the union before this route renders.
+  const locale = requested as Locale;
+
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const locale = (await getLocale()) as Locale;
   return buildMetadata({
     title: product.name,
     description: pick(product.shortDescription, locale),
@@ -67,11 +83,15 @@ export default async function ProductDetailPage({
 }: {
   params: Promise<Params>;
 }) {
-  const { slug } = await params;
+  // Declaring the locale is what keeps this page statically rendered.
+  const { locale: requested, slug } = await params;
+  setRequestLocale(requested);
+  // The root layout 404s any locale outside the union before this route renders.
+  const locale = requested as Locale;
+
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const locale = (await getLocale()) as Locale;
   const t = await getTranslations("products");
   const td = await getTranslations("products.detail");
 

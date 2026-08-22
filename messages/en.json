@@ -277,8 +277,8 @@
   },
   "services": {
     "meta": {
-      "title": "Services & Capabilities",
-      "description": "Global sourcing, distribution, private label development and manufacturing partnerships — one accountable partner from factory floor to final market."
+      "title": "Global Sourcing, Distribution & Private Label",
+      "description": "Technology and electronics sourcing, wholesale distribution, OEM private label and textile manufacturing partnerships — one accountable partner."
     },
     "hero": {
       "eyebrow": "What we do",
@@ -386,6 +386,10 @@
           }
         }
       }
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "self": "Services"
     }
   },
   "export": {
@@ -562,6 +566,10 @@
       "subtitle": "Tell us about your product, your current markets and your international growth goals. We'll assess the right market and commercial structure together.",
       "primary": "Start a Partnership",
       "secondary": "Contact AYZENITH"
+    },
+    "breadcrumb": {
+      "home": "Home",
+      "self": "Export Management"
     }
   },
   "products": {

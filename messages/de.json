@@ -277,8 +277,8 @@
   },
   "services": {
     "meta": {
-      "title": "Leistungen & Kompetenzen",
-      "description": "Globale Beschaffung, Distribution, Eigenmarken-Entwicklung und Fertigungspartnerschaften — ein verantwortlicher Partner von der Fertigung bis zum Markt."
+      "title": "Globale Beschaffung, Distribution, Eigenmarken",
+      "description": "Beschaffung von Technologie und Elektronik, Großhandel, OEM-Eigenmarken und Textilfertigung — ein verantwortlicher Partner vom Werk zum Markt."
     },
     "hero": {
       "eyebrow": "Was wir tun",
@@ -386,11 +386,15 @@
           }
         }
       }
+    },
+    "breadcrumb": {
+      "home": "Startseite",
+      "self": "Leistungen"
     }
   },
   "export": {
     "meta": {
-      "title": "Exportmanagement und internationaler Markteintritt",
+      "title": "Exportmanagement und Markteintritt",
       "description": "Wir steuern internationalen Markteintritt, Händler- und Abnehmeraufbau sowie die Exportabwicklung für Hersteller und Marken — unter einer Struktur."
     },
     "hero": {
@@ -562,6 +566,10 @@
       "subtitle": "Erzählen Sie uns von Ihrem Produkt, Ihren heutigen Märkten und Ihren internationalen Wachstumszielen. Wir bewerten gemeinsam den passenden Markt und die passende Handelsstruktur.",
       "primary": "Partnerschaft starten",
       "secondary": "AYZENITH kontaktieren"
+    },
+    "breadcrumb": {
+      "home": "Startseite",
+      "self": "Exportmanagement"
     }
   },
   "products": {

@@ -62,10 +62,13 @@ const payloadSchema = z.object({
 export type ProductFormState = { error?: string; ok?: boolean };
 
 function revalidatePublic() {
-  // The public product routes are dynamic (revalidate = 0), but refresh their
-  // cache entries explicitly so lists/sitemap reflect the change right away.
+  // The public product routes are prerendered and served from the edge, so this
+  // is the ONLY thing that refreshes them — without it an edit would not appear
+  // until the next deploy. The detail route is listed too: a page whose list
+  // updated while its own body stayed stale is the worse of the two failures.
   revalidatePath("/products");
   revalidatePath("/[locale]/products", "page");
+  revalidatePath("/[locale]/products/[slug]", "page");
   revalidatePath("/sitemap.xml");
 }
 

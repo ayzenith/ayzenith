@@ -9,7 +9,11 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { Reveal } from "@/components/ui/reveal";
 import { Media } from "@/components/ui/media";
 import { ExportHero } from "@/components/sections/export-hero";
-import { buildMetadata } from "@/lib/seo";
+import {
+  buildMetadata,
+  breadcrumbStructuredData,
+  serviceCatalogStructuredData,
+} from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 /**
@@ -85,11 +89,38 @@ export default async function ExportPage({
   params: Promise<{ locale: string }>;
 }) {
   // Declaring the locale is what keeps this page statically rendered.
-  setRequestLocale((await params).locale);
+  const { locale } = await params;
+  setRequestLocale(locale);
   const t = await getTranslations("export");
+
+  // The four responsibilities, stated as addressable Service entities rather
+  // than left as prose a crawler has to infer. Built from the same `items`
+  // table the page renders from, so the two can never disagree.
+  const catalogue = serviceCatalogStructuredData({
+    locale,
+    path: "/export",
+    name: t("intro.title"),
+    description: t("intro.body"),
+    services: items.map(({ key }) => ({
+      name: t(`items.${key}.title`),
+      description: t(`items.${key}.description`),
+    })),
+  });
+
+  const breadcrumbs = breadcrumbStructuredData(locale, [
+    { name: t("breadcrumb.home"), path: "/" },
+    { name: t("breadcrumb.self"), path: "/export" },
+  ]);
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        // Developer-authored payload built from the page's own translations.
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify([catalogue, breadcrumbs]),
+        }}
+      />
       <ExportHero />
 
       {/* Positioning — the split that names the handover point. */}

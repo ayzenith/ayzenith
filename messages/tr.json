@@ -277,8 +277,8 @@
   },
   "services": {
     "meta": {
-      "title": "Hizmetler ve Yetkinlikler",
-      "description": "Küresel tedarik, dağıtım, özel marka geliştirme ve üretim ortaklıkları — fabrikadan nihai pazara tek ve hesap verebilir bir ortak."
+      "title": "Küresel Tedarik, Dağıtım ve Özel Marka",
+      "description": "Teknoloji ve elektronik tedariki, toptan dağıtım, OEM özel marka ve tekstil üretim ortaklıkları — fabrikadan pazara tek sorumlu ortak."
     },
     "hero": {
       "eyebrow": "Ne yaparız",
@@ -386,6 +386,10 @@
           }
         }
       }
+    },
+    "breadcrumb": {
+      "home": "Ana Sayfa",
+      "self": "Hizmetler"
     }
   },
   "export": {
@@ -562,6 +566,10 @@
       "subtitle": "Ürününüzü, mevcut pazarlarınızı ve uluslararası büyüme hedeflerinizi bize anlatın. Uygun pazar ve ticari yapı üzerinde birlikte değerlendirme yapalım.",
       "primary": "Ortaklık Başlatın",
       "secondary": "AYZENITH ile iletişime geçin"
+    },
+    "breadcrumb": {
+      "home": "Ana Sayfa",
+      "self": "İhracat Yönetimi"
     }
   },
   "products": {

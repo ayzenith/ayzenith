@@ -215,3 +215,71 @@ export function productStructuredData(input: {
       : {}),
   } as const;
 }
+
+/**
+ * Breadcrumb JSON-LD. Search engines render this as the "ayzenith.com › Export"
+ * trail under a result instead of a bare URL, and it tells them how the page
+ * sits in the site rather than making them infer it from the path.
+ *
+ * The trail is passed in already localized and locale-aware: `localizedUrl`
+ * gives each crumb the right URL for the active locale, so the /tr and /de
+ * variants describe their own hierarchy rather than pointing at the English one.
+ */
+export function breadcrumbStructuredData(
+  locale: string,
+  trail: ReadonlyArray<{ name: string; path: string }>,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: trail.map((crumb, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: crumb.name,
+      item: localizedUrl(locale, crumb.path),
+    })),
+  } as const;
+}
+
+/**
+ * Service-catalogue JSON-LD for a capability page.
+ *
+ * The services pages each list a set of distinct offerings in prose, which a
+ * crawler has no reliable way to enumerate. This states them as an ItemList of
+ * schema.org/Service entities bound to the Organization, so the individual
+ * capabilities — "Distribution & Channel Management", "Export Representation" —
+ * become entities in their own right rather than paragraphs on a page.
+ *
+ * No price, availability or rating is emitted: none is published, and inventing
+ * structured data the page cannot back is how a site earns a manual action.
+ */
+export function serviceCatalogStructuredData(input: {
+  locale: string;
+  /** Site-relative path of the page the catalogue belongs to. */
+  path: string;
+  name: string;
+  description: string;
+  services: ReadonlyArray<{ name: string; description: string }>;
+}) {
+  const orgId = `${siteConfig.url}/#organization`;
+  const url = localizedUrl(input.locale, input.path);
+
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "@id": `${url}#services`,
+    name: input.name,
+    description: input.description,
+    numberOfItems: input.services.length,
+    itemListElement: input.services.map((service, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      item: {
+        "@type": "Service",
+        name: service.name,
+        description: service.description,
+        provider: { "@id": orgId },
+      },
+    })),
+  } as const;
+}

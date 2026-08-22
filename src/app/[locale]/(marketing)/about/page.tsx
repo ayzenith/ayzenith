@@ -16,7 +16,16 @@ import { buildMetadata } from "@/lib/seo";
  * primitives + the asset registry, so it is asset-independent and consistent.
  */
 
-export async function generateMetadata(): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  // Metadata is generated BEFORE the component body runs, so the locale has to
+  // be declared here as well. Without it next-intl falls back to reading request
+  // headers, which opts the whole route out of static rendering.
+  setRequestLocale((await params).locale);
+
   const t = await getTranslations("about.meta");
   return buildMetadata({
     title: t("title"),

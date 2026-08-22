@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { assets, type AssetKey, type AssetDescriptor } from "@/config/assets";
 import { getAssetOverrides } from "@/server/assets";
+import { MediaGraphic, type GraphicKey } from "@/components/ui/media-graphics";
 import { cn } from "@/lib/utils";
 
 /**
@@ -103,6 +104,8 @@ export async function Media({
           placeholder={asset.blurDataURL ? "blur" : "empty"}
           blurDataURL={asset.blurDataURL}
         />
+      ) : asset.kind === "graphic" ? (
+        <MediaPlaceholder tone={asset.tone ?? "navy"} figure={asset.figure} />
       ) : (
         <MediaPlaceholder tone={asset.tone ?? "navy"} />
       )}
@@ -122,8 +125,18 @@ export async function Media({
  * navy depth, the faint precision grid, and a single restrained glint. Marked
  * decorative. Matches the visual language so pages read as finished before the
  * real assets land.
+ *
+ * With a `figure`, the same ground also carries an inline SVG (see
+ * media-graphics) — still zero requests, so a slot can say something concrete
+ * long before photography exists.
  */
-function MediaPlaceholder({ tone }: { tone: "navy" | "gold" }) {
+function MediaPlaceholder({
+  tone,
+  figure,
+}: {
+  tone: "navy" | "gold";
+  figure?: GraphicKey;
+}) {
   return (
     <div aria-hidden="true" className="absolute inset-0">
       <div className="absolute inset-0 bg-[linear-gradient(135deg,#081422_0%,#0a1a2f_60%,#0d2137_100%)]" />
@@ -136,6 +149,7 @@ function MediaPlaceholder({ tone }: { tone: "navy" | "gold" }) {
             : "bg-[radial-gradient(55%_60%_at_25%_15%,rgba(201,162,39,0.08),transparent_70%)]",
         )}
       />
+      {figure ? <MediaGraphic figure={figure} /> : null}
     </div>
   );
 }

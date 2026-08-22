@@ -12,6 +12,8 @@
  * network request, no layout shift, on-brand.
  */
 
+import type { GraphicKey } from "@/components/ui/media-graphics";
+
 export type AssetDescriptor =
   | {
       readonly kind: "image";
@@ -20,6 +22,12 @@ export type AssetDescriptor =
       readonly height: number;
       /** Tiny base64 LQIP for blur-up; optional. */
       readonly blurDataURL?: string;
+    }
+  | {
+      /** Inline SVG figure drawn on the placeholder ground — zero bytes over the wire. */
+      readonly kind: "graphic";
+      readonly figure: GraphicKey;
+      readonly tone?: "navy" | "gold";
     }
   | {
       readonly kind: "placeholder";
@@ -33,10 +41,10 @@ export const assets = {
   "about.accountability": { kind: "placeholder", tone: "navy" },
 
   // — Services —
-  "services.sourcing": { kind: "placeholder", tone: "navy" },
-  "services.distribution": { kind: "placeholder", tone: "navy" },
-  "services.privateLabel": { kind: "placeholder", tone: "gold" },
-  "services.partnerships": { kind: "placeholder", tone: "navy" },
+  "services.sourcing": { kind: "graphic", figure: "globeNetwork", tone: "navy" },
+  "services.distribution": { kind: "graphic", figure: "routeFlow", tone: "navy" },
+  "services.privateLabel": { kind: "graphic", figure: "labelMark", tone: "gold" },
+  "services.partnerships": { kind: "graphic", figure: "interlock", tone: "navy" },
 
   // — Products —
   "products.technology": { kind: "placeholder", tone: "navy" },

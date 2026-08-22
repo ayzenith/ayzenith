@@ -24,7 +24,10 @@ export type GraphicKey =
   | "globeNetwork"
   | "routeFlow"
   | "labelMark"
-  | "interlock";
+  | "interlock"
+  | "mandate"
+  | "channelWeb"
+  | "marketGate";
 
 /** Shared canvas: matches the 3:2 `wide` aspect the service blocks use. */
 function Figure({ children }: { children: React.ReactNode }) {
@@ -159,11 +162,101 @@ function Interlock() {
   );
 }
 
+/** Export rights — a signed mandate handing one product's authority across. */
+function Mandate() {
+  return (
+    <Figure>
+      {/* The agreement */}
+      <rect x="118" y="96" width="164" height="208" rx="6" stroke={LINE} strokeWidth="1.25" />
+      <path
+        d="M148 138h104M148 164h104M148 190h68M148 216h88"
+        stroke={LINE_SOFT}
+        strokeWidth="1"
+        strokeLinecap="round"
+      />
+      {/* Countersigned */}
+      <circle cx="200" cy="262" r="20" stroke={GOLD} strokeWidth="1.5" />
+      <path d="M191 262l7 7 12-14" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* Authority passing to the single counterpart */}
+      <path d="M300 200h58" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M348 191l10 9-10 9" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      {/* One address abroad */}
+      <rect x="378" y="150" width="112" height="100" rx="6" stroke={LINE} strokeWidth="1.5" />
+      <path d="M378 180h112" stroke={LINE_SOFT} strokeWidth="1" />
+      <circle cx="434" cy="215" r="13" stroke={LINE} strokeWidth="1.25" />
+      <path d="M434 202v26M421 215h26" stroke={LINE_SOFT} strokeWidth="1" />
+    </Figure>
+  );
+}
+
+/** Distribution — one hub already wired to the buyers on the other side. */
+function ChannelWeb() {
+  const spokes = [
+    [452, 96],
+    [488, 168],
+    [488, 232],
+    [452, 304],
+  ] as const;
+  return (
+    <Figure>
+      {/* Your product, entering */}
+      <rect x="70" y="172" width="84" height="56" rx="5" stroke={LINE} strokeWidth="1.25" />
+      <path d="M70 194h84" stroke={LINE_SOFT} strokeWidth="1" />
+      <path d="M170 200h58" stroke={GOLD} strokeWidth="1.5" strokeLinecap="round" />
+      {/* The hub */}
+      <circle cx="272" cy="200" r="44" stroke={GOLD} strokeWidth="1.5" />
+      <circle cx="272" cy="200" r="7" fill={GOLD} />
+      {/* Established channel */}
+      {spokes.map(([x, y]) => (
+        <g key={`${x}-${y}`}>
+          <path d={`M316 200L${x - 14} ${y}`} stroke={LINE} strokeWidth="1.25" />
+          <circle cx={x} cy={y} r="12" stroke={LINE} strokeWidth="1.25" />
+        </g>
+      ))}
+    </Figure>
+  );
+}
+
+/** Market entry — the gate opens only once every requirement is cleared. */
+function MarketGate() {
+  return (
+    <Figure>
+      {/* Requirements, settled before the goods move */}
+      {[128, 176, 224, 272].map((y, i) => (
+        <g key={y}>
+          <circle cx="128" cy={y} r="12" stroke={i === 3 ? LINE_SOFT : GOLD} strokeWidth="1.5" />
+          {i === 3 ? null : (
+            <path
+              d="M122 128l5 5 8-9"
+              transform={`translate(0 ${y - 128})`}
+              stroke={GOLD}
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+          <path d={`M154 ${y}h96`} stroke={LINE_SOFT} strokeWidth="1" strokeLinecap="round" />
+        </g>
+      ))}
+      {/* The threshold */}
+      <path d="M316 92v216" stroke={LINE} strokeWidth="1.25" />
+      <path d="M362 92v216" stroke={LINE_SOFT} strokeWidth="1.25" strokeDasharray="6 6" />
+      {/* The market beyond, on a shared floor */}
+      <path d="M394 308h130" stroke={LINE_SOFT} strokeWidth="1" />
+      <path d="M404 308v-58h34v58M456 308v-92h34v92" stroke={LINE} strokeWidth="1.25" strokeLinejoin="round" />
+      <circle cx="421" cy="228" r="4" fill={GOLD} />
+    </Figure>
+  );
+}
+
 const graphics: Record<GraphicKey, () => React.ReactElement> = {
   globeNetwork: GlobeNetwork,
   routeFlow: RouteFlow,
   labelMark: LabelMark,
   interlock: Interlock,
+  mandate: Mandate,
+  channelWeb: ChannelWeb,
+  marketGate: MarketGate,
 };
 
 export function MediaGraphic({ figure }: { figure: GraphicKey }) {

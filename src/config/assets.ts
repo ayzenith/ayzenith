@@ -46,6 +46,12 @@ export const assets = {
   "services.privateLabel": { kind: "graphic", figure: "labelMark", tone: "gold" },
   "services.partnerships": { kind: "graphic", figure: "interlock", tone: "navy" },
 
+  // — Export management —
+  "export.rights": { kind: "graphic", figure: "mandate", tone: "gold" },
+  "export.distribution": { kind: "graphic", figure: "channelWeb", tone: "navy" },
+  "export.market": { kind: "graphic", figure: "marketGate", tone: "navy" },
+  "export.operations": { kind: "graphic", figure: "routeFlow", tone: "navy" },
+
   // — Products —
   "products.technology": { kind: "placeholder", tone: "navy" },
   "products.consumer": { kind: "placeholder", tone: "navy" },

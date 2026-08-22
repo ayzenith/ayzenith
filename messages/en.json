@@ -15,7 +15,8 @@
     "menu": "Open menu",
     "close": "Close menu",
     "skip": "Skip to content",
-    "home": "AYZENITH — home"
+    "home": "AYZENITH — home",
+    "export": "Export"
   },
   "cta": {
     "overline": "Start a partnership",
@@ -387,6 +388,181 @@
       }
     }
   },
+  "export": {
+    "meta": {
+      "title": "Export Management & International Market Entry",
+      "description": "We manage international market entry, distributor and buyer development, and export operations for manufacturers and brands — under one structure."
+    },
+    "hero": {
+      "eyebrow": "Global trade · Export management",
+      "title": "Take your product to the world. We'll build the market.",
+      "proposition": "Your export department — without building one.",
+      "subtitle": "We manage international market entry, distributor and buyer development, and export operations for manufacturers and brands — under one structure.",
+      "ctaPrimary": "Start a Partnership",
+      "ctaSecondary": "How we work",
+      "network": {
+        "caption": "AYZENITH's commercial corridors, run from Istanbul: Europe as the core market, the Gulf as a growth region, Central Asia under evaluation. These are regions of commercial focus, not office or facility locations.",
+        "origin": "Istanbul",
+        "europe": "Europe",
+        "gulf": "The Gulf",
+        "centralAsia": "Central Asia"
+      },
+      "flow": {
+        "entry": "Market entry",
+        "buyers": "Buyer development",
+        "export": "Export",
+        "logistics": "Logistics",
+        "collection": "Collection"
+      }
+    },
+    "positioning": {
+      "overline": "Positioning",
+      "title": "Keep manufacturing. Everything past the factory gate is ours.",
+      "body": "You manufacture. We take on what comes after the factory gate — market development, buyer and distributor relationships, documentation, logistics and collections.",
+      "chain": {
+        "factory": "Factory",
+        "market": "Market",
+        "buyer": "Buyer",
+        "order": "Order",
+        "delivery": "Delivery",
+        "growth": "Growth"
+      }
+    },
+    "process": {
+      "overline": "How it works",
+      "title": "From factory to market.",
+      "intro": "One structure connecting the commercial and operational steps behind international growth.",
+      "steps": {
+        "fit": {
+          "title": "Product & Market Fit",
+          "description": "We evaluate the product, market potential and commercial fit."
+        },
+        "entry": {
+          "title": "Market Entry",
+          "description": "We identify the right market, channel and commercial structure."
+        },
+        "channel": {
+          "title": "Buyer & Distributor Development",
+          "description": "We develop relationships with qualified distributors, retailers and B2B buyers."
+        },
+        "order": {
+          "title": "Order & Export",
+          "description": "Orders, documentation, customs, logistics and collection are coordinated through one operational flow."
+        },
+        "growth": {
+          "title": "Market Development",
+          "description": "We continue developing the channel and commercial relationship beyond the first shipment."
+        }
+      }
+    },
+    "intro": {
+      "overline": "What we do",
+      "title": "Four responsibilities, one commercial structure.",
+      "body": "All four run under the same accountability — one counterpart for the market, the channel, the paperwork and the shipment."
+    },
+    "items": {
+      "rights": {
+        "title": "Export Representation",
+        "outcome": "One counterpart, clear accountability.",
+        "description": "We represent selected products and brands in defined international markets, acting as the commercial counterpart from first contact through to order.",
+        "imageAlt": "Export rights and representation structure"
+      },
+      "distribution": {
+        "title": "Distribution & Channel Management",
+        "outcome": "Enter the market without building a channel.",
+        "description": "We identify distributors, retailers and B2B buyers, establish the commercial relationships and manage channel development.",
+        "imageAlt": "Distribution and channel network"
+      },
+      "market": {
+        "title": "Market Entry",
+        "outcome": "Preparation settled before goods move.",
+        "description": "We coordinate the documentation, conformity, customs and local requirements needed to prepare a product for its target market.",
+        "imageAlt": "Preparation for entry into a target market"
+      },
+      "operations": {
+        "title": "Export Operations & Logistics",
+        "outcome": "One flow from order to delivery.",
+        "description": "From purchase order through delivery and collection, we coordinate documentation, freight, customs and payment in one operational flow.",
+        "imageAlt": "Export operations and logistics flow"
+      }
+    },
+    "statement": {
+      "lead": "We don't just move products.",
+      "emphasis": "We build the markets behind them."
+    },
+    "audience": {
+      "overline": "Who we work with",
+      "title": "Built for companies ready to go beyond their home market.",
+      "manufacturers": {
+        "title": "Manufacturers",
+        "description": "Companies looking for international distribution without building a full export department."
+      },
+      "brands": {
+        "title": "Established Brands",
+        "description": "Brands looking to enter new markets and develop international channels."
+      },
+      "producers": {
+        "title": "Specialized Producers",
+        "description": "Product companies with strong B2B potential and defined commercial positioning."
+      },
+      "buyers": {
+        "title": "International Buyers",
+        "description": "Distributors, retailers and B2B buyers looking for reliable products and new supply relationships."
+      }
+    },
+    "markets": {
+      "overline": "Markets",
+      "title": "Where we operate",
+      "intro": "The order below reflects commercial focus: the market we work today, the region we are building, and the markets we are evaluating. These are not office or facility locations.",
+      "europe": {
+        "title": "Europe",
+        "label": "Core market",
+        "countries": "Germany · Netherlands · France · Belgium",
+        "description": "Our primary focus for export development, distribution and B2B market entry."
+      },
+      "gulf": {
+        "title": "The Gulf",
+        "label": "Growth region",
+        "countries": "United Arab Emirates · Saudi Arabia",
+        "cities": "Dubai · Abu Dhabi · Riyadh · Jeddah",
+        "description": "We are developing our commercial network in the Gulf, with the United Arab Emirates and Saudi Arabia as our first focus markets."
+      },
+      "centralAsia": {
+        "title": "Central Asia",
+        "label": "Emerging markets",
+        "countries": "Kazakhstan · Uzbekistan · Azerbaijan",
+        "description": "Selected markets we are evaluating as part of long-term international growth."
+      }
+    },
+    "why": {
+      "overline": "Why AYZENITH",
+      "title": "More than an export agent.",
+      "closing": "Our objective is not the first shipment. It is the next ten.",
+      "access": {
+        "title": "Market Access",
+        "description": "We don't simply move products. We build the commercial relationships behind the shipment."
+      },
+      "partner": {
+        "title": "One Operational Partner",
+        "description": "Market development, orders, documentation, logistics and collection under one structure."
+      },
+      "selective": {
+        "title": "Selective Growth",
+        "description": "We focus on products and markets where there is a clear commercial fit."
+      },
+      "channels": {
+        "title": "Long-Term Channels",
+        "description": "The objective isn't a single shipment. It's a sustainable international channel."
+      }
+    },
+    "cta": {
+      "overline": "Partnership",
+      "title": "Let's build your next market.",
+      "subtitle": "Tell us about your product, your current markets and your international growth goals. We'll assess the right market and commercial structure together.",
+      "primary": "Start a Partnership",
+      "secondary": "Contact AYZENITH"
+    }
+  },
   "products": {
     "meta": {
       "title": "Products",
@@ -527,6 +703,7 @@
     "legalHeading": "Legal",
     "privacy": "Privacy Policy",
     "cookies": "Cookie Policy",
-    "terms": "Terms & Conditions"
+    "terms": "Terms & Conditions",
+    "export": "Export Management"
   }
 }

@@ -44,6 +44,7 @@ export type NavItem = {
 export const primaryNav: readonly NavItem[] = [
   { labelKey: "about", href: "/about" },
   { labelKey: "services", href: "/services" },
+  { labelKey: "export", href: "/export" },
   { labelKey: "products", href: "/products" },
   { labelKey: "contact", href: "/contact" },
 ] as const;
@@ -52,6 +53,7 @@ export const footerNav = {
   company: [
     { labelKey: "about", href: "/about" },
     { labelKey: "services", href: "/services" },
+    { labelKey: "export", href: "/export" },
     { labelKey: "products", href: "/products" },
   ],
   engage: [

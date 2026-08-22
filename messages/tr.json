@@ -15,7 +15,8 @@
     "menu": "Menüyü aç",
     "close": "Menüyü kapat",
     "skip": "İçeriğe geç",
-    "home": "AYZENITH — ana sayfa"
+    "home": "AYZENITH — ana sayfa",
+    "export": "İhracat"
   },
   "cta": {
     "overline": "Ortaklık başlatın",
@@ -387,6 +388,181 @@
       }
     }
   },
+  "export": {
+    "meta": {
+      "title": "İhracat Yönetimi ve Uluslararası Pazara Giriş",
+      "description": "Üretici ve markalar için uluslararası pazara giriş, distribütör ve alıcı geliştirme ile ihracat operasyonlarını tek bir yapı altında yönetiyoruz."
+    },
+    "hero": {
+      "eyebrow": "Küresel ticaret · İhracat yönetimi",
+      "title": "Ürününüzü dünyaya taşıyın. Pazarı biz kuralım.",
+      "proposition": "İhracat departmanınız — kurmanıza gerek kalmadan.",
+      "subtitle": "Üreticiler ve markalar için uluslararası pazara giriş, distribütör ve alıcı geliştirme ile ihracat operasyonlarını tek bir yapı altında yönetiyoruz.",
+      "ctaPrimary": "Ortaklık Başlatın",
+      "ctaSecondary": "Nasıl Çalışıyoruz",
+      "network": {
+        "caption": "AYZENITH'in ticari koridorları: İstanbul merkezli, ana pazar Avrupa, büyüme bölgesi Körfez, değerlendirme aşamasında Orta Asya. Bunlar ticari odak bölgeleridir; fiziksel ofis ya da tesis konumları değildir.",
+        "origin": "İstanbul",
+        "europe": "Avrupa",
+        "gulf": "Körfez",
+        "centralAsia": "Orta Asya"
+      },
+      "flow": {
+        "entry": "Pazara giriş",
+        "buyers": "Alıcı geliştirme",
+        "export": "İhracat",
+        "logistics": "Lojistik",
+        "collection": "Tahsilat"
+      }
+    },
+    "positioning": {
+      "overline": "Konumumuz",
+      "title": "Siz üretmeye devam edin. Fabrika kapısından sonrası bizde.",
+      "body": "Siz üretirsiniz. Fabrika kapısından sonrasını biz üstleniriz — pazar geliştirme, alıcı ve distribütör ilişkileri, belgelendirme, lojistik ve tahsilat.",
+      "chain": {
+        "factory": "Fabrika",
+        "market": "Pazar",
+        "buyer": "Alıcı",
+        "order": "Sipariş",
+        "delivery": "Teslimat",
+        "growth": "Büyüme"
+      }
+    },
+    "process": {
+      "overline": "Nasıl işler",
+      "title": "Fabrikadan pazara.",
+      "intro": "Uluslararası büyümenin ardındaki ticari ve operasyonel adımları birbirine bağlayan tek bir yapı.",
+      "steps": {
+        "fit": {
+          "title": "Ürün ve Pazar Uyumu",
+          "description": "Ürünü, pazar potansiyelini ve ticari uyumu değerlendiririz."
+        },
+        "entry": {
+          "title": "Pazara Giriş",
+          "description": "Doğru pazarı, kanalı ve ticari yapıyı belirleriz."
+        },
+        "channel": {
+          "title": "Alıcı ve Distribütör Geliştirme",
+          "description": "Nitelikli distribütörler, perakendeciler ve B2B alıcılarla ilişki kurarız."
+        },
+        "order": {
+          "title": "Sipariş ve İhracat",
+          "description": "Sipariş, belgelendirme, gümrük, lojistik ve tahsilat tek bir operasyonel akışta koordine edilir."
+        },
+        "growth": {
+          "title": "Pazar Geliştirme",
+          "description": "İlk sevkiyattan sonra da kanalı ve ticari ilişkiyi geliştirmeye devam ederiz."
+        }
+      }
+    },
+    "intro": {
+      "overline": "Ne yaparız",
+      "title": "Dört sorumluluk, tek ticari yapı.",
+      "body": "Dördü de aynı hesap verebilirlikle yürütülür — pazar, kanal, evrak ve sevkiyat için tek muhatap."
+    },
+    "items": {
+      "rights": {
+        "title": "İhracat Hakkı ve Temsilcilik",
+        "outcome": "Tek muhatap, net sorumluluk.",
+        "description": "Seçilmiş ürün ve markaları belirlenen uluslararası pazarlarda temsil eder, ilk temastan siparişe kadar ticari sürecin muhatabı oluruz.",
+        "imageAlt": "İhracat hakkı ve temsilcilik yapısı"
+      },
+      "distribution": {
+        "title": "Distribütörlük ve Kanal Yönetimi",
+        "outcome": "Kanal kurmadan pazara girin.",
+        "description": "Distribütör, perakendeci ve B2B alıcıları belirler, ticari ilişkileri kurar ve kanal gelişimini yönetiriz.",
+        "imageAlt": "Distribütörlük ve kanal ağı"
+      },
+      "market": {
+        "title": "Pazara Giriş",
+        "outcome": "Hazırlık, mal yola çıkmadan tamamlanır.",
+        "description": "Ürünleri hedef pazara hazırlamak için belgelendirme, uygunluk, gümrük ve ilgili yerel gereklilikleri koordine ederiz.",
+        "imageAlt": "Hedef pazara giriş hazırlığı"
+      },
+      "operations": {
+        "title": "İhracat Operasyonu ve Lojistik",
+        "outcome": "Siparişten teslimata tek akış.",
+        "description": "Siparişten teslimata ve tahsilata kadar belgelendirme, nakliye, gümrük ve ödeme süreçlerini tek operasyonel akışta koordine ederiz.",
+        "imageAlt": "İhracat operasyonu ve lojistik akışı"
+      }
+    },
+    "statement": {
+      "lead": "Biz sadece ürün taşımıyoruz.",
+      "emphasis": "Arkasındaki pazarı kuruyoruz."
+    },
+    "audience": {
+      "overline": "Kimlerle çalışırız",
+      "title": "Kendi pazarının ötesine geçmeye hazır şirketler için.",
+      "manufacturers": {
+        "title": "Üreticiler",
+        "description": "Tam bir ihracat departmanı kurmadan uluslararası dağıtım arayan şirketler."
+      },
+      "brands": {
+        "title": "Yerleşik Markalar",
+        "description": "Yeni pazarlara girmek ve uluslararası kanal geliştirmek isteyen markalar."
+      },
+      "producers": {
+        "title": "Uzmanlaşmış Üreticiler",
+        "description": "Güçlü B2B potansiyeli ve net ticari konumu olan ürün şirketleri."
+      },
+      "buyers": {
+        "title": "Uluslararası Alıcılar",
+        "description": "Güvenilir ürün ve yeni tedarik ilişkileri arayan distribütörler, perakendeciler ve B2B alıcılar."
+      }
+    },
+    "markets": {
+      "overline": "Pazarlar",
+      "title": "Nerede çalışıyoruz",
+      "intro": "Aşağıdaki sıralama ticari odağımızı gösterir: bugün çalıştığımız pazar, kurmakta olduğumuz bölge ve değerlendirdiğimiz pazarlar. Bunlar fiziksel ofis ya da tesis konumları değildir.",
+      "europe": {
+        "title": "Avrupa",
+        "label": "Ana pazar",
+        "countries": "Almanya · Hollanda · Fransa · Belçika",
+        "description": "İhracat geliştirme, dağıtım ve B2B pazara giriş için birincil odağımız."
+      },
+      "gulf": {
+        "title": "Körfez",
+        "label": "Büyüme bölgesi",
+        "countries": "Birleşik Arap Emirlikleri · Suudi Arabistan",
+        "cities": "Dubai · Abu Dabi · Riyad · Cidde",
+        "description": "Körfez'de ticari ağımızı geliştiriyoruz; Birleşik Arap Emirlikleri ve Suudi Arabistan ilk odak pazarlarımız."
+      },
+      "centralAsia": {
+        "title": "Orta Asya",
+        "label": "Gelişen pazarlar",
+        "countries": "Kazakistan · Özbekistan · Azerbaycan",
+        "description": "Uzun vadeli uluslararası büyüme kapsamında değerlendirdiğimiz seçili pazarlar."
+      }
+    },
+    "why": {
+      "overline": "Neden AYZENITH",
+      "title": "Bir ihracat acentesinden fazlası.",
+      "closing": "Hedefimiz ilk sevkiyat değil. Sonraki on tanesi.",
+      "access": {
+        "title": "Pazara Erişim",
+        "description": "Sadece ürün taşımıyoruz. Sevkiyatın arkasındaki ticari ilişkileri kuruyoruz."
+      },
+      "partner": {
+        "title": "Tek Operasyonel Ortak",
+        "description": "Pazar geliştirme, sipariş, belgelendirme, lojistik ve tahsilat tek bir yapı altında."
+      },
+      "selective": {
+        "title": "Seçici Büyüme",
+        "description": "Net bir ticari uyum gördüğümüz ürün ve pazarlara odaklanırız."
+      },
+      "channels": {
+        "title": "Kalıcı Kanallar",
+        "description": "Hedef tek bir sevkiyat değil. Sürdürülebilir bir uluslararası kanal."
+      }
+    },
+    "cta": {
+      "overline": "Ortaklık",
+      "title": "Bir sonraki pazarınızı birlikte kuralım.",
+      "subtitle": "Ürününüzü, mevcut pazarlarınızı ve uluslararası büyüme hedeflerinizi bize anlatın. Uygun pazar ve ticari yapı üzerinde birlikte değerlendirme yapalım.",
+      "primary": "Ortaklık Başlatın",
+      "secondary": "AYZENITH ile iletişime geçin"
+    }
+  },
   "products": {
     "meta": {
       "title": "Ürünler",
@@ -527,6 +703,7 @@
     "legalHeading": "Yasal",
     "privacy": "Gizlilik Politikası",
     "cookies": "Çerez Politikası",
-    "terms": "Kullanım Koşulları"
+    "terms": "Kullanım Koşulları",
+    "export": "İhracat Yönetimi"
   }
 }

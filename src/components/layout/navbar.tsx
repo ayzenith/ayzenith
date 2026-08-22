@@ -60,7 +60,7 @@ export function Navbar() {
             <Logo tone="brand" priority alt="" sizes="280px" className="h-12 md:h-14" />
           </Link>
 
-          <nav aria-label="Primary" className="hidden md:block">
+          <nav aria-label="Primary" className="hidden lg:block">
             <ul className="flex items-center gap-10">
               {primaryNav.map((item) => {
                 const isActive = pathname === item.href;
@@ -91,7 +91,7 @@ export function Navbar() {
           <div className="flex items-center gap-2 md:gap-3">
             <LanguageSwitcher />
 
-            <Button asChild size="sm" className="hidden md:inline-flex">
+            <Button asChild size="sm" className="hidden lg:inline-flex">
               <Link href="/contact">{t("cta")}</Link>
             </Button>
 
@@ -102,7 +102,7 @@ export function Navbar() {
               aria-label={t("menu")}
               aria-expanded={menuOpen}
               aria-haspopup="dialog"
-              className="inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] md:hidden"
+              className="inline-flex size-11 items-center justify-center rounded-md text-foreground transition-colors hover:text-accent focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-ring)] lg:hidden"
             >
               <Menu className="size-6" aria-hidden="true" />
             </button>

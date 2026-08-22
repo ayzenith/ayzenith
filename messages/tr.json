@@ -405,7 +405,8 @@
         "origin": "İstanbul",
         "europe": "Avrupa",
         "gulf": "Körfez",
-        "centralAsia": "Orta Asya"
+        "centralAsia": "Orta Asya",
+        "panel": "Ticari koridorlar"
       },
       "flow": {
         "entry": "Pazara giriş",
@@ -512,26 +513,26 @@
     },
     "markets": {
       "overline": "Pazarlar",
-      "title": "Nerede çalışıyoruz",
-      "intro": "Aşağıdaki sıralama ticari odağımızı gösterir: bugün çalıştığımız pazar, kurmakta olduğumuz bölge ve değerlendirdiğimiz pazarlar. Bunlar fiziksel ofis ya da tesis konumları değildir.",
+      "title": "Bugün çalıştığımız pazarlar — ve gittiğimiz yön.",
+      "intro": "Aşağıdaki üç kademe AYZENITH'in ticari odağını ve globalleşme yönünü birlikte gösterir: bugün çalıştığımız ana pazar, ağımızı kurduğumuz bölge ve uzun vadeli büyüme kapsamında değerlendirdiğimiz pazarlar. Bunlar ticari odak bölgeleridir; fiziksel ofis ya da tesis konumları değildir.",
       "europe": {
         "title": "Avrupa",
-        "label": "Ana pazar",
+        "label": "Ana Pazarımız",
         "countries": "Almanya · Hollanda · Fransa · Belçika",
         "description": "İhracat geliştirme, dağıtım ve B2B pazara giriş için birincil odağımız."
       },
       "gulf": {
         "title": "Körfez",
-        "label": "Büyüme bölgesi",
+        "label": "Büyüme Bölgemiz",
         "countries": "Birleşik Arap Emirlikleri · Suudi Arabistan",
-        "cities": "Dubai · Abu Dabi · Riyad · Cidde",
+        "cities": "Dubai · Abu Dabi · Riyad",
         "description": "Körfez'de ticari ağımızı geliştiriyoruz; Birleşik Arap Emirlikleri ve Suudi Arabistan ilk odak pazarlarımız."
       },
       "centralAsia": {
         "title": "Orta Asya",
-        "label": "Gelişen pazarlar",
+        "label": "Gelişen Pazarlar",
         "countries": "Kazakistan · Özbekistan · Azerbaycan",
-        "description": "Uzun vadeli uluslararası büyüme kapsamında değerlendirdiğimiz seçili pazarlar."
+        "description": "AYZENITH'in uzun vadeli uluslararası büyüme stratejisi kapsamında değerlendirdiği ve ticari fırsatları araştırdığı seçili pazarlar."
       }
     },
     "why": {

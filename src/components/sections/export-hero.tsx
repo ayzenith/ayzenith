@@ -80,15 +80,28 @@ export async function ExportHero() {
             </div>
           </Reveal>
 
-          {/* Commercial corridors — focus regions, not premises. */}
+          {/* Commercial corridors — focus regions, not premises.
+              Framed as a board rather than left floating: a titled panel with a
+              ruled header and its key along the bottom reads as an instrument
+              the company works from, which is the difference between looking
+              like a trading house and looking like a consultancy with a nice
+              illustration. */}
           <Reveal delay={0.1}>
-            <div className="mx-auto max-w-[34rem] lg:max-w-none">
-              <TradeNetwork labels={{ caption: t("network.caption"), ...regions }} />
+            <figure className="mx-auto max-w-[34rem] rounded-lg border border-border bg-surface/70 p-5 shadow-sm md:p-6 lg:max-w-none">
+              <figcaption className="border-b border-border pb-4">
+                <span className="eyebrow text-foreground">{t("network.panel")}</span>
+              </figcaption>
+
+              <TradeNetwork
+                className="mt-2"
+                labels={{ caption: t("network.caption"), ...regions }}
+              />
+
               <TradeNetworkLegend
                 labels={regions}
-                className="mt-2 justify-center lg:justify-start"
+                className="border-t border-border pt-4"
               />
-            </div>
+            </figure>
           </Reveal>
         </div>
 

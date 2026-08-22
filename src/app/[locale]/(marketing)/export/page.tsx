@@ -68,15 +68,15 @@ const items: ReadonlyArray<{ key: string; asset: AssetKey }> = [
 ];
 
 /**
- * The tier rule above each market. Weight encodes standing — solid gold for the
- * market we work, a lighter gold for the one we are building, a dashed hairline
- * for the ones we are only evaluating — so the ranking survives even if someone
- * reads nothing but the shapes.
+ * The tier rule above each market. All three are solid gold and none is faint:
+ * the ranking is carried by length and by the 01/02/03 order, not by draining
+ * the colour out of the last one. An expansion map that greys out where the
+ * company is going would argue against the strategy it is there to state.
  */
 const tierRule: Record<"core" | "growth" | "emerging", string> = {
   core: "h-0.5 w-16 bg-gold-500",
-  growth: "h-px w-12 bg-gold-500/55",
-  emerging: "h-0 w-8 border-t border-dashed border-border-strong",
+  growth: "h-0.5 w-12 bg-gold-500/70",
+  emerging: "h-0.5 w-9 bg-gold-500/55",
 };
 
 export default async function ExportPage({
@@ -292,10 +292,18 @@ export default async function ExportPage({
             />
           </Reveal>
 
-          {/* Core market — full width, gold rule, the heaviest thing here. */}
+          {/* 01 — the market being worked today. Full width, largest type. */}
           <Reveal className="mt-14">
             <article className="rounded-lg border border-border bg-surface p-8 shadow-sm md:p-12">
-              <span aria-hidden="true" className={cn("block", tierRule.core)} />
+              <div className="flex items-center gap-4">
+                <span
+                  aria-hidden="true"
+                  className="font-mono text-caption tabular-nums text-accent"
+                >
+                  01
+                </span>
+                <span aria-hidden="true" className={tierRule.core} />
+              </div>
               <p className="eyebrow mt-6 text-accent">{t("markets.europe.label")}</p>
               <h3 className="mt-3 font-sans text-h3 font-semibold text-foreground">
                 {t("markets.europe.title")}
@@ -309,42 +317,45 @@ export default async function ExportPage({
             </article>
           </Reveal>
 
-          {/* Being built, and being evaluated — visibly lighter than the above. */}
+          {/* 02 and 03 — the network being built, and where it is heading next.
+              Identical chrome on purpose: the sequence and the rule length carry
+              the ranking, so neither reads as a market AYZENITH has written off. */}
           <div className="mt-6 grid gap-6 md:grid-cols-2">
-            <Reveal delay={0.05}>
-              <article className="h-full rounded-lg border border-border bg-surface p-8">
-                <span aria-hidden="true" className={cn("block", tierRule.growth)} />
-                <p className="eyebrow mt-6 text-accent">{t("markets.gulf.label")}</p>
-                <h3 className="mt-3 font-sans text-h4 font-semibold text-foreground">
-                  {t("markets.gulf.title")}
-                </h3>
-                <p className="mt-5 text-body-lg text-foreground">
-                  {t("markets.gulf.countries")}
-                </p>
-                <p className="mt-2 text-small text-subtle">{t("markets.gulf.cities")}</p>
-                <p className="mt-4 text-body text-muted">
-                  {t("markets.gulf.description")}
-                </p>
-              </article>
-            </Reveal>
-
-            <Reveal delay={0.1}>
-              <article className="h-full rounded-lg border border-dashed border-border p-8">
-                <span aria-hidden="true" className={cn("block", tierRule.emerging)} />
-                <p className="eyebrow mt-6 text-subtle">
-                  {t("markets.centralAsia.label")}
-                </p>
-                <h3 className="mt-3 font-sans text-h5 font-semibold text-muted">
-                  {t("markets.centralAsia.title")}
-                </h3>
-                <p className="mt-5 text-body text-muted">
-                  {t("markets.centralAsia.countries")}
-                </p>
-                <p className="mt-4 text-small text-subtle">
-                  {t("markets.centralAsia.description")}
-                </p>
-              </article>
-            </Reveal>
+            {(
+              [
+                { key: "gulf", tier: "growth", index: "02" },
+                { key: "centralAsia", tier: "emerging", index: "03" },
+              ] as const
+            ).map(({ key, tier, index }, i) => (
+              <Reveal key={key} delay={0.05 + i * 0.05}>
+                <article className="h-full rounded-lg border border-border bg-surface p-8">
+                  <div className="flex items-center gap-4">
+                    <span
+                      aria-hidden="true"
+                      className="font-mono text-caption tabular-nums text-accent"
+                    >
+                      {index}
+                    </span>
+                    <span aria-hidden="true" className={tierRule[tier]} />
+                  </div>
+                  <p className="eyebrow mt-6 text-accent">{t(`markets.${key}.label`)}</p>
+                  <h3 className="mt-3 font-sans text-h4 font-semibold text-foreground">
+                    {t(`markets.${key}.title`)}
+                  </h3>
+                  <p className="mt-5 text-body-lg text-foreground">
+                    {t(`markets.${key}.countries`)}
+                  </p>
+                  {key === "gulf" ? (
+                    <p className="mt-2 text-small text-subtle">
+                      {t("markets.gulf.cities")}
+                    </p>
+                  ) : null}
+                  <p className="mt-4 text-body text-muted">
+                    {t(`markets.${key}.description`)}
+                  </p>
+                </article>
+              </Reveal>
+            ))}
           </div>
         </Container>
       </Section>

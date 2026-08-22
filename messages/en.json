@@ -405,7 +405,8 @@
         "origin": "Istanbul",
         "europe": "Europe",
         "gulf": "The Gulf",
-        "centralAsia": "Central Asia"
+        "centralAsia": "Central Asia",
+        "panel": "Commercial corridors"
       },
       "flow": {
         "entry": "Market entry",
@@ -512,26 +513,26 @@
     },
     "markets": {
       "overline": "Markets",
-      "title": "Where we operate",
-      "intro": "The order below reflects commercial focus: the market we work today, the region we are building, and the markets we are evaluating. These are not office or facility locations.",
+      "title": "The markets we work today — and the direction we are heading.",
+      "intro": "The three tiers below show both AYZENITH's commercial focus and the direction of its international growth: the core market we work today, the region where we are building our network, and the markets we are evaluating for long-term expansion. These are regions of commercial focus, not office or facility locations.",
       "europe": {
         "title": "Europe",
-        "label": "Core market",
+        "label": "Our Core Market",
         "countries": "Germany · Netherlands · France · Belgium",
         "description": "Our primary focus for export development, distribution and B2B market entry."
       },
       "gulf": {
         "title": "The Gulf",
-        "label": "Growth region",
+        "label": "Our Growth Region",
         "countries": "United Arab Emirates · Saudi Arabia",
-        "cities": "Dubai · Abu Dhabi · Riyadh · Jeddah",
+        "cities": "Dubai · Abu Dhabi · Riyadh",
         "description": "We are developing our commercial network in the Gulf, with the United Arab Emirates and Saudi Arabia as our first focus markets."
       },
       "centralAsia": {
         "title": "Central Asia",
-        "label": "Emerging markets",
+        "label": "Emerging Markets",
         "countries": "Kazakhstan · Uzbekistan · Azerbaijan",
-        "description": "Selected markets we are evaluating as part of long-term international growth."
+        "description": "Selected markets AYZENITH is evaluating, and actively exploring commercial opportunities in, as part of its long-term international growth strategy."
       }
     },
     "why": {

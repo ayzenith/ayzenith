@@ -405,7 +405,8 @@
         "origin": "Istanbul",
         "europe": "Europa",
         "gulf": "Golf",
-        "centralAsia": "Zentralasien"
+        "centralAsia": "Zentralasien",
+        "panel": "Handelskorridore"
       },
       "flow": {
         "entry": "Markteintritt",
@@ -512,26 +513,26 @@
     },
     "markets": {
       "overline": "Märkte",
-      "title": "Wo wir arbeiten",
-      "intro": "Die Reihenfolge zeigt den kaufmännischen Fokus: der Markt, in dem wir heute arbeiten, die Region, die wir aufbauen, und die Märkte, die wir prüfen. Es sind keine Büro- oder Standortangaben.",
+      "title": "Die Märkte, in denen wir heute arbeiten — und wohin wir gehen.",
+      "intro": "Die drei Stufen zeigen den kaufmännischen Fokus von AYZENITH und zugleich die Richtung des internationalen Wachstums: der Kernmarkt, in dem wir heute arbeiten, die Region, in der wir unser Netz aufbauen, und die Märkte, die wir für langfristige Expansion prüfen. Es sind Regionen kaufmännischen Fokus, keine Büro- oder Standortangaben.",
       "europe": {
         "title": "Europa",
-        "label": "Kernmarkt",
+        "label": "Unser Kernmarkt",
         "countries": "Deutschland · Niederlande · Frankreich · Belgien",
         "description": "Unser primärer Fokus für Exportentwicklung, Vertrieb und B2B-Markteintritt."
       },
       "gulf": {
         "title": "Der Golf",
-        "label": "Wachstumsregion",
+        "label": "Unsere Wachstumsregion",
         "countries": "Vereinigte Arabische Emirate · Saudi-Arabien",
-        "cities": "Dubai · Abu Dhabi · Riad · Dschidda",
+        "cities": "Dubai · Abu Dhabi · Riad",
         "description": "Wir entwickeln unser Handelsnetz am Golf, mit den Vereinigten Arabischen Emiraten und Saudi-Arabien als ersten Fokusmärkten."
       },
       "centralAsia": {
         "title": "Zentralasien",
         "label": "Aufkommende Märkte",
         "countries": "Kasachstan · Usbekistan · Aserbaidschan",
-        "description": "Ausgewählte Märkte, die wir im Rahmen des langfristigen internationalen Wachstums prüfen."
+        "description": "Ausgewählte Märkte, die AYZENITH im Rahmen seiner langfristigen internationalen Wachstumsstrategie prüft und in denen es aktiv kaufmännische Chancen auslotet."
       }
     },
     "why": {

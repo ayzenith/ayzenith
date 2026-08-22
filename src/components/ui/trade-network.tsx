@@ -9,11 +9,12 @@ import { cn } from "@/lib/utils";
  * are trade corridors, and the legend says so in words. Drawn abstractly, on a
  * bare graticule rather than coastlines, for exactly that reason.
  *
- * The three tiers are encoded in ink, not just in labels — Europe is drawn
- * solid and gold, the Gulf thinner and quieter, Central Asia dashed and faint.
- * A visitor who reads only the picture should still come away with the right
- * ranking, because a diagram that flatters every region would over-claim just
- * as badly as the copy would.
+ * All three tiers are drawn in gold, and the ranking is carried by weight and
+ * line style rather than by fading anything out: Europe solid and heaviest, the
+ * Gulf solid and lighter, Central Asia on a long dash — the map convention for
+ * a projected route. That last distinction matters in both directions. Drawn
+ * solid it would claim corridors that do not run yet; drawn as a grey hairline
+ * it would read as a market abandoned rather than one being opened.
  *
  * Inline SVG on the light hero field: no request, no decode, no layout shift.
  * Server Component.
@@ -23,7 +24,8 @@ const HAIR = "rgba(18,50,82,0.09)";
 const LINE = "rgba(18,50,82,0.20)";
 const LINE_STRONG = "rgba(18,50,82,0.38)";
 const GOLD = "#C9A227";
-const GOLD_SOFT = "rgba(201,162,39,0.42)";
+const GOLD_SOFT = "rgba(201,162,39,0.62)";
+const GOLD_FAINT = "rgba(201,162,39,0.5)";
 const NAVY = "#123252";
 
 type Labels = {
@@ -43,13 +45,13 @@ const EUROPE_NODES = [
   [196, 162],
 ] as const;
 
-/** The Gulf — being built, so two corridors at reduced weight. */
+/** The Gulf — network being built: solid corridors, a shade under Europe. */
 const GULF_NODES = [
   [402, 344],
   [452, 398],
 ] as const;
 
-/** Central Asia — under evaluation only: dashed, small, quiet. */
+/** Central Asia — the direction of expansion: projected corridors, full size. */
 const CENTRAL_ASIA_NODES = [
   [430, 112],
   [472, 158],
@@ -84,19 +86,31 @@ export function TradeNetwork({
         <ellipse cx="280" cy="235" rx="238" ry="188" stroke={HAIR} strokeWidth="1" />
       </g>
 
-      {/* Central Asia — evaluated, not worked. Dashed, thin, low contrast. */}
+      {/* Central Asia — where the network is heading. Drawn in the same gold as
+          the rest, on a long measured dash: the cartographic convention for a
+          PROJECTED route, which says "planned" without saying "absent". A faint
+          grey hairline here would have read as a market written off rather than
+          one under active evaluation. */}
       <g>
         {CENTRAL_ASIA_NODES.map(([x, y]) => (
           <path
             key={`ca-${x}`}
             d={`M${ORIGIN[0]} ${ORIGIN[1]}Q${(ORIGIN[0] + x) / 2} ${y - 46} ${x} ${y}`}
-            stroke={LINE}
-            strokeWidth="1"
-            strokeDasharray="3 6"
+            stroke={GOLD_FAINT}
+            strokeWidth="1.25"
+            strokeDasharray="9 6"
+            strokeLinecap="round"
           />
         ))}
         {CENTRAL_ASIA_NODES.map(([x, y]) => (
-          <circle key={`can-${x}`} cx={x} cy={y} r="3.5" stroke={LINE} strokeWidth="1" />
+          <circle
+            key={`can-${x}`}
+            cx={x}
+            cy={y}
+            r="4.5"
+            stroke={GOLD_FAINT}
+            strokeWidth="1.5"
+          />
         ))}
       </g>
 
@@ -154,8 +168,8 @@ export function TradeNetwork({
  */
 const legendRule: Record<"core" | "growth" | "emerging", string> = {
   core: "h-0.5 w-8 bg-gold-500",
-  growth: "h-px w-6 bg-gold-500/55",
-  emerging: "h-0 w-5 border-t border-dashed border-border-strong",
+  growth: "h-0.5 w-6 bg-gold-500/70",
+  emerging: "h-0.5 w-5 bg-gold-500/55",
 };
 
 export function TradeNetworkLegend({
@@ -166,9 +180,9 @@ export function TradeNetworkLegend({
   className?: string;
 }) {
   const rows = [
-    { key: "core", label: labels.europe, tone: "text-foreground" },
-    { key: "growth", label: labels.gulf, tone: "text-muted" },
-    { key: "emerging", label: labels.centralAsia, tone: "text-subtle" },
+    { key: "core", label: labels.europe },
+    { key: "growth", label: labels.gulf },
+    { key: "emerging", label: labels.centralAsia },
   ] as const;
 
   return (
@@ -177,10 +191,10 @@ export function TradeNetworkLegend({
         <span aria-hidden="true" className="size-[7px] rounded-full bg-navy-800" />
         <span className="eyebrow text-foreground">{labels.origin}</span>
       </li>
-      {rows.map(({ key, label, tone }) => (
+      {rows.map(({ key, label }) => (
         <li key={key} className="flex items-center gap-2.5">
           <span aria-hidden="true" className={legendRule[key]} />
-          <span className={cn("eyebrow", tone)}>{label}</span>
+          <span className="eyebrow text-foreground">{label}</span>
         </li>
       ))}
     </ul>

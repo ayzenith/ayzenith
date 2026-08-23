@@ -102,12 +102,20 @@ async function mapLimit<T, R>(
 // ----------------------------------------------------------------------------
 
 type ReporterWorld = {
-  /** Clean aggregate total (partner2Code === 0). */
+  /** Clean aggregate total (partner2Code === 0), or null if the response had no
+   *  row for this (reporter, cmd, year) — genuinely means "no data reported". */
   total: number | null;
   /** Source-country breakdown (partner2Code !== 0) → ISO/value. */
   sources: CountryValue[];
   fetchedAt: string;
   url: string;
+  /** True only when the call itself failed (network/HTTP/throttled-after-retries)
+   *  — distinct from a clean response that simply had no rows. A `failed` job
+   *  must never be treated the same as "this country/year has zero trade": the
+   *  caller excludes it from sums/baskets AND records that it could not be
+   *  measured, so a throttled request can no longer silently change a score
+   *  (see cache.ts rate-limiting fix, 2026-08-23). */
+  failed: boolean;
 };
 
 /** One (reporter, cmd, year, flow=M, partner=World) call → total + sources. */
@@ -115,7 +123,7 @@ async function fetchReporterWorld(
   reporterM49: string,
   cmd: string,
   year: number,
-): Promise<ReporterWorld | null> {
+): Promise<ReporterWorld> {
   const params = {
     reporterCode: reporterM49,
     partnerCode: WORLD,
@@ -125,14 +133,15 @@ async function fetchReporterWorld(
     customsCode: "C00",
     motCode: "0",
   };
+  const url = buildUrl(params);
   try {
     const { payload, fetchedAt } = await cachedFetch({
       provider: "comtrade",
       query: params,
-      url: buildUrl(params),
+      url,
     });
     const rows = rowsOf(payload);
-    if (rows.length === 0) return null;
+    if (rows.length === 0) return { total: null, sources: [], fetchedAt: fetchedAt.toISOString(), url, failed: false };
     const totalRow = rows.find((r) => (r.partner2Code ?? -1) === 0);
     const sources: CountryValue[] = rows
       .filter((r) => (r.partner2Code ?? 0) !== 0 && r.primaryValue != null)
@@ -144,10 +153,13 @@ async function fetchReporterWorld(
       total: totalRow?.primaryValue ?? null,
       sources,
       fetchedAt: fetchedAt.toISOString(),
-      url: buildUrl(params),
+      url,
+      failed: false,
     };
   } catch {
-    return null;
+    // Network/HTTP/throttling failure — NOT "no data". Caller must not count
+    // this the same as a real empty response.
+    return { total: null, sources: [], fetchedAt: new Date().toISOString(), url, failed: true };
   }
 }
 
@@ -156,7 +168,7 @@ async function fetchBilateralExport(
   partnerM49: string,
   cmd: string,
   year: number,
-): Promise<{ value: number | null; fetchedAt: string; url: string }> {
+): Promise<{ value: number | null; fetchedAt: string; url: string; failed: boolean }> {
   const params = {
     reporterCode: TR_M49,
     partnerCode: partnerM49,
@@ -166,21 +178,23 @@ async function fetchBilateralExport(
     customsCode: "C00",
     motCode: "0",
   };
+  const url = buildUrl(params);
   try {
     const { payload, fetchedAt } = await cachedFetch({
       provider: "comtrade",
       query: params,
-      url: buildUrl(params),
+      url,
     });
     const rows = rowsOf(payload);
     const totalRow = rows.find((r) => (r.partner2Code ?? -1) === 0);
     return {
       value: totalRow?.primaryValue ?? null,
       fetchedAt: fetchedAt.toISOString(),
-      url: buildUrl(params),
+      url,
+      failed: false,
     };
   } catch {
-    return { value: null, fetchedAt: new Date().toISOString(), url: buildUrl(params) };
+    return { value: null, fetchedAt: new Date().toISOString(), url, failed: true };
   }
 }
 
@@ -220,26 +234,40 @@ export async function getImportSeries(
 
   const jobs = years.flatMap((year) => hsCodes.map((cmd) => ({ year, cmd })));
   const results = await mapLimit(jobs, CONCURRENCY, (j) =>
-    fetchReporterWorld(reporter, j.cmd, j.year).then((r) => ({ ...j, total: r?.total ?? null, meta: r })),
+    fetchReporterWorld(reporter, j.cmd, j.year).then((r) => ({ ...j, meta: r })),
   );
 
-  // Build code → year → value, plus per-year coverage.
+  // Build code → year → value, plus per-year coverage. A `failed` job (network/
+  // HTTP/throttling) is EXCLUDED here, same as a real empty response, because
+  // neither contributes a number — but it is also counted separately below so
+  // the caller can tell "no trade reported" from "could not be measured".
   const byCode = new Map<string, Map<number, number>>();
   const coverage = new Map<number, number>();
   let fetchedAt = new Date().toISOString();
   let url = "";
-  for (const { cmd, year, total, meta } of results) {
-    if (total == null) continue;
+  let failedJobs = 0;
+  const failedByYear = new Map<number, number>();
+  for (const { cmd, year, meta } of results) {
+    if (meta.failed) {
+      failedJobs++;
+      failedByYear.set(year, (failedByYear.get(year) ?? 0) + 1);
+      continue;
+    }
+    if (meta.total == null) continue;
     const inner = byCode.get(cmd) ?? new Map<number, number>();
-    inner.set(year, total);
+    inner.set(year, meta.total);
     byCode.set(cmd, inner);
     coverage.set(year, (coverage.get(year) ?? 0) + 1);
-    if (meta) {
-      fetchedAt = meta.fetchedAt;
-      url = meta.url;
-    }
+    fetchedAt = meta.fetchedAt;
+    url = meta.url;
   }
-  if (byCode.size === 0) return err("Comtrade: ithalat verisi bulunamadı.");
+  if (byCode.size === 0) {
+    return err(
+      failedJobs > 0
+        ? `Comtrade: ithalat verisi bulunamadı (${failedJobs}/${jobs.length} sorgu ölçülemedi — kaynak yanıt vermedi).`
+        : "Comtrade: ithalat verisi bulunamadı.",
+    );
+  }
 
   // Latest year = most recent year with the maximal code coverage.
   const maxCov = Math.max(...coverage.values());
@@ -268,6 +296,18 @@ export async function getImportSeries(
   }
   const growthCagr = weightSum > 0 ? weightedCagr / weightSum : null;
 
+  // The headline demand number is the one criterion the whole score depends on
+  // (analyze.ts returns INSUFFICIENT_DATA without it) — so a failure exactly at
+  // the chosen latest year is called out explicitly rather than folded silently
+  // into "this HS code just wasn't traded".
+  const failedAtLatest = failedByYear.get(latestYear) ?? 0;
+  const warning =
+    failedAtLatest > 0
+      ? `${latestYear} yılı için ${failedAtLatest}/${hsCodes.length} HS kodu ölçülemedi (kaynak yanıt vermedi) — ithalat toplamı eksik olabilir.`
+      : failedJobs > 0
+        ? `${failedJobs} sorgu ölçülemedi (kaynak yanıt vermedi); etkilenmeyen yıl/kodlar kullanıldı.`
+        : undefined;
+
   return ok(
     { latestYear, latestValue, growthCagr, growthYears },
     [
@@ -281,6 +321,7 @@ export async function getImportSeries(
         fetchedAt,
       },
     ],
+    warning,
   );
 }
 
@@ -296,38 +337,57 @@ export async function getImportsForCountries(
   const codes = isoCodes.map((iso) => ({ iso, m49: toM49(iso) })).filter((c) => c.m49);
   if (codes.length === 0) return err("Geçerli ülke kodu yok.");
 
-  async function sumForYear(m49: string, y: number): Promise<number | null> {
-    const parts = await mapLimit(hsCodes, CONCURRENCY, (cmd) =>
-      fetchReporterWorld(m49, cmd, y).then((r) => r?.total ?? null),
-    );
-    const present = parts.filter((v): v is number => v != null);
-    return present.length > 0 ? present.reduce((a, b) => a + b, 0) : null;
+  // `couldNotMeasure` distinguishes "at least one call for this country failed
+  // (network/HTTP/throttling)" from "the country genuinely reported no trade" —
+  // a country in the FIRST group must never sit in the peer basket silently
+  // indistinguishable from the second, since that basket drives the min–max
+  // demand score (see cache.ts rate-limiting fix, 2026-08-23).
+  async function sumForYear(m49: string, y: number): Promise<{ total: number | null; couldNotMeasure: boolean }> {
+    const parts = await mapLimit(hsCodes, CONCURRENCY, (cmd) => fetchReporterWorld(m49, cmd, y));
+    const present = parts.filter((r) => !r.failed && r.total != null).map((r) => r.total as number);
+    const anyFailed = parts.some((r) => r.failed);
+    return { total: present.length > 0 ? present.reduce((a, b) => a + b, 0) : null, couldNotMeasure: anyFailed };
   }
 
   const byCountry = new Map<string, number>();
+  const unmeasured: string[] = [];
   await mapLimit(codes, CONCURRENCY, async (c) => {
-    let total = await sumForYear(c.m49 as string, year);
-    if (total == null && fallbackYear != null) {
-      total = await sumForYear(c.m49 as string, fallbackYear);
+    let r = await sumForYear(c.m49 as string, year);
+    if (r.total == null && fallbackYear != null) {
+      const fb = await sumForYear(c.m49 as string, fallbackYear);
+      r = { total: fb.total, couldNotMeasure: r.couldNotMeasure || fb.couldNotMeasure };
     }
-    if (total != null) byCountry.set(c.iso, total);
+    if (r.total != null) byCountry.set(c.iso, r.total);
+    else if (r.couldNotMeasure) unmeasured.push(c.iso);
   });
-  if (byCountry.size === 0) return err("Comtrade: benzer pazar verisi bulunamadı.");
+  if (byCountry.size === 0) {
+    return err(
+      unmeasured.length > 0
+        ? `Comtrade: benzer pazar verisi bulunamadı (${unmeasured.length} ülke ölçülemedi — kaynak yanıt vermedi).`
+        : "Comtrade: benzer pazar verisi bulunamadı.",
+    );
+  }
 
   const values: CountryValue[] = [...byCountry.entries()].map(([countryCode, value]) => ({
     countryCode,
     value,
   }));
-  return ok(values, [
-    {
-      provider: "comtrade",
-      label: `${values.length} benzer pazarın ithalatı ${year}`,
-      query: { countries: codes.map((c) => c.iso).join(","), period: year, flowCode: "M" },
-      rawValue: `${values.length} ülke`,
-      unit: "USD",
-      fetchedAt: new Date().toISOString(),
-    },
-  ]);
+  return ok(
+    values,
+    [
+      {
+        provider: "comtrade",
+        label: `${values.length} benzer pazarın ithalatı ${year}`,
+        query: { countries: codes.map((c) => c.iso).join(","), period: year, flowCode: "M" },
+        rawValue: `${values.length} ülke`,
+        unit: "USD",
+        fetchedAt: new Date().toISOString(),
+      },
+    ],
+    unmeasured.length > 0
+      ? `${unmeasured.length} kıyas pazarı ölçülemedi (kaynak yanıt vermedi, "sıfır ticaret" değil): ${unmeasured.join(", ")}.`
+      : undefined,
+  );
 }
 
 /** Turkey → each destination export value, latest year (with a one-year
@@ -341,38 +401,52 @@ export async function getTrExportsToCountries(
   const codes = isoCodes.map((iso) => ({ iso, m49: toM49(iso) })).filter((c) => c.m49);
   if (codes.length === 0) return err("Geçerli ülke kodu yok.");
 
-  async function sumForYear(m49: string, y: number): Promise<number | null> {
-    const parts = await mapLimit(hsCodes, CONCURRENCY, (cmd) =>
-      fetchBilateralExport(m49, cmd, y).then((r) => r.value),
-    );
-    const present = parts.filter((v): v is number => v != null);
-    return present.length > 0 ? present.reduce((a, b) => a + b, 0) : null;
+  async function sumForYear(m49: string, y: number): Promise<{ total: number | null; couldNotMeasure: boolean }> {
+    const parts = await mapLimit(hsCodes, CONCURRENCY, (cmd) => fetchBilateralExport(m49, cmd, y));
+    const present = parts.filter((r) => !r.failed && r.value != null).map((r) => r.value as number);
+    const anyFailed = parts.some((r) => r.failed);
+    return { total: present.length > 0 ? present.reduce((a, b) => a + b, 0) : null, couldNotMeasure: anyFailed };
   }
 
   const byPartner = new Map<string, number>();
+  const unmeasured: string[] = [];
   await mapLimit(codes, CONCURRENCY, async (c) => {
-    let total = await sumForYear(c.m49 as string, year);
-    if (total == null && fallbackYear != null) {
-      total = await sumForYear(c.m49 as string, fallbackYear);
+    let r = await sumForYear(c.m49 as string, year);
+    if (r.total == null && fallbackYear != null) {
+      const fb = await sumForYear(c.m49 as string, fallbackYear);
+      r = { total: fb.total, couldNotMeasure: r.couldNotMeasure || fb.couldNotMeasure };
     }
-    if (total != null) byPartner.set(c.iso, total);
+    if (r.total != null) byPartner.set(c.iso, r.total);
+    else if (r.couldNotMeasure) unmeasured.push(c.iso);
   });
-  if (byPartner.size === 0) return err("Comtrade: Türkiye ihracat verisi bulunamadı.");
+  if (byPartner.size === 0) {
+    return err(
+      unmeasured.length > 0
+        ? `Comtrade: Türkiye ihracat verisi bulunamadı (${unmeasured.length} ülke ölçülemedi — kaynak yanıt vermedi).`
+        : "Comtrade: Türkiye ihracat verisi bulunamadı.",
+    );
+  }
 
   const values: CountryValue[] = [...byPartner.entries()].map(([countryCode, value]) => ({
     countryCode,
     value,
   }));
-  return ok(values, [
-    {
-      provider: "comtrade",
-      label: `Türkiye ihracatı → ${values.length} pazar ${year}`,
-      query: { reporterCode: TR_M49, partners: codes.map((c) => c.iso).join(","), period: year, flowCode: "X" },
-      rawValue: `${values.length} ülke`,
-      unit: "USD",
-      fetchedAt: new Date().toISOString(),
-    },
-  ]);
+  return ok(
+    values,
+    [
+      {
+        provider: "comtrade",
+        label: `Türkiye ihracatı → ${values.length} pazar ${year}`,
+        query: { reporterCode: TR_M49, partners: codes.map((c) => c.iso).join(","), period: year, flowCode: "X" },
+        rawValue: `${values.length} ülke`,
+        unit: "USD",
+        fetchedAt: new Date().toISOString(),
+      },
+    ],
+    unmeasured.length > 0
+      ? `${unmeasured.length} pazara Türkiye ihracatı ölçülemedi (kaynak yanıt vermedi): ${unmeasured.join(", ")}.`
+      : undefined,
+  );
 }
 
 /** Import value of the target market broken down by SOURCE country — reuses the
@@ -392,31 +466,47 @@ export async function getImportSources(
   const bySource = new Map<string, number>();
   let url = "";
   let fetchedAt = new Date().toISOString();
+  let failedCount = 0;
   for (const r of results) {
-    if (!r) continue;
+    if (r.failed) {
+      failedCount++;
+      continue;
+    }
     url = r.url;
     fetchedAt = r.fetchedAt;
     for (const s of r.sources) {
       bySource.set(s.countryCode, (bySource.get(s.countryCode) ?? 0) + s.value);
     }
   }
-  if (bySource.size === 0) return err("Comtrade: kaynak ülke kırılımı bulunamadı.");
+  if (bySource.size === 0) {
+    return err(
+      failedCount > 0
+        ? `Comtrade: kaynak ülke kırılımı bulunamadı (${failedCount}/${hsCodes.length} HS kodu ölçülemedi).`
+        : "Comtrade: kaynak ülke kırılımı bulunamadı.",
+    );
+  }
 
   const values: CountryValue[] = [...bySource.entries()].map(([countryCode, value]) => ({
     countryCode,
     value,
   }));
-  return ok(values, [
-    {
-      provider: "comtrade",
-      label: `${reporterIso} ithalatının kaynak ülke kırılımı ${year}`,
-      query: { reporterCode: reporter, period: year, cmdCode: hsCodes.join(","), flowCode: "M" },
-      rawValue: `${values.length} kaynak ülke`,
-      unit: "USD",
-      sourceUrl: url,
-      fetchedAt,
-    },
-  ]);
+  return ok(
+    values,
+    [
+      {
+        provider: "comtrade",
+        label: `${reporterIso} ithalatının kaynak ülke kırılımı ${year}`,
+        query: { reporterCode: reporter, period: year, cmdCode: hsCodes.join(","), flowCode: "M" },
+        rawValue: `${values.length} kaynak ülke`,
+        unit: "USD",
+        sourceUrl: url,
+        fetchedAt,
+      },
+    ],
+    failedCount > 0
+      ? `${failedCount}/${hsCodes.length} HS kodu ölçülemedi; kaynak ülke kırılımı eksik olabilir.`
+      : undefined,
+  );
 }
 
 /** Turkey → one destination export value PER HS-6 code, latest year (with a
@@ -435,28 +525,39 @@ export async function getTrExportsByHsToCountry(
   const results = await mapLimit(hsCodes, CONCURRENCY, async (cmd) => {
     let r = await fetchBilateralExport(dest, cmd, year);
     if (r.value == null && fallbackYear != null) {
-      r = await fetchBilateralExport(dest, cmd, fallbackYear);
+      const fb = await fetchBilateralExport(dest, cmd, fallbackYear);
+      r = { ...fb, failed: r.failed && fb.failed }; // still "unmeasured" only if BOTH attempts failed
     }
-    return { cmd, value: r.value };
+    return { cmd, value: r.value, failed: r.failed };
   });
 
   const byHs: Record<string, number> = {};
-  for (const { cmd, value } of results) {
+  let failedCount = 0;
+  for (const { cmd, value, failed } of results) {
     if (value != null) byHs[cmd] = value;
+    else if (failed) failedCount++;
   }
   if (Object.keys(byHs).length === 0) {
-    return err("Comtrade: Türkiye'nin ürün bazında ihracat verisi bulunamadı.");
+    return err(
+      failedCount > 0
+        ? `Comtrade: Türkiye'nin ürün bazında ihracat verisi bulunamadı (${failedCount}/${hsCodes.length} HS kodu ölçülemedi).`
+        : "Comtrade: Türkiye'nin ürün bazında ihracat verisi bulunamadı.",
+    );
   }
-  return ok(byHs, [
-    {
-      provider: "comtrade",
-      label: `Türkiye → ${destIso} ihracatı (HS bazında) ${year}`,
-      query: { reporterCode: TR_M49, partnerCode: dest, period: year, cmdCode: hsCodes.join(","), flowCode: "X" },
-      rawValue: `${Object.keys(byHs).length} ürün grubu`,
-      unit: "USD",
-      fetchedAt: new Date().toISOString(),
-    },
-  ]);
+  return ok(
+    byHs,
+    [
+      {
+        provider: "comtrade",
+        label: `Türkiye → ${destIso} ihracatı (HS bazında) ${year}`,
+        query: { reporterCode: TR_M49, partnerCode: dest, period: year, cmdCode: hsCodes.join(","), flowCode: "X" },
+        rawValue: `${Object.keys(byHs).length} ürün grubu`,
+        unit: "USD",
+        fetchedAt: new Date().toISOString(),
+      },
+    ],
+    failedCount > 0 ? `${failedCount}/${hsCodes.length} ürün grubu ölçülemedi.` : undefined,
+  );
 }
 
 /** Per-HS-6 import value + short trend for the target market → sub-category
@@ -476,17 +577,28 @@ export async function getSubcategorySeries(
   const consideredYears = years.filter((y) => y <= latestYear);
   const jobs = hsCodes.flatMap((cmd) => consideredYears.map((year) => ({ cmd, year })));
   const results = await mapLimit(jobs, CONCURRENCY, (j) =>
-    fetchReporterWorld(reporter, j.cmd, j.year).then((r) => ({ ...j, total: r?.total ?? null })),
+    fetchReporterWorld(reporter, j.cmd, j.year).then((r) => ({ ...j, total: r.total, failed: r.failed })),
   );
 
   const byHs = new Map<string, Map<number, number>>();
-  for (const { cmd, year, total } of results) {
+  let failedCount = 0;
+  for (const { cmd, year, total, failed } of results) {
+    if (failed) {
+      failedCount++;
+      continue;
+    }
     if (total == null) continue;
     const inner = byHs.get(cmd) ?? new Map<number, number>();
     inner.set(year, total);
     byHs.set(cmd, inner);
   }
-  if (byHs.size === 0) return err("Comtrade: alt kategori verisi bulunamadı.");
+  if (byHs.size === 0) {
+    return err(
+      failedCount > 0
+        ? `Comtrade: alt kategori verisi bulunamadı (${failedCount}/${jobs.length} sorgu ölçülemedi).`
+        : "Comtrade: alt kategori verisi bulunamadı.",
+    );
+  }
 
   const result = [...byHs.entries()].map(([hs6, inner]) => {
     const ordered = [...inner.entries()].sort((a, b) => a[0] - b[0]);
@@ -509,5 +621,9 @@ export async function getSubcategorySeries(
     }
     return { hs6, latest, cagrPct: cagr };
   });
-  return ok(result, []);
+  return ok(
+    result,
+    [],
+    failedCount > 0 ? `${failedCount}/${jobs.length} alt kategori sorgusu ölçülemedi.` : undefined,
+  );
 }

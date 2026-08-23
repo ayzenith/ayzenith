@@ -30,12 +30,22 @@ export type Citation = {
   fetchedAt: string; // ISO timestamp
 };
 
-export type ProviderOk<T> = { ok: true; value: T; citations: Citation[] };
+export type ProviderOk<T> = {
+  ok: true;
+  value: T;
+  citations: Citation[];
+  /** Non-fatal caveat: the result is real, but some underlying calls could not
+   *  be measured (network/HTTP/throttling failure, not a genuine "no data"
+   *  response) and were excluded rather than silently counted as zero/absent.
+   *  Surfaced to `errors[]` so a degraded-but-usable result is never presented
+   *  with the same confidence as a complete one. */
+  warning?: string;
+};
 export type ProviderErr = { ok: false; error: string };
 export type ProviderResult<T> = ProviderOk<T> | ProviderErr;
 
-export function ok<T>(value: T, citations: Citation[] = []): ProviderOk<T> {
-  return { ok: true, value, citations };
+export function ok<T>(value: T, citations: Citation[] = [], warning?: string): ProviderOk<T> {
+  return { ok: true, value, citations, warning };
 }
 export function err(error: string): ProviderErr {
   return { ok: false, error };

@@ -202,6 +202,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
     growthCagr = seriesRes.value.growthCagr;
     growthYears = seriesRes.value.growthYears;
     latestYear = seriesRes.value.latestYear;
+    if (seriesRes.warning) errors.push(seriesRes.warning);
   } else {
     errors.push(seriesRes.error);
     // Eurostat fallback for EU members (demand only; no growth series).
@@ -233,12 +234,16 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
     getTrExportsByHsToCountry(countryCode, hsCodes, latestYear, latestYear - 1),
   ]);
   const trByHs: Record<string, number> = trByHsRes.ok ? trByHsRes.value : {};
-  if (trByHsRes.ok) citations.push(...trByHsRes.citations);
+  if (trByHsRes.ok) {
+    citations.push(...trByHsRes.citations);
+    if (trByHsRes.warning) errors.push(trByHsRes.warning);
+  }
 
   let peerImports: number[] = [];
   if (peerRes.ok) {
     citations.push(...peerRes.citations);
     peerImports = peerRes.value.map((c) => c.value);
+    if (peerRes.warning) errors.push(peerRes.warning);
   } else {
     errors.push(peerRes.error);
     peerImports = [targetImport]; // degrade: at least the target itself
@@ -250,6 +255,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
     citations.push(...trRes.citations);
     trToTargetExport = pickValue(trRes.value, countryCode);
     trToPeerExports = trRes.value.map((c) => c.value);
+    if (trRes.warning) errors.push(trRes.warning);
   } else {
     errors.push(trRes.error);
   }
@@ -260,6 +266,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
     citations.push(...sourceRes.citations);
     sourceBreakdown = sourceRes.value;
     sourceCountryImports = sourceRes.value.map((c) => c.value);
+    if (sourceRes.warning) errors.push(sourceRes.warning);
   } else {
     errors.push(sourceRes.error);
   }
@@ -319,6 +326,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
   // 7. Sub-category breakdown (real HS-6 data → per-code score).
   let subCategories: SubCategory[] = [];
   if (subRes.ok) {
+    if (subRes.warning) errors.push(subRes.warning);
     const values = subRes.value.map((s) => s.latest);
     const min = Math.min(...values);
     const max = Math.max(...values);

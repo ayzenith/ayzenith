@@ -1864,7 +1864,10 @@ enum BenchmarkMethod {
 /// contribute a stale, low-quality individual observation.
 model LogisticsSource {
   id                     String              @id @default(cuid())
-  name                   String
+  // Unique so an ingestion job can `upsert` its own source row by name
+  // instead of needing to look up an id first — one named source, one row,
+  // always (e.g. "EU Weekly Oil Bulletin", "CNR").
+  name                   String              @unique
   sourceType             LogisticsSourceType
   authorityScore         Int // 0-100, curated
   transparencyScore      Int
@@ -1874,9 +1877,52 @@ model LogisticsSource {
   lastFetchedAt          DateTime?
   url                    String?
 
-  rawObservations LogisticsRawObservation[]
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  rawObservations      LogisticsRawObservation[]
+  fuelIndexObservations LogisticsFuelIndexObservation[]
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+}
+
+/// Country-level fuel-price INDEX data (e.g. EU Weekly Oil Bulletin) — kept
+/// deliberately separate from LogisticsRawObservation, which is shaped for a
+/// LANE's own shipment price and has no "country" concept. An index observation
+/// has no origin/destination at all; it exists to feed the fuel-movement signal
+/// a REGIONAL_INDEX_ONLY estimate applies to an existing corridor base — it is
+/// NEVER, on its own, turned into a freight price (see evidence.ts doc).
+///
+/// The unique constraint below is the whole point of this table's shape: the
+/// SAME weekly publication re-fetched twice must upsert, not duplicate. That is
+/// the natural key a periodic ingestion job idempotently keys on.
+model LogisticsFuelIndexObservation {
+  id       String          @id @default(cuid())
+  sourceId String
+  source   LogisticsSource @relation(fields: [sourceId], references: [id])
+
+  country          String   // ISO alpha-2
+  fuelType         FuelType @default(DIESEL)
+  priceEurPerLiter Decimal  @db.Decimal(6, 4)
+  /// The published period this price is valid for (the bulletin's own week-of
+  /// date) — NOT when we happened to fetch it. This is the field the natural
+  /// key actually keys on.
+  periodStart      DateTime
+
+  /// Cheap sanity bound, not statistical outlier detection (a single weekly
+  /// index value per country has no sibling set to compare against the way a
+  /// lane's freight observations do). Diesel outside ~€0.30-3.50/L is almost
+  /// certainly a parsing error, not a real price.
+  plausible       Boolean @default(true)
+  plausibilityNote String?
+
+  rawPayload  Json     // the source file's row, verbatim, for audit
+  capturedAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+
+  @@unique([sourceId, country, fuelType, periodStart])
+  @@index([country, fuelType, periodStart])
+}
+
+enum FuelType {
+  DIESEL
 }
 
 /// Lazy-created: only exists once a real query or observation touches it — the

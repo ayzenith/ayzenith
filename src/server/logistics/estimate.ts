@@ -17,6 +17,20 @@ import { computeEstimateability } from "./estimateability";
  * presenting the extremes as "the estimate" would let a single legitimate-but-
  * unusual observation blow the band out to something misleading even after
  * MAD outlier filtering already ran.
+ *
+ * WHAT HAS ACTUALLY BEEN PROVEN, AS OF 2026-08-24 — read this before claiming
+ * more than it says. The 8-test verification run (evidence fallback A→B→C→
+ * NONE, the REGIONAL_INDEX_ONLY confidence ceiling, outlier flagging,
+ * immutability, actual-cost comparison, full-cleanup) proves the PIPELINE
+ * obeys its own safety rules when given data. It does NOT prove the pipeline
+ * predicts real freight cost accurately — that requires real lane
+ * observations (still zero) and a real CalibrationRun history comparing
+ * estimates to LogisticsActualCost over time. Until that exists, say "the
+ * estimation infrastructure is verified safe," never "logistics cost
+ * estimation works." The EU Oil Bulletin ingestion (sources/eu-oil-bulletin.ts)
+ * is the first REAL data in this system — but it is an INDEX signal only
+ * (see evidence.ts: REGIONAL_INDEX_ONLY cannot stand alone), not a lane
+ * price, so it does not by itself change this conclusion either.
  */
 
 export type EstimateQuery = {

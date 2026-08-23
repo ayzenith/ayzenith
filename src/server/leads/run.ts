@@ -138,7 +138,7 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
   }
 
   // 2. DEDUP (§13/§14) — company identity + branches.
-  const deduped = dedupeCandidates(candidates);
+  const dedupedRaw = dedupeCandidates(candidates);
 
   // Product-fit tier inputs (§2) + model for qualification (§1/§5).
   const strongTerms = profile.signals?.strong ?? [];
@@ -152,12 +152,39 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
   let brandFacts = new Map<string, BrandFacts>();
   try {
     brandFacts = await resolveBrandFacts(
-      deduped.map((dc) => dc.candidate.brandWikidataId).filter((q): q is string => Boolean(q)),
+      dedupedRaw.map((dc) => dc.candidate.brandWikidataId).filter((q): q is string => Boolean(q)),
     );
   } catch {
     // A brand lookup failure must never fail a search — the run simply keeps the
     // knowledge it already had.
   }
+
+  // WIKIDATA WEBSITE BACKFILL (2026-08-23). OSM gives no website at all for most
+  // discovered firms — measured live at ~60% of a typical run — and a company
+  // with no website is one this pipeline can never learn anything about: no
+  // product proof, no role, no contact, permanently UNCLEAR/UNVERIFIED. Deep
+  // Dive (deepdive.ts, §V3.12) already proved that Wikidata's P856 "official
+  // website" recovers exactly this for branded chains — Calzedonia, Intimissimi
+  // and Yamamay all have zero website in OSM but a real one on Wikidata — but
+  // that recovery only ever ran for the 3 firms a human clicked "derin inceleme"
+  // on. This folds the SAME already-cited, already-honest fact into the regular
+  // pipeline for every candidate that carries a `brand:wikidata` tag: a
+  // websiteless firm whose brand Wikidata entry states an official site is
+  // treated as if it HAD that website for ranking/verification/scoring, subject
+  // to the exact same SHALLOW_CAP/DEEP_CAP budget as any OSM-sourced website —
+  // no new cap, no new provider call (brandFacts was already being fetched for
+  // product signal), and the site is still read for itself before anything is
+  // asserted as verified. Provenance stays honest: the "website" source below is
+  // attributed to Wikidata, never misrepresented as OSM's own tag.
+  const websiteFromWikidata: boolean[] = new Array(dedupedRaw.length).fill(false);
+  const deduped: DedupedCandidate[] = dedupedRaw.map((dc, i) => {
+    if (dc.candidate.website) return dc;
+    const qid = dc.candidate.brandWikidataId;
+    const site = qid ? brandFacts.get(qid)?.officialWebsite : undefined;
+    if (!site) return dc;
+    websiteFromWikidata[i] = true;
+    return { ...dc, candidate: { ...dc.candidate, website: site } };
+  });
 
   const classifications = deduped.map((dc) =>
     classify(dc, {
@@ -289,7 +316,22 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
       { dataField: "existence", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl },
     ];
     if (dc.candidate.address) sources.push({ dataField: "address", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl });
-    if (dc.candidate.website) sources.push({ dataField: "website", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl });
+    if (dc.candidate.website) {
+      // Honest provenance for the WEBSITE field specifically: if OSM never
+      // tagged one and this firm's brand Wikidata entry supplied it instead
+      // (2026-08-23 backfill, above), the source must say Wikidata — never
+      // presented as if OSM had it.
+      sources.push(
+        websiteFromWikidata[i]
+          ? {
+              dataField: "website",
+              sourceType: "OTHER_FREE_SOURCE",
+              label: `Wikidata resmi site kaydı — ${dc.candidate.name}`,
+              sourceUrl: `https://www.wikidata.org/wiki/${dc.candidate.brandWikidataId}`,
+            }
+          : { dataField: "website", sourceType: "OSM", label: osmLabel, sourceUrl: dc.candidate.sourceUrl },
+      );
+    }
     // Wikidata brand record — cited whenever it told us anything (§V3.11). This is
     // provenance first, but it is also how the deep dive later recovers the brand
     // id: a chain with no website in OSM still has an official site on Wikidata,

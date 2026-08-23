@@ -1782,3 +1782,322 @@ model TradeDocumentLine {
   @@unique([documentId, saleLineId])
   @@index([documentId])
 }
+
+// ============================================================================
+// LOGISTICS INTELLIGENCE — v1 (additive, sits beside RADAR as an extra layer
+// on its "Giriş Kolaylığı" criterion). NOT wired to any UI/action yet — schema
+// only, drafted 2026-08-23, staged for review before a migration touches the
+// live database. See project memory for the full architecture discussion.
+//
+// Chain (each stage is a distinct table, never overwrites the previous one):
+//   RAW → NORMALIZED → VALIDATION → BENCHMARK → ESTIMATE → ACTUAL → CALIBRATION
+//
+// Core honesty rules, same doctrine as RadarSnapshot/AnalysisResult:
+//   - A raw observation is never edited, only validated (flagged, not deleted).
+//   - A price-per-kg coefficient is NEVER stored standalone and reapplied to a
+//     different weight — every normalized observation keeps its OWN absolute
+//     price and its OWN chargeable weight; a benchmark only ever groups
+//     observations that already share a profile bucket.
+//   - `LogisticsEstimate` is immutable once created (mirrors RadarSnapshot):
+//     a re-query creates a new row, it never rewrites an old one.
+//   - No band is generated below INSUFFICIENT estimateability — the gate is
+//     checked BEFORE producing a number, not after.
+// ============================================================================
+
+enum LogisticsSourceType {
+  OFFICIAL_INDEX       // EU weekly fuel bulletin, CNR, official toll tariffs
+  COMMERCIAL_BENCHMARK // Upply/Ti/IRU quarterly report (entered manually)
+}
+
+enum EvidenceLevel {
+  DIRECT_LANE          // same origin+dest+mode+profile, ≥2 observations
+  NEARBY_LANE          // same country pair, similar city/route
+  COUNTRY_CORRIDOR      // e.g. TR→DE, any city within the corridor
+  REGIONAL_INDEX_ONLY  // only an index movement applied to an existing corridor base — NEVER standalone
+  NONE
+}
+
+enum EstimateabilityBand {
+  HIGH
+  MEDIUM
+  LOW
+  INSUFFICIENT
+}
+
+enum TransportMode {
+  ROAD // sea/air/rail deferred — no unused enum surface until a real need exists
+}
+
+enum ShipmentType {
+  LTL
+  FTL
+}
+
+enum CorridorType {
+  DOMESTIC_EU
+  TR_EU_CROSS_BORDER
+}
+
+/// How a NormalizedObservation's shipment profile was actually determined.
+/// `MISSING` is the honest state for an absent field — never a silently
+/// assumed default that could later be mistaken for real data.
+enum NormalizationMethod {
+  AS_REPORTED
+  VOLUMETRIC_COMPUTED
+  MISSING
+}
+
+/// The statistical method used to flag (never delete) an outlier observation.
+enum ValidationMethod {
+  MAD_3X // median absolute deviation, >3x flagged — simple, explainable, no ML
+}
+
+/// How a Benchmark's central value was computed from its member observations.
+enum BenchmarkMethod {
+  MEDIAN
+  WEIGHTED_MEDIAN // weighted by sourceQuality × observationQuality per member
+}
+
+/// Source registry — SourceQuality lives here, changes rarely (admin-curated).
+/// Deliberately separate from ObservationQuality (computed per-row, see
+/// LogisticsNormalizedObservation) — a highly authoritative source can still
+/// contribute a stale, low-quality individual observation.
+model LogisticsSource {
+  id                     String              @id @default(cuid())
+  name                   String
+  sourceType             LogisticsSourceType
+  authorityScore         Int // 0-100, curated
+  transparencyScore      Int
+  coverageScore          Int
+  historicalDepthMonths  Int?
+  updateFrequency        String // "weekly" | "quarterly" | ...
+  lastFetchedAt          DateTime?
+  url                    String?
+
+  rawObservations LogisticsRawObservation[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+/// Lazy-created: only exists once a real query or observation touches it — the
+/// city×city matrix is never pre-seeded, so lane count grows with real demand,
+/// not with a combinatorial explosion of every possible pair.
+model LogisticsLane {
+  id            String        @id @default(cuid())
+  originCity    String
+  originCountry String // ISO alpha-2
+  destCity      String
+  destCountry   String
+  mode          TransportMode @default(ROAD)
+  corridorType  CorridorType
+
+  distanceKm       Float?
+  borderCrossings  Json     @default("[]")
+  // Placeholder only — toll varies by vehicle class, exact route and period,
+  // so a single static number on the lane is NOT trustworthy on its own.
+  // `tollLastUpdatedAt` exists so a stale value can be flagged; a proper
+  // `LaneTollSnapshot` (time-boxed, vehicle-class-aware) is the post-MVP fix.
+  tollExposureEur    Decimal?  @db.Decimal(10, 2)
+  tollLastUpdatedAt  DateTime?
+  lastCalibratedAt   DateTime?
+
+  rawObservations LogisticsRawObservation[]
+  benchmarks      LogisticsBenchmark[]
+  estimates       LogisticsEstimate[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([originCity, originCountry, destCity, destCountry, mode])
+}
+
+/// Immutable — exactly what the source said, verbatim. `rawPayload` keeps the
+/// full original response so a citation can always be audited back to source.
+model LogisticsRawObservation {
+  id       String          @id @default(cuid())
+  sourceId String
+  source   LogisticsSource @relation(fields: [sourceId], references: [id])
+  laneId   String?
+  lane     LogisticsLane?  @relation(fields: [laneId], references: [id])
+
+  rawShipmentDescription String? // the source's own free text, untouched
+  rawPrice               Decimal @db.Decimal(10, 2)
+  rawCurrency            String
+  observedAt             DateTime // when the price was actually valid
+  capturedAt             DateTime @default(now()) // when WE saw it
+  rawPayload             Json // the source's full original response
+
+  normalized LogisticsNormalizedObservation?
+  createdAt  DateTime @default(now())
+
+  @@index([laneId])
+  @@index([sourceId])
+}
+
+/// Profile-shaped and comparable — but NEVER a portable rate. `priceEur` and
+/// `chargeableWeightKg` always travel together as one observation's own pair;
+/// there is no field here that could be multiplied onto a different weight.
+model LogisticsNormalizedObservation {
+  id               String                  @id @default(cuid())
+  rawObservationId String                  @unique
+  rawObservation   LogisticsRawObservation @relation(fields: [rawObservationId], references: [id])
+
+  chargeableWeightKg Float // max(actual weight, L*W*H(cm)/3000)
+  volumeM3           Float?
+  palletCount        Int?
+  shipmentType       ShipmentType?
+  incoterm           String?
+  tollIncluded       Boolean? // null = unknown, never coerced to false
+  fuelIncluded       Boolean?
+
+  priceEur Decimal @db.Decimal(10, 2) // this observation's own absolute price
+
+  normalizationConfidence Int // 0-100 — drops as more fields were MISSING
+  normalizationMethod     NormalizationMethod
+
+  validation           LogisticsValidation?
+  benchmarkMemberships LogisticsBenchmarkObservation[]
+  createdAt            DateTime @default(now())
+}
+
+/// 1:1 with a normalized observation. Flags, never deletes or silently edits —
+/// `validatedValue` defaults to `rawValue` and only diverges if a human
+/// deliberately corrects a provable data-entry error, never an automated one.
+model LogisticsValidation {
+  id                      String                         @id @default(cuid())
+  normalizedObservationId String                         @unique
+  normalizedObservation   LogisticsNormalizedObservation @relation(fields: [normalizedObservationId], references: [id])
+
+  rawValue         Decimal          @db.Decimal(10, 2) // echo, for audit
+  validatedValue   Decimal          @db.Decimal(10, 2) // defaults to rawValue
+  outlierFlag      Boolean          @default(false)
+  outlierReason    String?
+  validationMethod ValidationMethod @default(MAD_3X)
+
+  createdAt DateTime @default(now())
+}
+
+/// Derived reference, never a raw fact — the median (or weighted median) of
+/// observations sharing one profile bucket on one lane. `members` keeps the
+/// join to every contributing observation so a benchmark can always be
+/// unpacked back to the real prices it came from.
+model LogisticsBenchmark {
+  id     String        @id @default(cuid())
+  laneId String
+  lane   LogisticsLane @relation(fields: [laneId], references: [id])
+
+  mode              TransportMode @default(ROAD)
+  shipmentType      ShipmentType
+  weightBucketMinKg Float
+  weightBucketMaxKg Float
+
+  calculationMethod BenchmarkMethod @default(MEDIAN)
+  medianPriceEur    Decimal         @db.Decimal(10, 2)
+  p25PriceEur       Decimal?        @db.Decimal(10, 2)
+  p75PriceEur       Decimal?        @db.Decimal(10, 2)
+  minPriceEur       Decimal?        @db.Decimal(10, 2)
+  maxPriceEur       Decimal?        @db.Decimal(10, 2)
+  sampleSize        Int
+  freshnessScore    Int // 0-100
+
+  members    LogisticsBenchmarkObservation[]
+  estimates  LogisticsEstimate[]
+  computedAt DateTime @default(now())
+
+  @@index([laneId, mode, shipmentType])
+}
+
+/// Join table — which normalized observations make up one benchmark, and each
+/// member's own weight in it (sourceQuality × observationQuality at the time
+/// the benchmark was computed).
+model LogisticsBenchmarkObservation {
+  benchmarkId             String
+  benchmark               LogisticsBenchmark             @relation(fields: [benchmarkId], references: [id])
+  normalizedObservationId String
+  normalizedObservation   LogisticsNormalizedObservation @relation(fields: [normalizedObservationId], references: [id])
+  weight                  Float
+
+  @@id([benchmarkId, normalizedObservationId])
+}
+
+/// Immutable — same principle as RadarSnapshot: a re-query creates a new row,
+/// never rewrites an old one. Estimateability is judged BEFORE a band is
+/// produced and frozen alongside it, since it is a judgement made at that
+/// moment, not a standalone re-usable fact (hence no separate table for it).
+model LogisticsEstimate {
+  id          String              @id @default(cuid())
+  laneId      String
+  lane        LogisticsLane       @relation(fields: [laneId], references: [id])
+  benchmarkId String?
+  benchmark   LogisticsBenchmark? @relation(fields: [benchmarkId], references: [id])
+
+  queryProfile Json // the query's own shipment profile (weight, volume, mode...)
+
+  evidenceLevel           EvidenceLevel
+  estimateability         EstimateabilityBand
+  estimateabilityFactors  Json // { evidenceLevel, observationCount, avgObservationQuality, profileSimilarity, sourceDiversity }
+
+  // How the band was actually produced — audit-critical, distinct from the
+  // human-readable `citations` shown in the UI: this is what the BACKEND
+  // needs to answer "what exact observations fed this number" even if a
+  // benchmark's own membership changes later.
+  estimateMethod       String // e.g. "benchmark_median" | "index_adjusted_corridor_base"
+  sourceObservationIds Json   // string[] of LogisticsNormalizedObservation ids
+
+  estimatedMinEur    Decimal? @db.Decimal(10, 2) // null ⇒ VERİ YETERSİZ
+  estimatedMaxEur    Decimal? @db.Decimal(10, 2)
+  insufficientReason String?
+
+  citations Json // user-facing source chain shown in the UI
+
+  actualCosts LogisticsActualCost[]
+  createdAt   DateTime @default(now())
+
+  @@index([laneId])
+}
+
+/// From Business OS's real CostLine data — compared against whatever estimate
+/// existed (if any) for that lane/profile at the time. `estimateId` is
+/// nullable AND non-unique on purpose: a real shipment might have had no
+/// estimate at all, and nothing here forces a 1:1 relationship an estimate's
+/// own definition (one query snapshot) doesn't actually guarantee.
+model LogisticsActualCost {
+  id         String              @id @default(cuid())
+  estimateId String?
+  estimate   LogisticsEstimate?  @relation(fields: [estimateId], references: [id])
+
+  purchaseId             String? // Business OS Purchase.id — the real freight CostLine
+  actualCostEur          Decimal  @db.Decimal(10, 2)
+  actualDate             DateTime
+  actualShipmentProfile  Json
+
+  absoluteError        Decimal? @db.Decimal(10, 2)
+  withinPredictionBand Boolean?
+
+  createdAt DateTime @default(now())
+
+  @@index([estimateId])
+  @@index([purchaseId])
+}
+
+/// Periodic job output — MAE/MAPE/within-band-rate, computed PER lane+mode
+/// (never a single global number, which would hide that one corridor is
+/// well-calibrated while another isn't). Feeds back into SourceQuality and a
+/// corridor's estimateability ceiling over time — a rule-based recalibration,
+/// not a hidden model.
+model LogisticsCalibrationRun {
+  id     String        @id @default(cuid())
+  laneId String
+  mode   TransportMode @default(ROAD)
+
+  sampleSize    Int
+  // Nullable: undefined/unreliable below a minimum sample size, and MAPE is
+  // undefined outright if any actual cost in the sample was ever zero.
+  mae           Decimal? @db.Decimal(10, 2)
+  mapePct       Float?
+  withinBandPct Float?
+
+  runAt DateTime @default(now())
+
+  @@index([laneId, mode])
+}

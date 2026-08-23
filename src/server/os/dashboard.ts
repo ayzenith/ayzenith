@@ -101,6 +101,82 @@ async function totalsFor(from: Date, to: Date): Promise<MonthTotals> {
   };
 }
 
+export type AttentionCounts = {
+  overdueIn: number;
+  overdueOut: number;
+  dueSoon: number;
+  lowCount: number;
+  draftDocs: number;
+  openSales: number;
+};
+
+/**
+ * The "bugün dikkat etmen gerekenler" list, as a pure function of six counts.
+ *
+ * Extracted so the cockpit screen and the desktop app's alert endpoint build the
+ * SAME list from the same numbers — a notification that disagrees with the
+ * screen it links to is worse than no notification at all.
+ */
+export function buildAttention(c: AttentionCounts): AttentionItem[] {
+  const attention: AttentionItem[] = [];
+  if (c.overdueIn > 0) {
+    attention.push({ level: "critical", label: `${c.overdueIn} gecikmiş tahsilat`, href: "/os/payments?direction=IN&overdue=1", count: c.overdueIn });
+  }
+  if (c.overdueOut > 0) {
+    attention.push({ level: "critical", label: `${c.overdueOut} gecikmiş ödeme`, href: "/os/payments?direction=OUT&overdue=1", count: c.overdueOut });
+  }
+  if (c.dueSoon > 0) {
+    attention.push({ level: "warning", label: `${c.dueSoon} ödeme 7 gün içinde`, href: "/os/payments?direction=OUT", count: c.dueSoon });
+  }
+  if (c.lowCount > 0) {
+    attention.push({ level: "warning", label: `${c.lowCount} üründe düşük stok`, href: "/os/inventory?low=1", count: c.lowCount });
+  }
+  if (c.draftDocs > 0) {
+    attention.push({ level: "info", label: `${c.draftDocs} taslak belge onay bekliyor`, href: "/os/sales?status=DRAFT", count: c.draftDocs });
+  }
+  if (c.openSales > 0) {
+    attention.push({ level: "info", label: `${c.openSales} açık satış`, href: "/os/sales?status=CONFIRMED", count: c.openSales });
+  }
+  if (attention.length === 0) {
+    attention.push({ level: "ok", label: "Bugün acil bir şey yok", href: "/os", count: 0 });
+  }
+  return attention;
+}
+
+/**
+ * The attention list ALONE — the six counts behind it and nothing else.
+ *
+ * `getOsDashboard` is deliberately heavy (two months of aggregates, cashflow,
+ * top channels, recent sales). The desktop app polls every few minutes and only
+ * needs the alerts, so it gets its own lean query set instead of dragging the
+ * whole cockpit through the database on a timer.
+ */
+export async function getOsAlerts(): Promise<{ attention: AttentionItem[]; counts: AttentionCounts }> {
+  const today = startOfDay();
+  const in7 = new Date(today);
+  in7.setDate(in7.getDate() + 7);
+
+  const [overdueIn, overdueOut, dueSoon, stock, draftSales, draftPurchases, openSales] = await Promise.all([
+    db.payment.count({ where: { direction: "IN", status: { in: ["PENDING", "PARTIAL"] }, dueDate: { lt: today } } }),
+    db.payment.count({ where: { direction: "OUT", status: { in: ["PENDING", "PARTIAL"] }, dueDate: { lt: today } } }),
+    db.payment.count({ where: { direction: "OUT", status: { in: ["PENDING", "PARTIAL"] }, dueDate: { gte: today, lte: in7 } } }),
+    stockSummary(),
+    db.sale.count({ where: { status: "DRAFT" } }),
+    db.purchase.count({ where: { status: "DRAFT" } }),
+    db.sale.count({ where: { status: "CONFIRMED" } }),
+  ]);
+
+  const counts: AttentionCounts = {
+    overdueIn,
+    overdueOut,
+    dueSoon,
+    lowCount: stock.lowCount,
+    draftDocs: draftSales + draftPurchases,
+    openSales,
+  };
+  return { attention: buildAttention(counts), counts };
+}
+
 export async function getOsDashboard(): Promise<OsDashboard> {
   const settings = await getOsSettings();
   const cur = monthRange(0);
@@ -151,28 +227,9 @@ export async function getOsDashboard(): Promise<OsDashboard> {
     }),
   ]);
 
-  const attention: AttentionItem[] = [];
-  if (overdueIn > 0) {
-    attention.push({ level: "critical", label: `${overdueIn} gecikmiş tahsilat`, href: "/os/payments?direction=IN&overdue=1", count: overdueIn });
-  }
-  if (overdueOut > 0) {
-    attention.push({ level: "critical", label: `${overdueOut} gecikmiş ödeme`, href: "/os/payments?direction=OUT&overdue=1", count: overdueOut });
-  }
-  if (dueSoon > 0) {
-    attention.push({ level: "warning", label: `${dueSoon} ödeme 7 gün içinde`, href: "/os/payments?direction=OUT", count: dueSoon });
-  }
-  if (stock.lowCount > 0) {
-    attention.push({ level: "warning", label: `${stock.lowCount} üründe düşük stok`, href: "/os/inventory?low=1", count: stock.lowCount });
-  }
-  if (draftDocs > 0) {
-    attention.push({ level: "info", label: `${draftDocs} taslak belge onay bekliyor`, href: "/os/sales?status=DRAFT", count: draftDocs });
-  }
-  if (openSales > 0) {
-    attention.push({ level: "info", label: `${openSales} açık satış`, href: "/os/sales?status=CONFIRMED", count: openSales });
-  }
-  if (attention.length === 0) {
-    attention.push({ level: "ok", label: "Bugün acil bir şey yok", href: "/os", count: 0 });
-  }
+  const attention = buildAttention({
+    overdueIn, overdueOut, dueSoon, lowCount: stock.lowCount, draftDocs, openSales,
+  });
 
   return {
     baseCurrency: settings.baseCurrency,

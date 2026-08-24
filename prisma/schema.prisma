@@ -1879,6 +1879,7 @@ model LogisticsSource {
 
   rawObservations      LogisticsRawObservation[]
   fuelIndexObservations LogisticsFuelIndexObservation[]
+  costIndexDefinitions  LogisticsCostIndexDefinition[]
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 }
@@ -1923,6 +1924,104 @@ model LogisticsFuelIndexObservation {
 
 enum FuelType {
   DIESEL
+}
+
+// ============================================================================
+// COST INDEX — a road-transport OPERATING-COST index (e.g. CNR), structurally
+// distinct from LogisticsFuelIndexObservation above even though both are
+// INDEX-class signals (never a lane price on their own — see evidence.ts).
+// The real link between the two is that both hang off the same LogisticsSource
+// quality registry, not a shared table: a fuel index is one country's pump
+// price with no vehicle/component concept; a cost index is one PROVIDER's
+// weighted, multi-component cost structure for a specific vehicle/geography
+// that has no country dimension at all. Merging them would blur exactly the
+// distinction the owner insisted on keeping explicit.
+//
+// Three-layer split (2026-08-24, revised from an initial single-table sketch
+// after inspecting CNR's real published data): a naive design put `weightPct`
+// and `baseValue`/`baseDate` directly on each monthly observation, but CNR's
+// real page shows component WEIGHTS are themselves an ANNUAL series that
+// actually moves over time (diesel's weight in the composite fell from 26.3%
+// in 2011 to 20.9% in 2026 as the fleet grew more fuel-efficient) — repeating
+// that on every monthly row would make future re-weighting an update-in-place
+// operation instead of a new fact, the same anti-pattern this design avoids
+// everywhere else. So methodology (Definition), weight-over-time
+// (Component, itself time-indexed), and the monthly index VALUE
+// (Observation) are three separate concerns with three separate time axes.
+// ============================================================================
+
+/// One provider's cost-index METHODOLOGY — what it measures, for what vehicle,
+/// in what geography, relative to what base. This does NOT change monthly;
+/// it changes only if the provider redefines the index itself (rare).
+///
+/// `geography` is the field that makes an honesty mistake impossible later:
+/// CNR's "Long haul semi-trailer truck" index is French-domestic (French fuel
+/// excise, French driver-wage law, French toll structure) — it describes how
+/// a FRENCH carrier's cost moves, not a Turkish carrier's, and is NOT a proxy
+/// for a TR-DE lane's cost base. Every reader of this row sees that scope
+/// explicitly instead of having to already know it.
+model LogisticsCostIndexDefinition {
+  id       String          @id @default(cuid())
+  sourceId String
+  source   LogisticsSource @relation(fields: [sourceId], references: [id])
+
+  indexName   String // e.g. "CNR Long haul semi-trailer truck index"
+  geography   String // e.g. "FR" — the geography the cost STRUCTURE reflects, never assumed wider
+  vehicleType String // e.g. "Semi-trailer truck ≤44t, long haul, for hire or reward"
+  methodology String? // free text / URL — what the index covers and excludes, for audit
+
+  baseValue Float // e.g. 100
+  baseDate  DateTime // e.g. 2000-12-01, the index's own base period
+
+  components   LogisticsCostIndexComponent[]
+  observations LogisticsCostIndexObservation[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([sourceId, indexName])
+}
+
+/// A component's WEIGHT within the composite, for one year — its own time
+/// axis, separate from the monthly index values. `component` is a plain
+/// string, not an enum: CNR's breakdown (diesel/maintenance/infrastructure/
+/// equipment/driver/allowances/overheads) is this provider's vocabulary, and
+/// a future cost-index provider is not guaranteed to decompose the same way.
+/// `component = "COMPOSITE"` (and `"COMPOSITE_EX_DIESEL"`) are the two
+/// synthetic totals CNR itself publishes — carried as components here too so
+/// EVERY series this table can hold, weighted or synthetic, lives in one
+/// place with one shape.
+model LogisticsCostIndexComponent {
+  id           String                       @id @default(cuid())
+  definitionId String
+  definition   LogisticsCostIndexDefinition @relation(fields: [definitionId], references: [id])
+
+  component      String
+  effectiveYear  Int // the weight published for THIS year — weights move annually, real CNR data confirmed
+  weightPct      Float? // null for a synthetic total like COMPOSITE, which has no weight of its own
+
+  createdAt DateTime @default(now())
+
+  @@unique([definitionId, component, effectiveYear])
+}
+
+/// The monthly index VALUE for one component of one definition. This is the
+/// table an ingestion job actually upserts into on every fetch — the natural
+/// key is exactly what makes re-fetching the same month idempotent.
+model LogisticsCostIndexObservation {
+  id           String                       @id @default(cuid())
+  definitionId String
+  definition   LogisticsCostIndexDefinition @relation(fields: [definitionId], references: [id])
+
+  component   String // matches a LogisticsCostIndexComponent.component for the same definition
+  periodStart DateTime // the published month this value is valid for
+  indexValue  Float // base-100-relative value, e.g. 242.15 (NOT a price, NEVER treated as one)
+
+  rawPayload Json // the source row, verbatim, for audit
+  capturedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@unique([definitionId, component, periodStart])
+  @@index([definitionId, component, periodStart])
 }
 
 /// Lazy-created: only exists once a real query or observation touches it — the

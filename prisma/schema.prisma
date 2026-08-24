@@ -1877,11 +1877,12 @@ model LogisticsSource {
   lastFetchedAt          DateTime?
   url                    String?
 
-  rawObservations      LogisticsRawObservation[]
+  rawObservations       LogisticsRawObservation[]
   fuelIndexObservations LogisticsFuelIndexObservation[]
   costIndexDefinitions  LogisticsCostIndexDefinition[]
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  marketReferences      LogisticsMarketReference[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 /// Country-level fuel-price INDEX data (e.g. EU Weekly Oil Bulletin) — kept
@@ -2274,4 +2275,96 @@ model LogisticsCalibrationRun {
   runAt DateTime @default(now())
 
   @@index([laneId, mode])
+}
+
+// ============================================================================
+// MARKET REFERENCE — a manually-entered, published sector/commercial price
+// band (e.g. a freight forum or logistics-provider site stating "İstanbul →
+// Germany, 1 Euro-pallet, ≤500 kg: €120–220"). Deliberately NOT built on top
+// of LogisticsRawObservation/LogisticsNormalizedObservation: that chain feeds
+// LogisticsBenchmark's point-weight aggregation via evidence.ts's
+// DIRECT_LANE/NEARBY_LANE detection, and a tiered/banded reference is not a
+// point observation — folding it in there would let a "valid up to 500 kg"
+// reference silently average into a benchmark as if it were one specific
+// shipment's real price. This table never feeds LogisticsBenchmark and is
+// never wired into LogisticsEstimate's estimatedMin/MaxEur — it is always
+// surfaced on its own, labeled "piyasa referansı", never "gerçek navlun".
+// No scraper: ingestion is manual entry only.
+// ============================================================================
+
+/// Mirrors RawPriceType exactly — a market reference is just as often a band
+/// as an exact figure, and the same EXACT/RANGE discipline applies: the
+/// original band is never collapsed away.
+enum MarketReferencePriceType {
+  EXACT
+  RANGE
+}
+
+/// How the source stated the shipment weight this price applies to. Mirrors
+/// MarketReferencePriceType's shape: EXACT means one weight was named,
+/// UP_TO means only a ceiling was given (weightScopeMinKg stays NULL — no
+/// floor is claimed, not even 0), RANGE means both bounds were stated.
+enum WeightScopeType {
+  EXACT
+  UP_TO
+  RANGE
+}
+
+/// A published reference price for a lane + shipment profile, entered by hand
+/// from a named commercial/sector source. `destCity` is nullable on purpose:
+/// a source saying "İstanbul → Almanya" named a country, not a city, and
+/// forcing a specific city onto that would invent precision the source never
+/// gave. This table has no LogisticsLane relation for the same reason — Lane
+/// requires both cities.
+///
+/// The weight scope (`weightScopeType` + min/max) is the field that answers
+/// the owner's core question: how a "≤500 kg" reference is kept from being
+/// misapplied to a 2000 kg query. The CHECK constraint (added at migration
+/// time) enforces internal consistency of these three fields; the actual
+/// misapplication guard lives one level up, in whatever future query logic
+/// reads this table — it must test
+/// `query.chargeableWeightKg BETWEEN (weightScopeMinKg ?? 0) AND (weightScopeMaxKg ?? infinity)`
+/// and exclude the row entirely outside that range. No such query exists yet;
+/// this table is not read by any code path today.
+model LogisticsMarketReference {
+  id       String          @id @default(cuid())
+  sourceId String
+  source   LogisticsSource @relation(fields: [sourceId], references: [id])
+
+  originCity    String
+  originCountry String // ISO alpha-2
+  destCity      String? // null when the source only named a country
+  destCountry   String
+
+  unitType  String? // e.g. "PALLET" | "CONTAINER" — the source's own unit, free text
+  unitCount Int? // e.g. 1 (Euro-pallet)
+
+  weightScopeType   WeightScopeType
+  weightScopeMinKg  Float? // null when weightScopeType = UP_TO (no floor claimed)
+  weightScopeMaxKg  Float? // null when weightScopeType = EXACT and min alone carries it
+
+  shipmentType ShipmentType?
+  incoterm     String?
+
+  priceType  MarketReferencePriceType @default(EXACT)
+  priceExact Decimal?                 @db.Decimal(10, 2) // set when priceType = EXACT
+  priceMin   Decimal?                 @db.Decimal(10, 2) // set when priceType = RANGE
+  priceMax   Decimal?                 @db.Decimal(10, 2) // set when priceType = RANGE
+  currency   String
+
+  /// The source rarely states an exact date — often just "as of 2026" or a
+  /// quarter. periodEnd stays null for a single stated date; for a stated
+  /// year/quarter it spans the full period, never invented beyond what the
+  /// source actually said.
+  periodStart DateTime
+  periodEnd   DateTime?
+
+  conditionsNote String? // free text — "kapıdan kapıya", "gümrük hariç", etc.
+  sourceUrl      String?
+  rawPayload     Json // the source's own text/snapshot, verbatim, for audit
+
+  capturedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  @@index([originCountry, destCountry])
 }

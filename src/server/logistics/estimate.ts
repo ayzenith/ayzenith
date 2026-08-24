@@ -184,11 +184,23 @@ async function ensureLane(query: EstimateQuery): Promise<string> {
 }
 
 function buildCitations(
-  observations: Array<{ id: string; priceEur: unknown; rawObservation: { observedAt: Date; source: { name: string } } }>,
+  observations: Array<{
+    id: string;
+    priceEur: unknown;
+    priceBasis: string;
+    priceMinEur: unknown;
+    priceMaxEur: unknown;
+    rawObservation: { observedAt: Date; source: { name: string } };
+  }>,
 ) {
   return observations.map((o) => ({
     normalizedObservationId: o.id,
     priceEur: Number(o.priceEur),
+    // If the source actually stated a range, the citation must say so — a
+    // reader asking "where did 170 come from" deserves "120-220, midpoint
+    // taken," never a bare 170 presented as if the source said that exactly.
+    priceBasis: o.priceBasis,
+    priceRangeEur: o.priceBasis === "RANGE_MIDPOINT" ? { min: Number(o.priceMinEur), max: Number(o.priceMaxEur) } : null,
     observedAt: o.rawObservation.observedAt.toISOString(),
     sourceName: o.rawObservation.source.name,
   }));

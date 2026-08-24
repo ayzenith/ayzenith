@@ -7,18 +7,31 @@ import { flagOutliers } from "./validate";
 /**
  * AYZENITH LOGISTICS INTELLIGENCE — ingestion (writes Raw + Normalized rows).
  *
- * MVP note: `priceEur` assumes the caller has already converted the source's
- * currency to EUR (or the source was already EUR). A real currency-conversion
- * step belongs here once a second currency source actually shows up — adding
- * it speculatively now would be exactly the kind of invented coefficient this
+ * MVP note: EUR amounts assume the caller has already converted the source's
+ * currency (or the source was already EUR). A real currency-conversion step
+ * belongs here once a second currency source actually shows up — adding it
+ * speculatively now would be exactly the kind of invented coefficient this
  * module's whole design exists to avoid.
+ *
+ * PRICE RANGES (2026-08-24). A source is not always one number — a sector
+ * site quoting "120-220 EUR per pallet" is a genuine band, and collapsing it
+ * to a single figure at ingestion would invent a precision the source never
+ * claimed. `IngestPrice` carries that distinction through: an EXACT price is
+ * stored as-is; a RANGE price is stored as its own min/max on BOTH the raw
+ * and normalized rows — the midpoint used for benchmark math is derived, not
+ * a substitute for the range, and `priceBasis` on the normalized row always
+ * says which one actually happened.
  */
+
+export type IngestPrice =
+  | { type: "EXACT"; valueEur: number }
+  | { type: "RANGE"; minEur: number; maxEur: number };
 
 export type IngestInput = {
   sourceId: string;
   laneId?: string | null;
   rawShipmentDescription?: string | null;
-  rawPriceEur: number;
+  price: IngestPrice;
   observedAt: Date;
   rawPayload: unknown;
   shipment: RawShipmentInput;
@@ -32,7 +45,10 @@ export async function ingestRawObservation(
       sourceId: input.sourceId,
       laneId: input.laneId ?? null,
       rawShipmentDescription: input.rawShipmentDescription ?? null,
-      rawPrice: input.rawPriceEur,
+      priceType: input.price.type,
+      priceExact: input.price.type === "EXACT" ? input.price.valueEur : null,
+      priceMin: input.price.type === "RANGE" ? input.price.minEur : null,
+      priceMax: input.price.type === "RANGE" ? input.price.maxEur : null,
       rawCurrency: "EUR",
       observedAt: input.observedAt,
       rawPayload: input.rawPayload as object,
@@ -46,6 +62,8 @@ export async function ingestRawObservation(
     return { rawId: raw.id, normalizedId: null };
   }
 
+  const priceEur = input.price.type === "EXACT" ? input.price.valueEur : (input.price.minEur + input.price.maxEur) / 2;
+
   const normalized = await db.logisticsNormalizedObservation.create({
     data: {
       rawObservationId: raw.id,
@@ -56,7 +74,10 @@ export async function ingestRawObservation(
       incoterm: profile.incoterm,
       tollIncluded: profile.tollIncluded,
       fuelIncluded: profile.fuelIncluded,
-      priceEur: input.rawPriceEur,
+      priceEur,
+      priceBasis: input.price.type === "EXACT" ? "EXACT" : "RANGE_MIDPOINT",
+      priceMinEur: input.price.type === "RANGE" ? input.price.minEur : null,
+      priceMaxEur: input.price.type === "RANGE" ? input.price.maxEur : null,
       normalizationConfidence: profile.normalizationConfidence,
       normalizationMethod: profile.weightMethod,
     },

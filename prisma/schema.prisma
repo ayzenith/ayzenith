@@ -1957,6 +1957,17 @@ model LogisticsLane {
   @@unique([originCity, originCountry, destCity, destCountry, mode])
 }
 
+/// A source's stated price is not always a single number — a sector site
+/// quoting "120-220 EUR per pallet" is a RANGE, not an EXACT figure with the
+/// midpoint silently chosen for it. Collapsing that to one number at the
+/// RAW layer would be exactly the kind of invented precision this whole
+/// design exists to avoid — see NormalizedObservation below for how the
+/// eventual single comparison value is derived WITHOUT losing the range.
+enum RawPriceType {
+  EXACT
+  RANGE
+}
+
 /// Immutable — exactly what the source said, verbatim. `rawPayload` keeps the
 /// full original response so a citation can always be audited back to source.
 model LogisticsRawObservation {
@@ -1967,7 +1978,11 @@ model LogisticsRawObservation {
   lane     LogisticsLane?  @relation(fields: [laneId], references: [id])
 
   rawShipmentDescription String? // the source's own free text, untouched
-  rawPrice               Decimal @db.Decimal(10, 2)
+
+  priceType  RawPriceType @default(EXACT)
+  priceExact Decimal?     @db.Decimal(10, 2) // set when priceType = EXACT
+  priceMin   Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
+  priceMax   Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
   rawCurrency            String
   observedAt             DateTime // when the price was actually valid
   capturedAt             DateTime @default(now()) // when WE saw it
@@ -1978,6 +1993,17 @@ model LogisticsRawObservation {
 
   @@index([laneId])
   @@index([sourceId])
+}
+
+/// How a NormalizedObservation's single `priceEur` was actually arrived at.
+/// EXACT means the source stated one number, used as-is. RANGE_MIDPOINT means
+/// the source stated a band and the midpoint was taken ONLY to give benchmark
+/// math one comparable number per observation — the original band is NEVER
+/// discarded, it travels alongside in `priceMinEur`/`priceMaxEur` so a
+/// citation can always show "the source actually said 120-220, we used 170."
+enum PriceBasis {
+  EXACT
+  RANGE_MIDPOINT
 }
 
 /// Profile-shaped and comparable — but NEVER a portable rate. `priceEur` and
@@ -1996,7 +2022,10 @@ model LogisticsNormalizedObservation {
   tollIncluded       Boolean? // null = unknown, never coerced to false
   fuelIncluded       Boolean?
 
-  priceEur Decimal @db.Decimal(10, 2) // this observation's own absolute price
+  priceEur      Decimal    @db.Decimal(10, 2) // the single value benchmark math uses
+  priceBasis    PriceBasis @default(EXACT)
+  priceMinEur   Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
+  priceMaxEur   Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
 
   normalizationConfidence Int // 0-100 — drops as more fields were MISSING
   normalizationMethod     NormalizationMethod

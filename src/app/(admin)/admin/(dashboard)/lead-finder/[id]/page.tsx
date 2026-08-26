@@ -94,6 +94,7 @@ export default async function LeadResultsPage({
           hasLinkedin: Boolean(c.linkedinUrl),
           identityStatus: deriveIdentity(c).status,
           identityDetail: deriveIdentity(c).detail,
+          productEvidenceDetail: c.productFitNote,
           scoreComponents: (c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null)?.components,
         }),
       ),

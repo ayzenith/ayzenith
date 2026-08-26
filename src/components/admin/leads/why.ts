@@ -49,6 +49,14 @@ export type WhyInput = {
    *  is rendered as such rather than as a failure. */
   identityStatus?: "VERIFIED" | "PARTIAL" | "MISMATCH" | "UNVERIFIED" | null;
   identityDetail?: string | null;
+  /** The evidence engine's own sourced reasoning for the product verdict
+   *  (§ accuracy Phase 2) — the page and the term, not just the verdict. Stored
+   *  as `productFitNote`, so it survives without a schema change. */
+  productEvidenceDetail?: string | null;
+  /** Commercial role, reported SEPARATELY from product fit. A wholesaler with no
+   *  product evidence is a plausible counterparty, not a confirmed seller — and
+   *  conflating the two is what let OSM's `shop=trade` tag imply "sells this". */
+  companyType?: string | null;
   /** The persisted `scoreBreakdown.components` from `scoring.ts` (§ audit
    *  finding — `companyQuality` and `marketRelevance` were scored but had no
    *  matching "why" entry, so 2 of the 6 scored components were invisible to
@@ -80,7 +88,18 @@ export function buildWhyLead(i: WhyInput): WhyReason[] {
   const out: WhyReason[] = [];
 
   // 1. Ürün uyumu — only VERIFIED/LIKELY are positive; missing ≠ negative.
-  if (i.productFit === "VERIFIED") {
+  //
+  // When the evidence engine's own reasoning is available it is shown verbatim
+  // ("Ürün/kategori sayfasında güçlü ürün kanıtı: kopfhörer") instead of the
+  // generic sentence, so the answer to "why did you believe this?" names the
+  // page and the term rather than restating the verdict.
+  if (i.productEvidenceDetail) {
+    const status: WhyStatus =
+      i.productFit === "VERIFIED" ? "verified"
+        : i.productFit === "LIKELY" ? "partial"
+          : i.productFit === "NOT_RELEVANT" ? "negative" : "unverified";
+    out.push(reason("product", "Ürün uyumu", i.productEvidenceDetail, status));
+  } else if (i.productFit === "VERIFIED") {
     out.push(reason("product", "Ürün uyumu", "Aranan ürün website üzerinde doğrulandı.", "verified"));
   } else if (i.productFit === "LIKELY") {
     out.push(reason("product", "Ürün uyumu", "Website'de ürünle güçlü bağlantılı sinyaller bulundu (muhtemel).", "partial"));

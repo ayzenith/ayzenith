@@ -471,6 +471,14 @@ function unverifiedOutcome(
     identityStatus: null,
     identityConfidence: null,
     identityReasons: [],
+    // No site was read, so no product evidence was gathered either. Null rather
+    // than level 0: "we did not look" is not "we looked and found nothing".
+    productEvidenceLevel: null,
+    productConfidence: null,
+    productEvidenceReasons: [],
+    productNegatives: [],
+    companyType: null,
+    companyTypeConfidence: null,
     email: null,
     phone: null,
     contacts: [],

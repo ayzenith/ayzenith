@@ -2,7 +2,10 @@ import "server-only";
 
 import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } from "./providers/website";
 import { checkVatId } from "./providers/vies";
-import { resolveIdentity, capProductFitByIdentity, type IdentityStatus } from "./evidence";
+import {
+  resolveIdentity, capProductFitByIdentity, resolveProductEvidence, resolveCompanyType,
+  ProductEvidenceLevel, type IdentityStatus, type CompanyType,
+} from "./evidence";
 import type { DedupedCandidate } from "./dedup";
 import type { Classification } from "./classify";
 import {
@@ -71,6 +74,17 @@ export type VerifyOutcome = {
   identityStatus: IdentityStatus | null;
   identityConfidence: number | null;
   identityReasons: string[];
+  /** Product evidence, as a level rather than a yes/no (§ accuracy Phase 2).
+   *  Kept alongside `productFit` so the UI can say WHY, not just WHAT. */
+  productEvidenceLevel: ProductEvidenceLevel | null;
+  productConfidence: number | null;
+  productEvidenceReasons: string[];
+  productNegatives: string[];
+  /** What kind of business this is — a SEPARATE axis from product fit. A
+   *  wholesaler with no product evidence is a plausible counterparty, not a
+   *  confirmed seller, and the two claims are now reported separately. */
+  companyType: CompanyType | null;
+  companyTypeConfidence: number | null;
   /** Company-level enrichment (only when the company lacked it). */
   email: string | null;
   phone: string | null;
@@ -267,6 +281,12 @@ export async function verifyCandidate(
     identityStatus: null,
     identityConfidence: null,
     identityReasons: [],
+    productEvidenceLevel: null,
+    productConfidence: null,
+    productEvidenceReasons: [],
+    productNegatives: [],
+    companyType: null,
+    companyTypeConfidence: null,
     email: null,
     phone: null,
     contacts: [],
@@ -350,6 +370,22 @@ export async function verifyCandidate(
     sourceUrl: src,
   });
 
+  // Company TYPE — deliberately its own axis (§ accuracy Phase 2). Answers "is
+  // this a plausible commercial counterparty?", never "does it sell our
+  // product?". The site text is passed so a law firm or an association is
+  // recognised as such rather than inheriting a shop tag's meaning.
+  {
+    const ct = resolveCompanyType(base.roles, intel.productHits.map((h) => h.snippet ?? "").join(" "));
+    base.companyType = ct.type;
+    base.companyTypeConfidence = ct.confidence;
+    base.verifications.push({
+      check: "company-type",
+      passed: ct.type === "UNKNOWN" ? null : true,
+      evidence: `Şirket tipi: ${ct.type}. ${ct.reasons.join(" ")}`,
+      sourceUrl: src,
+    });
+  }
+
   // Business model + model-fit for the searched model (§1/§5).
   const { b2b, b2c } = intel.modelSignals;
   base.detectedModel = b2b && b2c ? "BOTH" : b2b ? "B2B" : b2c ? "B2C" : null;
@@ -368,21 +404,39 @@ export async function verifyCandidate(
   // Product fit — TIERED (§2). STRONG term → VERIFIED; MEDIUM → LIKELY; only
   // generic/weak terms → UNCLEAR (never "Doğrulandı"); nothing → keep/NOT_RELEVANT.
   base.productCategories = [...intel.strongFound, ...intel.mediumFound, ...intel.productTermsFound].slice(0, 8);
-  if (intel.strongFound.length >= 1) {
-    base.productFit = "VERIFIED";
-    base.productFitTier = "STRONG";
-    base.productFitNote = `Website'de güçlü ürün kanıtı: ${intel.strongFound.slice(0, 4).join(", ")}.`;
-    base.extraSources.push({ dataField: "productFit", sourceType: "OFFICIAL_WEBSITE", label: "Güçlü ürün kanıtı", sourceUrl: src });
-  } else if (intel.mediumFound.length >= 1) {
-    base.productFit = "LIKELY";
-    base.productFitTier = "MEDIUM";
-    base.productFitNote = `Website'de orta düzey ürün sinyali: ${intel.mediumFound.slice(0, 4).join(", ")}.`;
-    base.extraSources.push({ dataField: "productFit", sourceType: "OFFICIAL_WEBSITE", label: "Orta ürün sinyali", sourceUrl: src });
-  } else if (intel.productTermsFound.length >= 1) {
-    base.productFit = "UNCLEAR";
-    base.productFitTier = "WEAK";
-    base.productFitNote = "Yalnızca genel ürün/moda terimleri bulundu — ürün uyumu belirsiz.";
-  } else {
+
+  // The 6-level evidence engine (§ accuracy Phase 2). What replaced the old
+  // "one strong term anywhere outside boilerplate → VERIFIED" rule, which was
+  // the module's single biggest source of false positives.
+  //
+  // Corroborations come from DISCOVERY, not from the site — a specific OSM shop
+  // tag, the firm's own name, a Wikidata brand fact — so they are genuinely
+  // independent of whatever the crawler happened to read.
+  const evidence = resolveProductEvidence({
+    hits: intel.productHits,
+    osmSpecificShop: classification.productFitTier === "STRONG" && classification.productFit === "LIKELY",
+    nameMatchesProduct: opts.productSignals?.strong?.some((t) => {
+      const n = normalizeProduct(t);
+      return n.length >= 3 && normalizeProduct(dc.candidate.name).includes(n);
+    }) ?? false,
+    brandFactsMatch: (classification.productFitNote ?? "").includes("Wikidata"),
+    negatives: intel.negativeSignals,
+    // Every page we actually opened, so "no product page among the hits" can be
+    // told apart from "we never fetched one" — with the current crawl budget the
+    // second is overwhelmingly the common case (live: 14 of 1369 cached pages
+    // were product/catalogue pages), and treating it as evidence would mark down
+    // genuine retailers for our own gap.
+    crawledPageTypes: intel.crawledPageTypes,
+  });
+  base.productEvidenceLevel = evidence.level;
+  base.productConfidence = evidence.confidence;
+  base.productEvidenceReasons = evidence.reasons;
+  base.productNegatives = evidence.negatives.map((n) => n.kind);
+
+  if (evidence.level === ProductEvidenceLevel.NONE) {
+    // Unchanged from before: a site we READ that carries no trace of the product
+    // is weak evidence against it — but only when discovery had a real product
+    // hint to contradict in the first place.
     const wasWeak = classification.productFitTier === "WEAK" || classification.productFit === "UNCLEAR";
     if (opts.productMatched && wasWeak) {
       base.productFit = "NOT_RELEVANT";
@@ -393,6 +447,19 @@ export async function verifyCandidate(
       base.productFitTier = "WEAK";
       base.productFitNote = "Website aktif; ürün terimleri sınırlı sayfa taramasında bulunamadı.";
     }
+  } else {
+    base.productFit = evidence.fit;
+    base.productFitTier = evidence.tier;
+    base.productFitNote = evidence.reasons.join(" ");
+    // Attribute to the page that actually carried the decisive evidence, not to
+    // the homepage — "why did you believe this?" must be answerable with a link.
+    const decisiveUrl = evidence.decisive[0]?.pageUrl ?? src;
+    base.extraSources.push({
+      dataField: "productFit",
+      sourceType: "OFFICIAL_WEBSITE",
+      label: `Ürün kanıtı (seviye ${evidence.level}: ${ProductEvidenceLevel[evidence.level]})`,
+      sourceUrl: decisiveUrl,
+    });
   }
   base.verifications.push({
     check: "product-connection",

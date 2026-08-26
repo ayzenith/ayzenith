@@ -3,6 +3,10 @@ import "server-only";
 import { cachedLeadFetch } from "../cache";
 import { SOCIAL_PLATFORMS } from "@/config/leads";
 import {
+  classifyPageType, findNegativeSignals, PAGE_TYPE_WEIGHT,
+  type ProductHit, type NegativeSignal, type PageType,
+} from "../evidence";
+import {
   langForSite,
   subpageRounds,
   normalizeForMatch,
@@ -76,6 +80,16 @@ export type SiteIntel = {
   /** Tiered product evidence (§2): STRONG/MEDIUM terms actually found on site. */
   strongFound: string[];
   mediumFound: string[];
+  /** Every product-term match WITH the page it was found on and the text around
+   *  it (§ accuracy Phase 2). The flat sets above cannot say whether a term came
+   *  off a catalogue or an Impressum, which is the difference between a seller
+   *  and a coincidence — `resolveProductEvidence` needs this, the sets are kept
+   *  for the existing callers and the stored `productCategories`. */
+  productHits: ProductHit[];
+  /** Statements found NEAR a product match that contradict "this firm sells it". */
+  negativeSignals: NegativeSignal[];
+  /** Every page type actually fetched, including ones where nothing matched. */
+  crawledPageTypes: PageType[];
   /** Whether an explicit non-relevant signal dominated (different industry). */
   roleSignals: string[]; // mapped LeadRole keys evidenced on the site
   modelSignals: { b2b: boolean; b2c: boolean };
@@ -472,6 +486,20 @@ async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null
   }
 }
 
+/**
+ * The text around a matched term — the evidence the "why" panel shows and the
+ * only text negative-signal scanning is allowed to look at.
+ *
+ * Deliberately a window rather than a sentence: page text stripped of tags has
+ * no reliable sentence boundaries (navigation runs together without full stops),
+ * so hunting for one produces either a fragment or half the page.
+ */
+function snippetAround(text: string, term: string, radius = 110): string | undefined {
+  const i = text.indexOf(term);
+  if (i < 0) return undefined;
+  return text.slice(Math.max(0, i - radius), i + term.length + radius).trim();
+}
+
 /** The shallow pass fetches MANY more homepages than the old single-pass design,
  *  so dead/slow hosts dominate its wall time: every unreachable site costs a full
  *  timeout. A tighter budget there keeps the widened coverage affordable — a
@@ -676,6 +704,9 @@ export async function fetchSiteIntel(
       productTermsFound: [],
       strongFound: [],
       mediumFound: [],
+      productHits: [],
+      negativeSignals: [],
+      crawledPageTypes: [],
       roleSignals: [],
       modelSignals: { b2b: false, b2c: false },
       decisionMakers: [],
@@ -751,6 +782,9 @@ export async function fetchSiteIntel(
   const mediumFound = new Set<string>();
   const socialsByPlatform = new Map<string, string>();
   const decisionMakers: DecisionMaker[] = [];
+  const productHits: ProductHit[] = [];
+  const negativeSignals: NegativeSignal[] = [];
+  const crawledPageTypes: PageType[] = [];
   let legalName: string | undefined;
   let title: string | undefined;
   let vatId: string | undefined;
@@ -825,6 +859,39 @@ export async function fetchSiteIntel(
       for (const t of strongTerms) if (includesTermBoundary(lower, t)) strongFound.add(t);
       for (const t of mediumTerms) if (includesTermBoundary(lower, t)) mediumFound.add(t);
     }
+
+    // Phase 2: the SAME matches, recorded with the page they came off and the
+    // sentence around them. Boilerplate pages are recorded too — their weight
+    // (PAGE_TYPE_WEIGHT) is what disqualifies them, not their absence, so the
+    // "why" panel can still say "found, but only in the privacy policy".
+    const pageType = classifyPageType(url, base, {
+      product: HIGH_VALUE_PATH_RE,
+      legal: LEGAL_PAGE_RE,
+      companyInfo: COMPANY_INFO_PAGE_RE,
+    });
+    crawledPageTypes.push(pageType);
+    const addHits = (terms: string[], tier: ProductHit["tier"]) => {
+      for (const t of terms) {
+        if (!includesTermBoundary(lower, t)) continue;
+        if (productHits.length >= 40) return;
+        productHits.push({ term: t, tier, pageUrl: url, pageType, snippet: snippetAround(lower, t) });
+      }
+    };
+    addHits(strongTerms, "strong");
+    addHits(mediumTerms, "medium");
+    addHits(normProductTerms, "generic");
+
+    // Contradicting statements, scanned only where a product term actually
+    // matched — a stray "kein Vertrieb" elsewhere on a big site says nothing
+    // about the product we asked about.
+    if (PAGE_TYPE_WEIGHT[pageType] >= 0.3) {
+      for (const h of productHits) {
+        if (h.pageUrl !== url || !h.snippet) continue;
+        for (const n of findNegativeSignals(h.snippet)) {
+          if (!negativeSignals.some((x) => x.kind === n.kind)) negativeSignals.push(n);
+        }
+      }
+    }
     // Note: LOW_VALUE pages are still crawled but their product signals are not counted
     // toward VERIFIED/LIKELY; this is a conservative "absence of proof ≠ proof of absence".
 
@@ -889,6 +956,9 @@ export async function fetchSiteIntel(
     productTermsFound: Array.from(productTermsFound),
     strongFound: Array.from(strongFound),
     mediumFound: Array.from(mediumFound),
+    productHits,
+    negativeSignals,
+    crawledPageTypes,
     roleSignals: Array.from(roleSignals),
     modelSignals: { b2b, b2c },
     storeCount,

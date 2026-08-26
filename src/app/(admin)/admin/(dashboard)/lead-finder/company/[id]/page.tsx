@@ -76,6 +76,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
       const id = deriveIdentity(c);
       return { identityStatus: id.status, identityDetail: id.detail };
     })(),
+    productEvidenceDetail: c.productFitNote,
     scoreComponents: breakdown?.components,
   });
 

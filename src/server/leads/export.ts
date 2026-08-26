@@ -35,6 +35,7 @@ export type ExportCompany = {
   commercialRoles: string[];
   size: string;
   productFit: string;
+  productFitNote: string | null;
   detectedModel: string | null;
   modelFit: string | null;
   websiteStatus: string | null;
@@ -109,6 +110,7 @@ export async function getCompaniesForExport(ids: string[]): Promise<ExportCompan
       commercialRoles: Array.isArray(c.commercialRoles) ? (c.commercialRoles as string[]) : [],
       size: c.size,
       productFit: c.productFit,
+      productFitNote: c.productFitNote,
       detectedModel: c.detectedModel,
       modelFit: c.modelFit,
       websiteStatus: c.websiteStatus,
@@ -191,6 +193,7 @@ function whyLine(c: ExportCompany, businessModel: string): string {
       contactCount: c.contacts.length, socialMatchStatus: c.socialMatchStatus,
       hasInstagram: Boolean(c.instagramUrl), hasLinkedin: Boolean(c.linkedinUrl),
       identityStatus: identity.status, identityDetail: identity.detail,
+      productEvidenceDetail: c.productFitNote,
       scoreComponents: breakdown?.components,
     }),
   )

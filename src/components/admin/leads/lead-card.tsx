@@ -53,6 +53,7 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
       hasLinkedin: Boolean(c.linkedinUrl),
       identityStatus: identity.status,
       identityDetail: identity.detail,
+      productEvidenceDetail: c.productFitNote,
       scoreComponents: breakdown?.components,
     }),
   );

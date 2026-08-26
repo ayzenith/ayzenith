@@ -586,11 +586,67 @@ export function includesProductTerm(haystack: string, term: string): boolean {
   return ` ${haystack} `.includes(` ${term} `);
 }
 
-/** Resolve a natural-language product to its discovery profile, or a broad
- *  fallback profile (marked so callers know fit must be verified separately). */
-/** Ensure a profile always carries product-fit signals: if none were curated,
- *  derive STRONG signals from its local-language terms (never fabricated — they
- *  are the product's own words) so tiering still works for uncurated products. */
+/**
+ * Words that name an industry, a material or a shape of business rather than a
+ * product a firm can be shown to SELL. On their own they discriminate nothing: a
+ * steel stockist, a firm that fits steel-framed windows and a firm that merely
+ * mentions steel in its company profile all carry the word "steel".
+ *
+ * The list only ever DEMOTES a term. It never rejects a firm, and a generic word
+ * sitting next to a specific one changes nothing about the specific one.
+ */
+export const GENERIC_PRODUCT_WORDS = new Set([
+  // material / industry
+  "cam", "glass", "celik", "steel", "stahl", "metal", "eisen", "iron", "alu", "aluminium",
+  "plastik", "plastic", "kunststoff", "ahsap", "wood", "holz", "beton", "concrete",
+  "tekstil", "textile", "textil", "kumas", "fabric", "kagit", "paper", "papier",
+  "kimya", "chemie", "chemical", "gida", "food", "lebensmittel", "getranke", "beverage",
+  // shape of business / catch-alls
+  "sistem", "system", "systeme", "makine", "machine", "maschine", "maschinen",
+  "ekipman", "equipment", "ausrustung", "urun", "product", "produkt", "produkte",
+  "ticaret", "trade", "handel", "hizmet", "service", "dienstleistung",
+  "cozum", "solution", "losung", "teknoloji", "technology", "technik",
+  "malzeme", "material", "sanayi", "industrie", "industry", "industrial", "endustriyel",
+  "parca", "part", "teile", "aksesuar", "accessory", "zubehor",
+  "ithalat", "import", "ihracat", "export", "toptan", "wholesale", "grosshandel",
+]);
+
+/**
+ * Turn a product query we have NO curated profile for into product-fit signals.
+ *
+ * This was the single highest-impact false-positive source in the module. The
+ * previous `withSignals` fallback put the user's RAW QUERY straight into the
+ * STRONG tier, and one STRONG term matched anywhere outside boilerplate is the
+ * only thing that sets productFit = "VERIFIED". So a one-word search — "cam",
+ * "çelik", "sistem" — verified every firm whose site happened to contain that
+ * word. Measured on live data: the "akıllı gözlük" search returned 162 firms
+ * whose top scorers were a scrap-metal dealer, a tile wholesaler and a builders'
+ * merchant, every one of them at score 83.
+ *
+ * The rule now:
+ *   • A multi-word query is a PHRASE, and a phrase is specific enough to verify:
+ *     "akilli gozluk" printed on a page is a real product claim.
+ *   • A single word is NEVER strong — at best it supports "LIKELY".
+ *   • A single GENERIC word supports nothing beyond the unranked generic-term
+ *     bucket, whose ceiling is already "UNCLEAR".
+ *
+ * The phrase's own specific words stay as MEDIUM signals, so a genuine partial
+ * match still counts: precision rises without recall collapsing.
+ */
+export function tierUncuratedQuery(productQuery: string): { strong: string[]; medium: string[] } {
+  const norm = normalizeProduct(productQuery);
+  if (!norm) return { strong: [], medium: [] };
+  const tokens = norm.split(" ").filter((t) => t.length >= 3);
+  const specific = tokens.filter((t) => !GENERIC_PRODUCT_WORDS.has(t));
+  if (tokens.length >= 2) return { strong: [norm], medium: specific };
+  return { strong: [], medium: specific };
+}
+
+/** Ensure a CURATED profile always carries product-fit signals: if none were
+ *  hand-written, derive STRONG signals from its local-language terms. Safe here
+ *  and only here — a curated profile's `terms` are real, specific product words
+ *  chosen by a human. The uncurated fallback must NOT go through this; it uses
+ *  `tierUncuratedQuery` above. */
 function withSignals(p: ProductProfile): ProductProfile {
   if (p.signals) return p;
   const strong = Array.from(
@@ -609,12 +665,15 @@ export function resolveProductProfile(productQuery: string): {
       return { profile: withSignals(entry.profile), matched: true };
     }
   }
+  // UNCURATED. The query is whatever the user typed, so its signals are tiered
+  // by specificity rather than trusted wholesale (§ accuracy audit).
   const q = productQuery.trim();
   return {
-    profile: withSignals({
+    profile: {
       osmShops: FALLBACK_OSM_SHOPS,
       terms: { en: [q], de: [q], tr: [q] },
-    }),
+      signals: tierUncuratedQuery(q),
+    },
     matched: false,
   };
 }

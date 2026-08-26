@@ -12,7 +12,7 @@ import { PRIORITY_LABELS } from "@/config/leads";
 import { PageHeader } from "@/components/admin/page-header";
 import { LeadCard } from "@/components/admin/leads/lead-card";
 import { LeadFilters } from "@/components/admin/leads/filters";
-import { buildWhyLead, positiveWhy } from "@/components/admin/leads/why";
+import { buildWhyLead, positiveWhy, deriveIdentity } from "@/components/admin/leads/why";
 import { flagEmoji } from "@/components/admin/leads/ui";
 import { ContinueVerify } from "@/components/admin/leads/continue-verify";
 import { DeepDive } from "@/components/admin/leads/deep-dive";
@@ -92,6 +92,8 @@ export default async function LeadResultsPage({
           socialMatchStatus: c.socialMatchStatus,
           hasInstagram: Boolean(c.instagramUrl),
           hasLinkedin: Boolean(c.linkedinUrl),
+          identityStatus: deriveIdentity(c).status,
+          identityDetail: deriveIdentity(c).detail,
           scoreComponents: (c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null)?.components,
         }),
       ),

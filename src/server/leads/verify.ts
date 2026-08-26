@@ -2,6 +2,7 @@ import "server-only";
 
 import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } from "./providers/website";
 import { checkVatId } from "./providers/vies";
+import { resolveIdentity, capProductFitByIdentity, type IdentityStatus } from "./evidence";
 import type { DedupedCandidate } from "./dedup";
 import type { Classification } from "./classify";
 import {
@@ -64,6 +65,12 @@ export type VerifyOutcome = {
   storeCount: number | null;
   employeeCount: number | null;
   legalName: string | null;
+  /** Whether the crawled site could be attributed to THIS company (§ accuracy
+   *  audit). Always computed once a site answers — "we could not tell" is a
+   *  first-class outcome, not a silent pass. */
+  identityStatus: IdentityStatus | null;
+  identityConfidence: number | null;
+  identityReasons: string[];
   /** Company-level enrichment (only when the company lacked it). */
   email: string | null;
   phone: string | null;
@@ -123,59 +130,6 @@ function emailForPerson(emails: string[], lastName?: string): string | undefined
   const key = normalizeProduct(lastName).replace(/\s+/g, "");
   if (key.length < 3) return undefined;
   return emails.find((e) => normalizeProduct(e.split("@")[0] ?? "").replace(/\s+/g, "").includes(key));
-}
-
-// ---------------------------------------------------------------------------
-// Domain / company identity plausibility (§2 audit finding).
-//
-// OSM's `website=` tag is trusted as a candidate's own site with NO check that
-// it actually is — the exact mechanism behind a real, live bug: the "C&A" OSM
-// node's website tag pointed at an unrelated domain (cunda.de), and that site's
-// content was recorded as C&A's own verified evidence. `legalName` (from the
-// crawled Impressum/legal page) and the VIES-registered VAT name are both
-// already extracted — they were just never compared back to the name we
-// believe this record is about. This closes that gap, but ONLY in the
-// direction of doubt: it can downgrade an unsafe VERIFIED, never manufacture a
-// positive "confirmed" — a brand name and its legal entity legitimately
-// diverge all the time (Zara / Industria de Diseño Textil S.A., "Raab Karcher"
-// / "STARK Deutschland GmbH"), so silence about a real divergence stays
-// silence, not a red flag, whenever the site's own DOMAIN still plausibly
-// relates to the searched name.
-const ORG_FORM_STOPWORDS = new Set([
-  "gmbh", "co", "kg", "ag", "ohg", "ug", "ek", "ltd", "inc", "gbr", "sarl", "sas",
-  "sasu", "eurl", "srl", "srls", "spa", "snc", "sl", "slu", "sau", "sa", "bv", "nv",
-  "vof", "bvba", "sprl", "lda", "oy", "oyj", "ab", "as", "aps", "kft", "zrt", "sro",
-  "doo", "plc", "llc", "sti", "haftungsbeschrankt", "unipessoal", "und", "and",
-  "group", "holding", "international", "deutschland", "germany", "europe", "europa",
-]);
-
-function significantTokens(normalized: string): string[] {
-  return normalized.split(" ").filter((t) => t.length >= 3 && !ORG_FORM_STOPWORDS.has(t));
-}
-
-/** Loose, NEGATIVE-only plausibility check between the candidate's OSM name and
- *  a name found on its (supposed) own website. "inconclusive" — not enough
- *  distinguishing text on one side (e.g. a two-letter brand like "C&A") — is
- *  deliberately NOT treated as a mismatch: absence of proof is not proof of a
- *  problem, only a real, checkable disagreement is. */
-function nameOverlap(candidateName: string, otherName: string): "match" | "mismatch" | "inconclusive" {
-  const a = significantTokens(normalizeProduct(candidateName));
-  const b = significantTokens(normalizeProduct(otherName));
-  if (a.length === 0 || b.length === 0) return "inconclusive";
-  const overlap = a.some((t) => b.some((u) => u.includes(t) || t.includes(u)));
-  return overlap ? "match" : "mismatch";
-}
-
-/** Does the site's own domain plausibly relate to the candidate's name? A
- *  domain match is strong ownership evidence on its own ("raabkarcher.de" for
- *  "Raab Karcher") and is checked BEFORE trusting a legalName mismatch as real,
- *  so a legitimate brand/legal-entity split never gets flagged just because the
- *  parent company's name reads nothing like the storefront's. */
-function domainMatchesName(domain: string | undefined, candidateName: string): boolean {
-  if (!domain) return false;
-  const core = (domain.split(".")[0] ?? "").toLowerCase();
-  const tokens = significantTokens(normalizeProduct(candidateName)).filter((t) => t.length >= 4);
-  return tokens.some((t) => core.includes(t));
 }
 
 const has = (roles: LeadRole[], set: LeadRole[]) => roles.some((r) => set.includes(r));
@@ -310,6 +264,9 @@ export async function verifyCandidate(
     storeCount: null,
     employeeCount: null,
     legalName: null,
+    identityStatus: null,
+    identityConfidence: null,
+    identityReasons: [],
     email: null,
     phone: null,
     contacts: [],
@@ -469,9 +426,14 @@ export async function verifyCandidate(
   // text can be wrong, and VIES cannot tell "this firm is not registered" from
   // "you sent me the wrong string", so an invalid or unreachable answer is left
   // as silence rather than turned into a finding about the company.
+  // Kept separately from `legalName` because identity compares against BOTH: the
+  // VIES answer is a register entry (the strongest name we can get), while
+  // `legalName` is parsed off a page and may itself be a mis-extraction.
+  let viesName: string | null = null;
   if (intel.vatId) {
     const vat = await checkVatId(intel.vatId);
     if (vat?.valid) {
+      viesName = vat.name ?? null;
       base.verifications.push({
         check: "eu-vat-registered",
         passed: true,
@@ -494,35 +456,44 @@ export async function verifyCandidate(
     }
   }
 
-  // Identity plausibility (§2) — now that legalName is fully resolved (site
-  // Impressum, then VAT fallback). A domain that plausibly relates to the
-  // candidate's own name is treated as ownership evidence on its own and
-  // suppresses the check entirely, so a legitimate brand/legal-entity split
-  // (franchise, holding company, corporate group) never gets flagged.
-  if (base.legalName && !domainMatchesName(opts.domain, dc.candidate.name)) {
-    const overlap = nameOverlap(dc.candidate.name, base.legalName);
-    if (overlap === "mismatch") {
-      base.verifications.push({
-        check: "identity-match",
-        passed: false,
-        evidence: `Sitede bulunan yasal unvan ("${base.legalName}") aranan firma adıyla ("${dc.candidate.name}") örtüşmüyor — bu site farklı bir işletmeye ait olabilir.`,
-        sourceUrl: src,
-      });
-      // The site's content may be entirely real — it just is no longer safe to
-      // attribute to THIS company at full confidence. Downgrade, don't discard.
-      if (base.productFit === "VERIFIED") {
-        base.productFit = "LIKELY";
-        base.productFitTier = "MEDIUM";
-        base.productFitNote = `${base.productFitNote ?? ""} Kimlik uyuşmazlığı nedeniyle güven düşürüldü: site "${base.legalName}" adına görünüyor.`.trim();
-      }
-    } else if (overlap === "match") {
-      base.verifications.push({
-        check: "identity-match",
-        passed: true,
-        evidence: `Sitedeki yasal unvan ("${base.legalName}") aranan firma adıyla örtüşüyor.`,
-        sourceUrl: src,
-      });
-    }
+  // IDENTITY (§ accuracy audit) — is the site we just read actually this
+  // company's site? Runs ALWAYS, now that legalName is fully resolved (site
+  // legal page, then the VIES fallback).
+  //
+  // The previous version ran only `if (legalName)`, which made it silently
+  // absent exactly where it was needed most: a crawl that extracts no company
+  // name tells us nothing about ownership, and the lead used to sail on to
+  // "Doğrulandı" regardless. Measured live before this change: 71 of 133
+  // VERIFIED leads carried no legal name at all, and every cunda.de row filed
+  // under "C&A" — the bug this check was written for — was in that set.
+  //
+  // The outcome CAPS what product fit may claim rather than nudging a score in
+  // the background: evidence read off a page we cannot attribute is evidence
+  // about whoever owns that page, not about this company. Nothing is discarded,
+  // and the reason is written down.
+  const identity = resolveIdentity({
+    candidateName: dc.candidate.name,
+    legalName: base.legalName,
+    viesName: viesName,
+    domain: opts.domain ?? null,
+    websiteTitle: intel.title ?? null,
+  });
+  base.identityStatus = identity.status;
+  base.identityConfidence = identity.confidence;
+  base.identityReasons = identity.reasons;
+  base.verifications.push({
+    check: "identity-match",
+    passed: identity.status === "VERIFIED" ? true : identity.status === "MISMATCH" ? false : null,
+    evidence: identity.reasons.join(" "),
+    sourceUrl: src,
+  });
+
+  const cappedFit = capProductFitByIdentity(base.productFit, identity.status);
+  if (cappedFit !== base.productFit) {
+    base.productFit = cappedFit;
+    base.productFitTier = cappedFit === "LIKELY" ? "MEDIUM" : cappedFit === "UNCLEAR" ? "WEAK" : base.productFitTier;
+    base.productFitNote =
+      `${base.productFitNote ?? ""} Kimlik doğrulanamadığı için ürün kanıtı bu firmaya tam güvenle atfedilemedi (${identity.status}).`.trim();
   }
 
   // Company-level contact enrichment (only fill what was missing).

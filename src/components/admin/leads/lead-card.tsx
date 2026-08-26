@@ -7,7 +7,7 @@ import {
   DETECTED_MODEL_LABELS, FRESHNESS_META, MODEL_FIT_META, SOCIAL_PLATFORMS,
 } from "@/config/leads";
 import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct, externalHref } from "./ui";
-import { buildWhyLead, positiveWhy } from "./why";
+import { buildWhyLead, positiveWhy, deriveIdentity } from "./why";
 import type { LeadCompanyView } from "@/server/leads/leads";
 
 /**
@@ -37,6 +37,7 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
 
   // "Neden bu lead?" — deterministic, positive reasons only on the card (§7/§10).
   const breakdown = c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null;
+  const identity = deriveIdentity(c);
   const whyPositive = positiveWhy(
     buildWhyLead({
       businessModel: c.businessModel,
@@ -50,6 +51,8 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
       socialMatchStatus: c.socialMatchStatus,
       hasInstagram: Boolean(c.instagramUrl),
       hasLinkedin: Boolean(c.linkedinUrl),
+      identityStatus: identity.status,
+      identityDetail: identity.detail,
       scoreComponents: breakdown?.components,
     }),
   );

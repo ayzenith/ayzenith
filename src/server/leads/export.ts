@@ -7,7 +7,7 @@ import {
   SOURCE_TYPE_LABELS, SIGNAL_STRENGTH_LABELS, DETECTED_MODEL_LABELS,
   WEBSITE_STATUS_LABELS, PRIORITY_LABELS, qualifiedPriority,
 } from "@/config/leads";
-import { buildWhyLead, positiveWhy } from "@/components/admin/leads/why";
+import { buildWhyLead, positiveWhy, deriveIdentity } from "@/components/admin/leads/why";
 import type { LeadSearchView } from "./leads";
 
 /**
@@ -183,12 +183,14 @@ function priorityLabelOf(c: ExportCompany): string {
 /** Deterministic "Why This Lead" one-liner (positive reasons only) for export. */
 function whyLine(c: ExportCompany, businessModel: string): string {
   const breakdown = c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null;
+  const identity = deriveIdentity(c);
   return positiveWhy(
     buildWhyLead({
       businessModel, productFit: c.productFit, modelFit: c.modelFit,
       websiteStatus: c.websiteStatus, hasEmail: Boolean(c.email), hasPhone: Boolean(c.phone),
       contactCount: c.contacts.length, socialMatchStatus: c.socialMatchStatus,
       hasInstagram: Boolean(c.instagramUrl), hasLinkedin: Boolean(c.linkedinUrl),
+      identityStatus: identity.status, identityDetail: identity.detail,
       scoreComponents: breakdown?.components,
     }),
   )

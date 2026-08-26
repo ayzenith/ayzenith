@@ -466,6 +466,11 @@ function unverifiedOutcome(
     storeCount: null,
     employeeCount: null,
     legalName: null,
+    // No site was read, so there is nothing to attribute — identity stays
+    // genuinely unknown rather than being reported as unverified-and-checked.
+    identityStatus: null,
+    identityConfidence: null,
+    identityReasons: [],
     email: null,
     phone: null,
     contacts: [],

@@ -13,6 +13,8 @@
  * layers. Input is a minimal structural shape so it never couples to a DB type.
  */
 
+import { resolveIdentity } from "@/server/leads/evidence";
+
 export type WhyStatus = "verified" | "partial" | "unverified" | "negative";
 
 export type WhyReason = {
@@ -40,6 +42,13 @@ export type WhyInput = {
   socialMatchStatus: string | null; // VERIFIED | POSSIBLE | UNVERIFIED | null
   hasInstagram?: boolean;
   hasLinkedin?: boolean;
+  /** Whether the crawled website could be attributed to THIS company
+   *  (§ accuracy audit). Derived from the persisted name / legalName / domain by
+   *  `resolveIdentity`, so the card and the detail screen say the same thing the
+   *  pipeline concluded. Null when no site was read — genuinely unknown, which
+   *  is rendered as such rather than as a failure. */
+  identityStatus?: "VERIFIED" | "PARTIAL" | "MISMATCH" | "UNVERIFIED" | null;
+  identityDetail?: string | null;
   /** The persisted `scoreBreakdown.components` from `scoring.ts` (§ audit
    *  finding — `companyQuality` and `marketRelevance` were scored but had no
    *  matching "why" entry, so 2 of the 6 scored components were invisible to
@@ -93,6 +102,22 @@ export function buildWhyLead(i: WhyInput): WhyReason[] {
     out.push(reason("role", "Ticari rol", `${model} araması için uygun değil.`, "negative"));
   } else {
     out.push(reason("role", "Ticari rol", `${model} ticari rolü doğrulanamadı.`, "unverified"));
+  }
+
+  // 2b. Kimlik — is this really this company's website? (§ accuracy audit).
+  // Placed directly after the gate criteria because it CONDITIONS them: product
+  // evidence read off a site we cannot attribute is not evidence about this
+  // firm, and the pipeline now caps the product claim accordingly. Previously
+  // this had no row at all, so a capped lead showed a lowered product fit with
+  // no visible reason for it.
+  if (i.identityStatus === "VERIFIED") {
+    out.push(reason("identity", "Kimlik", i.identityDetail ?? "Sitedeki yasal unvan firma adıyla örtüşüyor.", "verified"));
+  } else if (i.identityStatus === "PARTIAL") {
+    out.push(reason("identity", "Kimlik", i.identityDetail ?? "Kimlik kısmen doğrulandı (alan adı firmayla bağdaşıyor, yasal unvan teyit edilemedi).", "partial"));
+  } else if (i.identityStatus === "MISMATCH") {
+    out.push(reason("identity", "Kimlik", i.identityDetail ?? "Sitedeki yasal unvan aranan firmayla örtüşmüyor — site başka bir işletmeye ait olabilir.", "negative"));
+  } else if (i.identityStatus === "UNVERIFIED") {
+    out.push(reason("identity", "Kimlik", i.identityDetail ?? "Bu sitenin bu firmaya ait olduğu doğrulanamadı.", "unverified"));
   }
 
   // 3. Website.
@@ -163,6 +188,25 @@ export function buildWhyLead(i: WhyInput): WhyReason[] {
   }
 
   return out;
+}
+
+/**
+ * Identity for a persisted lead, derived from the fields the pipeline already
+ * stores. ONE helper so the card, the detail screen, the results list and the
+ * export cannot disagree about whose website was read.
+ *
+ * Returns nulls when no site was read at all: identity is then not "failed", it
+ * is simply not a question that was asked.
+ */
+export function deriveIdentity(c: {
+  name: string;
+  legalName: string | null;
+  domain: string | null;
+  websiteStatus: string | null;
+}): { status: WhyInput["identityStatus"]; detail: string | null } {
+  if (c.websiteStatus !== "ACTIVE") return { status: null, detail: null };
+  const r = resolveIdentity({ candidateName: c.name, legalName: c.legalName, domain: c.domain });
+  return { status: r.status, detail: r.reasons.join(" ") || null };
 }
 
 /** Only the positive (verified/partial) reasons — for compact card/top-lead/export

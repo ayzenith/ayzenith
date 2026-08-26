@@ -17,7 +17,7 @@ import {
 } from "@/config/leads";
 import { PageHeader } from "@/components/admin/page-header";
 import { LEAD_BAND, FIT_STYLE, flagEmoji, fmtDate, confidencePct, externalHref } from "@/components/admin/leads/ui";
-import { buildWhyLead } from "@/components/admin/leads/why";
+import { buildWhyLead, deriveIdentity } from "@/components/admin/leads/why";
 
 export const metadata: Metadata = { title: "Lead Detayı · Lead Finder", robots: { index: false, follow: false } };
 type SizeSignalRow = { label: string; value: string; source?: string };
@@ -72,6 +72,10 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     socialMatchStatus: c.socialMatchStatus,
     hasInstagram: Boolean(c.instagramUrl),
     hasLinkedin: Boolean(c.linkedinUrl),
+    ...(() => {
+      const id = deriveIdentity(c);
+      return { identityStatus: id.status, identityDetail: id.detail };
+    })(),
     scoreComponents: breakdown?.components,
   });
 

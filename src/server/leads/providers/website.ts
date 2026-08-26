@@ -64,6 +64,11 @@ export type SiteIntel = {
   emails: string[];
   phones: string[];
   legalName?: string;
+  /** The homepage's own <title>. Weakest of the identity signals — it is
+   *  marketing copy, not a disclosure — but on a site whose legal page names
+   *  nobody it is often the ONLY place the firm states who it is, so identity
+   *  uses it to reach "partial" (never to declare a mismatch). */
+  title?: string;
   /** EU VAT id printed on a legal page, unvalidated (§V3.7). */
   vatId?: string;
   /** Which of the supplied product terms appeared on the site. */
@@ -747,6 +752,7 @@ export async function fetchSiteIntel(
   const socialsByPlatform = new Map<string, string>();
   const decisionMakers: DecisionMaker[] = [];
   let legalName: string | undefined;
+  let title: string | undefined;
   let vatId: string | undefined;
   let storeCount: number | undefined;
   let employeeCount: number | undefined;
@@ -773,6 +779,14 @@ export async function fetchSiteIntel(
     const isLegalPage = LEGAL_PAGE_RE.test(url) || LEGAL_PAGE_RE.test(lower.slice(0, 400));
     const isCompanyInfo = isLegalPage || COMPANY_INFO_PAGE_RE.test(url);
     const context = pageContext(url);
+
+    // The FIRST page's title only (the homepage) — a sub-page title is about the
+    // sub-page ("Impressum"), not about who the company is.
+    if (title === undefined && url === base) {
+      const t = html.match(/<title[^>]*>([\s\S]{0,200}?)<\/title>/i);
+      const cleaned = t?.[1] ? stripTags(t[1]).replace(/\s+/g, " ").trim() : "";
+      if (cleaned) title = cleaned;
+    }
 
     // Emails / phones — only what's literally present (placeholders excluded).
     for (const e of html.match(EMAIL_RE) ?? []) {
@@ -870,6 +884,7 @@ export async function fetchSiteIntel(
     emails: Array.from(emails).slice(0, 10),
     phones: Array.from(phones).slice(0, 6),
     legalName,
+    title,
     vatId,
     productTermsFound: Array.from(productTermsFound),
     strongFound: Array.from(strongFound),

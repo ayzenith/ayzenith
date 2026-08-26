@@ -13,6 +13,8 @@
  *     enforceable end to end.
  */
 
+import type { RadarCriterionKey } from "@/config/radar";
+
 export type ProviderId = "comtrade" | "eurostat" | "wits";
 
 /** A source record for one fetched numeric value. Persisted (as RadarCitation)
@@ -28,6 +30,14 @@ export type Citation = {
   unit?: string;
   sourceUrl?: string;
   fetchedAt: string; // ISO timestamp
+  /** Which of the 5 scoring criteria this citation backs (§ audit finding —
+   *  citations previously attached only at the snapshot level, with no
+   *  structured link to which criterion they support; a person had to infer
+   *  the mapping from the label text). Some provider calls feed more than one
+   *  criterion (the target import series backs both demand and growth), hence
+   *  an array. Attached by the orchestrator (analyze.ts), which is the only
+   *  place that knows WHY a given call was made — the provider itself doesn't. */
+  criterionKeys?: RadarCriterionKey[];
 };
 
 export type ProviderOk<T> = {

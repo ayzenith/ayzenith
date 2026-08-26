@@ -40,6 +40,14 @@ export type WhyInput = {
   socialMatchStatus: string | null; // VERIFIED | POSSIBLE | UNVERIFIED | null
   hasInstagram?: boolean;
   hasLinkedin?: boolean;
+  /** The persisted `scoreBreakdown.components` from `scoring.ts` (§ audit
+   *  finding — `companyQuality` and `marketRelevance` were scored but had no
+   *  matching "why" entry, so 2 of the 6 scored components were invisible to
+   *  this explainer). Reading the component's own `note` here — rather than
+   *  re-deriving separate wording — means this can never drift from what the
+   *  scorer actually said, for exactly these two. Optional so older callers
+   *  that don't have the breakdown handy keep working unchanged. */
+  scoreComponents?: Array<{ key: string; score: number | null; available: boolean; note: string }>;
 };
 
 const DOT: Record<WhyStatus, string> = {
@@ -117,7 +125,33 @@ export function buildWhyLead(i: WhyInput): WhyReason[] {
     out.push(reason("decision", "Karar verici", "Karar verici doğrulanamadı.", "unverified"));
   }
 
-  // 6. Sosyal — enrichment only, never the qualifier (§4).
+  // 6. Şirket kalitesi + 7. Pazar uyumu — read straight from the scorer's own
+  // component notes, when the caller has them, rather than re-deriving.
+  const comp = (key: string) => i.scoreComponents?.find((c) => c.key === key);
+  const companyQuality = comp("companyQuality");
+  if (companyQuality) {
+    const status: WhyStatus = !companyQuality.available
+      ? "unverified"
+      : (companyQuality.score ?? 0) >= 70
+        ? "verified"
+        : (companyQuality.score ?? 0) >= 40
+          ? "partial"
+          : "unverified";
+    out.push(reason("companyQuality", "Şirket kalitesi", companyQuality.note, status));
+  }
+  const marketRelevance = comp("marketRelevance");
+  if (marketRelevance) {
+    const status: WhyStatus = !marketRelevance.available
+      ? "unverified"
+      : (marketRelevance.score ?? 0) >= 90
+        ? "verified"
+        : (marketRelevance.score ?? 0) >= 60
+          ? "partial"
+          : "unverified";
+    out.push(reason("marketRelevance", "Pazar uyumu", marketRelevance.note, status));
+  }
+
+  // 8. Sosyal — enrichment only, never the qualifier (§4).
   if (i.socialMatchStatus === "VERIFIED") {
     const nets: string[] = [];
     if (i.hasInstagram) nets.push("Instagram");

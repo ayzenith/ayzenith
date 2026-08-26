@@ -55,6 +55,7 @@ type Citation = {
   sourceUrl: string | null;
   fetchedAt: Date;
   query: unknown;
+  criterionKeys?: unknown;
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -123,6 +124,10 @@ export default async function AnalysisResultPage({
   const opportunities = deriveOpportunities(criteria, subs);
   const risks = deriveRisks(criteria, snap.measuredCriteria, model);
   const dataLimitations = deriveDataLimitations(criteria, snap.measuredCriteria, model);
+  // Raw provider warnings frozen on THIS snapshot (§ audit finding — previously
+  // computed in analyze.ts and discarded before ever reaching the database, so
+  // a partial-outage run looked identical to a fully-measured one on screen).
+  const providerWarnings = Array.isArray(snap.errors) ? (snap.errors as unknown[]).filter((e): e is string => typeof e === "string") : [];
 
   // V1.1 intelligence — deterministic, from the frozen criteria.
   const twin = splitScores(criteria, weights);
@@ -441,6 +446,12 @@ export default async function AnalysisResultPage({
                 const label = CRITERION_LABELS[c.key as RadarCriterionKey] ?? c.key;
                 const weight = weights[c.key] ?? 0;
                 const pct = c.score ?? 0;
+                // Which sourced figures actually back THIS criterion (§ audit
+                // finding — citations used to sit only in one flat undifferentiated
+                // list, so a reader had to guess which source supported which score).
+                const ownCitations = citations.filter(
+                  (cit) => Array.isArray(cit.criterionKeys) && (cit.criterionKeys as string[]).includes(c.key),
+                );
                 return (
                   <details key={c.key} className="group rounded-lg border border-border bg-surface-sunken">
                     <summary className="flex cursor-pointer list-none items-center gap-4 p-4">
@@ -480,9 +491,30 @@ export default async function AnalysisResultPage({
                           );
                         })}
                       </dl>
-                      <p className="mt-3 text-caption text-subtle">
-                        Kaynak: {providersUsed.map((p) => PROVIDER_LABELS[p] ?? p).join(", ") || "—"} · Veri çekilme: {fmtDate(fetchedAt)}
-                      </p>
+                      {ownCitations.length > 0 ? (
+                        <div className="mt-3 border-t border-dashed border-border/70 pt-3">
+                          <p className="text-caption font-medium text-subtle">Bu kriteri destekleyen kaynaklar</p>
+                          <ul className="mt-1.5 space-y-1">
+                            {ownCitations.map((cit, i) => (
+                              <li key={i} className="flex items-center gap-2 text-caption text-foreground/90">
+                                <span className="shrink-0 rounded bg-surface px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-subtle">
+                                  {PROVIDER_LABELS[cit.provider] ?? cit.provider}
+                                </span>
+                                <span className="min-w-0 flex-1 truncate">{cit.label}</span>
+                                {cit.sourceUrl ? (
+                                  <a href={cit.sourceUrl} target="_blank" rel="noopener noreferrer" className="shrink-0 text-subtle hover:text-foreground">
+                                    <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+                                  </a>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : (
+                        <p className="mt-3 text-caption text-subtle">
+                          Kaynak: {providersUsed.map((p) => PROVIDER_LABELS[p] ?? p).join(", ") || "—"} · Veri çekilme: {fmtDate(fetchedAt)}
+                        </p>
+                      )}
                     </div>
                   </details>
                 );
@@ -619,7 +651,7 @@ export default async function AnalysisResultPage({
           ) : null}
 
           {/* 10b. VERİ SINIRLAMALARI — what could NOT be measured (never a risk) */}
-          {dataLimitations.length > 0 || anomalies.length > 0 ? (
+          {dataLimitations.length > 0 || anomalies.length > 0 || providerWarnings.length > 0 ? (
             <section className="mt-6 rounded-xl border border-border bg-surface p-6">
               <div className="flex items-center gap-2">
                 <Info className="size-4 text-subtle" aria-hidden="true" />
@@ -638,6 +670,11 @@ export default async function AnalysisResultPage({
                 {anomalies.map((a, i) => (
                   <li key={`a${i}`} className="flex items-start gap-2.5 text-small text-foreground/80">
                     <span className="mt-0.5 shrink-0" aria-hidden="true">⚠</span>{a}
+                  </li>
+                ))}
+                {providerWarnings.map((w, i) => (
+                  <li key={`w${i}`} className="flex items-start gap-2.5 text-small text-foreground/80">
+                    <Info className="mt-0.5 size-4 shrink-0 text-subtle" aria-hidden="true" />{w}
                   </li>
                 ))}
               </ul>

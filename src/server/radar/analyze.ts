@@ -5,6 +5,7 @@ import {
   EU_DUTY_FREE_FOR_TR,
   weightsForModel,
   type RadarCategoryKey,
+  type RadarCriterionKey,
 } from "@/config/radar";
 import { getRadarSettings } from "./settings";
 import { getVerifiedHsCodes } from "./hs";
@@ -20,6 +21,15 @@ import {
 } from "./providers/comtrade";
 import { getAppliedTariff } from "./providers/wits";
 import { getEuImport } from "./providers/eurostat";
+
+/** Tag citations with which criterion they back (§ audit finding — citations
+ *  were only ever attached at the snapshot level, never linked to a specific
+ *  criterion). The orchestrator is the only place that knows this — a provider
+ *  function like `getImportSeries` has no idea whether its caller wants it for
+ *  demand, growth, or both. */
+function tag(citations: Citation[], ...keys: RadarCriterionKey[]): Citation[] {
+  return citations.map((c) => ({ ...c, criterionKeys: keys }));
+}
 
 /**
  * AYZENITH RADAR — analysis orchestrator (the pipeline).
@@ -197,7 +207,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
   let latestYear: number | null = null;
 
   if (seriesRes.ok) {
-    citations.push(...seriesRes.citations);
+    citations.push(...tag(seriesRes.citations, "demand", "growth"));
     targetImport = seriesRes.value.latestValue;
     growthCagr = seriesRes.value.growthCagr;
     growthYears = seriesRes.value.growthYears;
@@ -210,7 +220,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
       const { latest } = defaultYearWindow();
       const euRes = await getEuImport(countryCode, hsCodes, latest);
       if (euRes.ok) {
-        citations.push(...euRes.citations);
+        citations.push(...tag(euRes.citations, "demand"));
         targetImport = euRes.value.value;
         latestYear = euRes.value.year;
       } else {
@@ -240,30 +250,40 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
   }
 
   let peerImports: number[] = [];
+  // Expected basket size = the peers we SET OUT to compare against, before any
+  // provider failure trimmed it — this is what lets scoring tell "1 of 8
+  // measured" apart from "8 of 8 measured" (§ audit finding: both used to earn
+  // identical confidence credit).
+  let peerCoverage: { measured: number; expected: number } | null = { measured: 0, expected: peerSet.length };
   if (peerRes.ok) {
-    citations.push(...peerRes.citations);
+    citations.push(...tag(peerRes.citations, "demand"));
     peerImports = peerRes.value.map((c) => c.value);
+    peerCoverage = { measured: peerRes.value.length, expected: peerSet.length };
     if (peerRes.warning) errors.push(peerRes.warning);
   } else {
     errors.push(peerRes.error);
     peerImports = [targetImport]; // degrade: at least the target itself
+    peerCoverage = { measured: 1, expected: peerSet.length };
   }
 
   let trToTargetExport: number | null = null;
   let trToPeerExports: number[] = [];
+  let trPeerCoverage: { measured: number; expected: number } | null = { measured: 0, expected: peerSet.length };
   if (trRes.ok) {
-    citations.push(...trRes.citations);
+    citations.push(...tag(trRes.citations, "supplyAdvantage"));
     trToTargetExport = pickValue(trRes.value, countryCode);
     trToPeerExports = trRes.value.map((c) => c.value);
+    trPeerCoverage = { measured: trRes.value.length, expected: peerSet.length };
     if (trRes.warning) errors.push(trRes.warning);
   } else {
     errors.push(trRes.error);
+    trPeerCoverage = { measured: 0, expected: peerSet.length };
   }
 
   let sourceCountryImports: number[] = [];
   let sourceBreakdown: CountryValue[] = [];
   if (sourceRes.ok) {
-    citations.push(...sourceRes.citations);
+    citations.push(...tag(sourceRes.citations, "competition"));
     sourceBreakdown = sourceRes.value;
     sourceCountryImports = sourceRes.value.map((c) => c.value);
     if (sourceRes.warning) errors.push(sourceRes.warning);
@@ -280,7 +300,7 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
   } else {
     const tariffRes = await getAppliedTariff(countryCode, hsCodes, latestYear);
     if (tariffRes.ok) {
-      citations.push(...tariffRes.citations);
+      citations.push(...tag(tariffRes.citations, "entry"));
       customsDutyPct = tariffRes.value;
     } else {
       errors.push(tariffRes.error);
@@ -301,6 +321,8 @@ export async function analyzeMarket(params: AnalyzeParams): Promise<AnalysisResu
     customsDutyPct,
     certificationBurden,
     sourceCountryImports,
+    peerCoverage,
+    trPeerCoverage,
   };
   const outcome = computeScore(input, weights);
   const decision = outcome.insufficient

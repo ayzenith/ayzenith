@@ -92,6 +92,7 @@ export default async function LeadResultsPage({
           socialMatchStatus: c.socialMatchStatus,
           hasInstagram: Boolean(c.instagramUrl),
           hasLinkedin: Boolean(c.linkedinUrl),
+          scoreComponents: (c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null)?.components,
         }),
       ),
     }));

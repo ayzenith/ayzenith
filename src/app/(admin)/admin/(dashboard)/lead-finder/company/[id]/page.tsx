@@ -72,6 +72,7 @@ export default async function LeadDetailPage({ params }: { params: Promise<{ id:
     socialMatchStatus: c.socialMatchStatus,
     hasInstagram: Boolean(c.instagramUrl),
     hasLinkedin: Boolean(c.linkedinUrl),
+    scoreComponents: breakdown?.components,
   });
 
   return (

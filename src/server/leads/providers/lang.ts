@@ -164,11 +164,19 @@ export function subpageRounds(lang: SiteLang): string[][] {
 export const LEGAL_PAGE_RE =
   /(impressum|imprint|legal[-_\s]?notice|mentions[-_\s]?legales|note[-_\s]?legali|dati[-_\s]?societari|aviso[-_\s]?legal|informacion[-_\s]?legal|informacao[-_\s]?legal|colofon|nota[-_\s]?prawna|juridische[-_\s]?informatie|firmenbuch)/i;
 
-/** Company-info pages: about / contact / privacy. Real management names live here
- *  in the many countries that have no Impressum equivalent, so they ARE read —
- *  just at a lower confidence than an official legal notice. */
+/** Company-info pages: about / contact / privacy / TEAM. Real management names
+ *  live here in the many countries that have no Impressum equivalent, so they
+ *  ARE read — just at a lower confidence than an official legal notice.
+ *  Team/staff pages were previously entirely absent from this pattern (§ audit
+ *  finding — "no team-page path in any language pack") even though a "Team" or
+ *  "Yönetim Ekibi" link is exactly where a site names people beyond the
+ *  Impressum's forced director listing. Reusing this ONE shared pattern means
+ *  team pages get discovered (via `discoverInfoPages` below, which ranks hits
+ *  against this same regex) AND get mined for names once fetched (the per-page
+ *  loop in website.ts also gates decision-maker extraction on this pattern) —
+ *  no separate plumbing needed. */
 export const COMPANY_INFO_PAGE_RE =
-  /(ueber[-_\s]?uns|about|kontakt|contact|contatti|contattaci|chi[-_\s]?siamo|azienda|qui[-_\s]?sommes[-_\s]?nous|nous[-_\s]?contacter|a[-_\s]?propos|quienes[-_\s]?somos|sobre[-_\s]?nosotros|contacto|empresa|quem[-_\s]?somos|contactos|over[-_\s]?ons|bedrijf|o[-_\s]?nas|o[-_\s]?firmie|firma|iletisim|hakkimizda|kurumsal|om[-_\s]?oss|yhteystiedot|privacy|datenschutz|politique[-_\s]?de[-_\s]?confidentialite|politica[-_\s]?de[-_\s]?privacid|polityka[-_\s]?prywatnosci|gizlilik|tietosuoja|ochrana[-_\s]?osobnich)/i;
+  /(ueber[-_\s]?uns|about|kontakt|contact|contatti|contattaci|chi[-_\s]?siamo|azienda|qui[-_\s]?sommes[-_\s]?nous|nous[-_\s]?contacter|a[-_\s]?propos|quienes[-_\s]?somos|sobre[-_\s]?nosotros|contacto|empresa|quem[-_\s]?somos|contactos|over[-_\s]?ons|bedrijf|o[-_\s]?nas|o[-_\s]?firmie|firma|iletisim|hakkimizda|kurumsal|om[-_\s]?oss|yhteystiedot|privacy|datenschutz|politique[-_\s]?de[-_\s]?confidentialite|politica[-_\s]?de[-_\s]?privacid|polityka[-_\s]?prywatnosci|gizlilik|tietosuoja|ochrana[-_\s]?osobnich|\bteam\b|notre[-_\s]?equipe|nuestro[-_\s]?equipo|nosso[-_\s]?equipa|squadra|nasz[-_\s]?zespol|nas[-_\s]?tym|ekibimiz|yonetim[-_\s]?ekibi|calisanlarimiz|mitarbeiter)/i;
 
 /**
  * Strip diacritics so a pattern written in plain ASCII still matches the accented
@@ -461,4 +469,39 @@ export const EMPLOYEE_TERMS_MULTILANG = [
  */
 export function normalizeForMatch(text: string): string {
   return text.toLocaleLowerCase("de").replace(/\u0307/g, "");
+}
+
+/**
+ * Right-bounded substring test for raw (non-tokenized) page text.
+ *
+ * `String.includes` matches ANYWHERE \u2014 a 4-letter product term like "slip"
+ * (underwear) also fires inside "slippers", "slipway", etc. This is not
+ * hypothetical: this exact match feeds `strongFound`/`mediumFound` in
+ * `website.ts`, and a single strong-term hit is the ONE thing that can set
+ * `productFit = "VERIFIED"` \u2014 the highest-trust tier a lead can reach on
+ * product evidence. A false hit here is not cosmetic, it is a false claim of
+ * verification.
+ *
+ * The LEFT side is deliberately left unguarded, matching the same reasoning
+ * `ROLE_TERMS_MULTILANG` above already documents: German (and Dutch, Nordic\u2026)
+ * builds real compounds by prefixing a modifier directly onto the head noun
+ * with no space \u2014 "Damenunterw\u00e4sche", "Sportbikini" \u2014 so a term is expected
+ * to appear as the TAIL of a longer word, and that is a genuine match, not a
+ * false one. A live regression against 1,361 cached crawled pages confirmed
+ * this: requiring a left boundary too silently lost real matches like
+ * "Brautunterw\u00e4sche", "Sportbikinis" (583 of 881 medium-term hits flipped \u2014
+ * almost all legitimate compounds/plurals, not noise).
+ *
+ * The RIGHT side allows up to two more letters \u2014 covering ordinary
+ * inflections (plural "-s"/"-es", German "-e"/"-en", genitive "-'s") \u2014 but not
+ * an unrelated longer stem: "slip" + "pers" (4 letters) is rejected, "slip" +
+ * "s" (1 letter, a real plural) is accepted. This was tuned against the same
+ * live sample: it kept "slips", "bralettes", "sportbikinis" while dropping
+ * the "slip"-in-"slippers"-style false positive the two-sided version had
+ * been added to catch.
+ */
+export function includesTermBoundary(haystack: string, term: string): boolean {
+  if (!term) return false;
+  const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return new RegExp(`${escaped}\\p{L}{0,2}(?!\\p{L})`, "u").test(haystack);
 }

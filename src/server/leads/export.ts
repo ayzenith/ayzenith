@@ -55,6 +55,7 @@ export type ExportCompany = {
   socialVerifiedAt: Date | null;
   leadScore: number | null;
   leadConfidence: number | null;
+  scoreBreakdown: unknown;
   status: string;
   discoveredVia: string;
   lastCheckedAt: Date;
@@ -128,6 +129,7 @@ export async function getCompaniesForExport(ids: string[]): Promise<ExportCompan
       socialVerifiedAt: c.socialVerifiedAt,
       leadScore: c.leadScore,
       leadConfidence: c.leadConfidence,
+      scoreBreakdown: c.scoreBreakdown,
       status: c.status,
       discoveredVia: c.discoveredVia,
       lastCheckedAt: c.lastCheckedAt,
@@ -180,12 +182,14 @@ function priorityLabelOf(c: ExportCompany): string {
 
 /** Deterministic "Why This Lead" one-liner (positive reasons only) for export. */
 function whyLine(c: ExportCompany, businessModel: string): string {
+  const breakdown = c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null;
   return positiveWhy(
     buildWhyLead({
       businessModel, productFit: c.productFit, modelFit: c.modelFit,
       websiteStatus: c.websiteStatus, hasEmail: Boolean(c.email), hasPhone: Boolean(c.phone),
       contactCount: c.contacts.length, socialMatchStatus: c.socialMatchStatus,
       hasInstagram: Boolean(c.instagramUrl), hasLinkedin: Boolean(c.linkedinUrl),
+      scoreComponents: breakdown?.components,
     }),
   )
     .map((r) => `${r.label}: ${r.detail}`)

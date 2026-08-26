@@ -36,6 +36,7 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
   })).filter((s) => s.url);
 
   // "Neden bu lead?" — deterministic, positive reasons only on the card (§7/§10).
+  const breakdown = c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null;
   const whyPositive = positiveWhy(
     buildWhyLead({
       businessModel: c.businessModel,
@@ -49,6 +50,7 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
       socialMatchStatus: c.socialMatchStatus,
       hasInstagram: Boolean(c.instagramUrl),
       hasLinkedin: Boolean(c.linkedinUrl),
+      scoreComponents: breakdown?.components,
     }),
   );
 

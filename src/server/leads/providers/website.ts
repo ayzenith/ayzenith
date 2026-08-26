@@ -6,6 +6,7 @@ import {
   langForSite,
   subpageRounds,
   normalizeForMatch,
+  includesTermBoundary,
   LEGAL_PAGE_RE,
   COMPANY_INFO_PAGE_RE,
   foldAccents,
@@ -209,6 +210,56 @@ function looksLikeName(first?: string, last?: string): boolean {
 
 const ORG_FORM_RE = /^(gmbh|ag|kg|ohg|ug|ek|ltd|inc|gbr|sarl|sas|sasu|eurl|srl|srls|spa|snc|sl|slu|sau|sa|bv|nv|vof|bvba|sprl|lda|oy|oyj|ab|as|aps|kft|zrt|sro|doo|plc|llc|sti)$/i;
 
+/**
+ * UI/navigation/legal-boilerplate words that sit right next to a legal-form
+ * token SOMEWHERE on a crawled page without being part of anyone's name — a
+ * "Datenschutz" heading, a cookie banner's "Widerruf · Retouren · Entsorgung"
+ * footer nav, a checkout page's "Zahlarten · Versandarten". `LEGAL_FORM_RE`
+ * only knows "word(s) then GmbH/AG/Inc.", so on a page with no clean Impressum
+ * paragraph it can walk straight into one of these instead of the real entity.
+ * Fed into the same leading-token stripper `cleanLegalName` already uses, so a
+ * hit here is dropped exactly like the existing "Inhalte loveco GmbH" case,
+ * regardless of capitalisation (found live: "About Us AG", "Suchvorschläge
+ * Günter Tilly GmbH" — real name only surfaces once "Suchvorschläge" strips).
+ */
+const LEGAL_NAME_LEAK_WORDS = new Set([
+  "about", "us", "contact", "privacy", "cookie", "cookies", "terms", "agb",
+  "widerruf", "widerrufsbelehrung", "retouren", "retoure", "entsorgung",
+  "versandarten", "versandkosten", "zahlarten", "zahlungsarten",
+  "lieferung", "lieferzeit", "faq", "hilfe", "help", "suchvorschlage",
+  "suchvorschläge", "erreichbarkeit",
+  "anfahrt", "rechtliches", "sitemap", "menu", "navigation", "anzeigen",
+  "deal", "sonderposten", "newsletter", "login", "registrieren", "warenkorb",
+  "checkout", "bestellung", "datenschutzerklarung", "datenschutzerklärung",
+  "webanalysedienst", "analysedienst", "cookiehinweis", "datenschutzhinweis",
+  // NOT included, deliberately, despite looking like page-nav words: "versand"
+  // and "dienstleistung(en)" — both are also genuine, common leading words in
+  // real German legal-entity names ("Otto Versand GmbH", and a live case here,
+  // "WIEDEMANN Dienstleistung und Verwaltung GmbH" — stripping "Dienstleistung"
+  // would have further truncated an already brand-clipped capture). Ambiguous
+  // words are left in, not out — a false NEGATIVE here just means occasionally
+  // failing to drop real leaked text, which the identity-overlap check in
+  // verify.ts still catches downstream; a false POSITIVE silently destroys a
+  // real company name, which is worse and unrecoverable.
+]);
+const LEGAL_NAME_STOPWORDS = new Set([...NAME_STOPWORDS, ...LEGAL_NAME_LEAK_WORDS]);
+
+/**
+ * Well-known THIRD-PARTY organisations that show up on almost every commercial
+ * site's own privacy/cookie/analytics disclosure ("this site uses Google
+ * Analytics, provided by Google Inc.") — matching `LEGAL_FORM_RE` perfectly
+ * while never being the searched firm's own entity. Live cases: "Alphabet
+ * Inc.", "Dolby Laboratories Inc." (a hifi shop's certification blurb),
+ * "Webanalysedienst der Google Inc.". Checked against the tokens that remain
+ * AFTER boilerplate stripping, so this only fires when the third-party name is
+ * the whole remaining result, not merely mentioned nearby.
+ */
+const THIRD_PARTY_ORG_NAMES = new Set([
+  "google", "alphabet", "facebook", "meta", "youtube", "instagram", "twitter",
+  "microsoft", "amazon", "dolby", "stripe", "paypal", "hotjar", "doubleclick",
+  "cloudflare", "matomo", "hubspot", "mailchimp", "sentry", "wix", "shopify",
+]);
+
 /** Is this token a legal-entity suffix rather than part of the name? Dots and
  *  commas are stripped first so "S.p.A." and "B.V." are recognised alongside
  *  "GmbH". Used to tell "loveco GmbH" (name + form) from "adresinde Calzedonia
@@ -221,13 +272,29 @@ function isOrgFormToken(token: string): boolean {
  *  legal name, keeping "loveco GmbH" rather than "Inhalte loveco GmbH". Returns
  *  null if nothing but the org form remains (a bare "GmbH" is not a company name). */
 function cleanLegalName(raw: string): string | null {
-  const tokens = raw.trim().split(/\s+/);
+  let tokens = raw.trim().split(/\s+/);
+
+  // A non-final token ending in "." means the capture crossed a sentence/section
+  // boundary (stripped HTML leaves no other punctuation cue) — e.g. "Hausgeräte.
+  // ERREICHBARKEIT ANFAHRT AG" is two unrelated page fragments glued together by
+  // proximity, not a name. Keep only what comes after the last such break. The
+  // length guard (>5 incl. the period) keeps genuine short abbreviations inside a
+  // real name intact — "Müller u. Söhne GmbH", "Meyer Co. KG" — while still
+  // catching a full word that happened to end a sentence.
+  const breakIdx = tokens.findIndex((t, i) => {
+    if (i >= tokens.length - 1 || isOrgFormToken(t)) return false;
+    const bare = t.replace(/[,&]/g, "");
+    return /\.$/.test(bare) && bare.length > 5;
+  });
+  if (breakIdx >= 0) tokens = tokens.slice(breakIdx + 1);
+  if (tokens.length === 0) return null;
+
   // Also drop a leading bare number or copyright mark: the legal entity is very
   // often printed in the footer right after the year, and Hunkemöller's came back
   // as "2026 Hunkemöller B.V." on the first multi-language run (§V3.9).
   while (
     tokens.length > 1 &&
-    (NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) || /^(?:[©®]|\d{2,4}|[©®]\d{2,4})$/.test(tokens[0]!))
+    (LEGAL_NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) || /^(?:[©®]|\d{2,4}|[©®]\d{2,4})$/.test(tokens[0]!))
   ) {
     tokens.shift();
   }
@@ -246,6 +313,18 @@ function cleanLegalName(raw: string): string | null {
     tokens.shift();
   }
   if (tokens.length < 2 && isOrgFormToken(tokens[0] ?? "")) return null;
+
+  // Purely numeric remainder ("4672 60 966 AG") is not a name, whatever slipped
+  // past the leading-token stripper above.
+  const nonOrgTokens = tokens.filter((t) => !isOrgFormToken(t));
+  if (nonOrgTokens.length === 0 || nonOrgTokens.every((t) => /^\d+$/.test(t))) return null;
+
+  // A well-known THIRD PARTY (Google, Meta, Dolby…) named in a privacy/cookie/
+  // analytics disclosure elsewhere on the page is never the searched firm's own
+  // entity, even though it matches the exact same "Name Inc./AG" shape.
+  const normNonOrg = nonOrgTokens.map((t) => normalizeForMatch(t.replace(/[.,]/g, "")));
+  if (normNonOrg.every((t) => THIRD_PARTY_ORG_NAMES.has(t))) return null;
+
   return tokens.join(" ");
 }
 
@@ -441,7 +520,11 @@ function discoverInfoPages(html: string, base: string): string[] {
     }
     // Same site only — a link to a payment provider's imprint is not this firm's.
     if (abs.hostname.replace(/^www\./, "") !== host) continue;
-    if (/\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?)$/i.test(abs.pathname)) continue;
+    // Found live: a "Datenschutz" link on cebus-computer.de actually pointed at
+    // a TeamViewer remote-support installer — non-HTML file types were excluded
+    // by extension, but never executables/archives a crawler has no business
+    // requesting at all.
+    if (/\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?|exe|msi|dmg|pkg|apk|rar|7z|bin)$/i.test(abs.pathname)) continue;
 
     const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
     if (url === base || seen.has(url)) continue;
@@ -452,10 +535,16 @@ function discoverInfoPages(html: string, base: string): string[] {
 
     let rank: number;
     if (hit(LEGAL_PAGE_RE)) rank = 0;
-    else if (!hit(COMPANY_INFO_PAGE_RE)) continue;
-    else if (hit(PRIVACY_HINT_RE)) rank = 1;
-    else if (hit(CONTACT_HINT_RE)) rank = 2;
-    else rank = 3;
+    else if (hit(COMPANY_INFO_PAGE_RE)) rank = hit(PRIVACY_HINT_RE) ? 1 : hit(CONTACT_HINT_RE) ? 2 : 3;
+    // Product/catalog pages (§ audit finding — crawling only ever asked for
+    // legal/disclosure pages, so product-fit evidence could only ever come from
+    // whatever text happened to sit on the homepage or an about/contact page; a
+    // dedicated product page is what could actually CONFIRM or REFUTE a product
+    // claim). Ranked below every legal/contact category so identity and
+    // decision-maker discovery are never displaced by it — this only ever
+    // spends a leftover slot in the SAME 3-subpage budget, never a new one.
+    else if (hit(HIGH_VALUE_PATH_RE)) rank = 4;
+    else continue;
 
     seen.add(url);
     found.push({ url, rank, depth: abs.pathname.replace(/\/$/, "").split("/").length });
@@ -639,10 +728,10 @@ export async function fetchSiteIntel(
     // V3.1: Product signals from LOW_VALUE pages (career/news/blog) are NOT added to
     // strongFound/mediumFound, as they don't prove the company's own products. Career
     // page "Dessous" ≠ company sells dessous. Homepage "Lingerie" → company sells lingerie.
-    for (const t of normProductTerms) if (lower.includes(t)) productTermsFound.add(t);
+    for (const t of normProductTerms) if (includesTermBoundary(lower, t)) productTermsFound.add(t);
     if (context !== "LOW_VALUE") {
-      for (const t of strongTerms) if (lower.includes(t)) strongFound.add(t);
-      for (const t of mediumTerms) if (lower.includes(t)) mediumFound.add(t);
+      for (const t of strongTerms) if (includesTermBoundary(lower, t)) strongFound.add(t);
+      for (const t of mediumTerms) if (includesTermBoundary(lower, t)) mediumFound.add(t);
     }
     // Note: LOW_VALUE pages are still crawled but their product signals are not counted
     // toward VERIFIED/LIKELY; this is a conservative "absence of proof ≠ proof of absence".

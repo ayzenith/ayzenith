@@ -2,7 +2,7 @@ import "server-only";
 
 import type { DedupedCandidate } from "./dedup";
 import { isWholesaleIndustry, type BrandFacts } from "./providers/wikidata";
-import { normalizeProduct, type LeadRole } from "@/config/leads";
+import { normalizeProduct, includesProductTerm, type LeadRole } from "@/config/leads";
 
 /**
  * AYZENITH LEAD FINDER — classification (roles, size, product fit).
@@ -128,7 +128,7 @@ export function classify(
   const isSpecificShop = opts.specificShops.includes(rawType);
   const nameStrong = opts.strongTerms.some((t) => {
     const n = normalizeProduct(t);
-    return n.length >= 3 && nameNorm.includes(n);
+    return n.length >= 3 && includesProductTerm(nameNorm, n);
   });
   const isSpecialty = roles.includes("specialty_store") || roles.includes("boutique");
 
@@ -144,7 +144,7 @@ export function classify(
     terms
       .map(normalizeProduct)
       .filter((t) => t.length >= 3)
-      .find((t) => brandTerms.some((b) => b.includes(t)));
+      .find((t) => brandTerms.some((b) => includesProductTerm(b, t)));
   const brandStrong = brandTerms.length ? matchIn(opts.strongTerms) : undefined;
   const brandMedium = brandTerms.length && !brandStrong ? matchIn(opts.mediumTerms ?? []) : undefined;
 

@@ -119,22 +119,45 @@ const PENDING_SELECT = {
 } as const;
 
 /** A firm still awaiting its FIRST website check: it has a website, but no run
- *  has reached it yet (`websiteStatus` null). Rows whose site was already tried
- *  and did not answer are NOT retried here — that is a re-check concern with its
- *  own freshness rules, not a coverage gap. */
+ *  has reached it yet (`websiteStatus` null). */
 const PENDING_WHERE = { website: { not: null }, websiteStatus: null } as const;
+
+/** How long an UNREACHABLE result is trusted before it becomes eligible for a
+ *  retry. Before this, a site that failed to answer on its ONE attempt stayed
+ *  "UNREACHABLE" forever — indistinguishable on screen from "checked, dead" even
+ *  though the only evidence was a single failed request, possibly a 30-second
+ *  hiccup. Bounded (not every day) so a genuinely dead site doesn't get
+ *  re-fetched on every cron tick for no reason. */
+const RECHECK_UNREACHABLE_AFTER_MS = 3 * 24 * 60 * 60 * 1000;
+
+/** Never-checked OR checked-and-failed-long-enough-ago-to-retry. Used by the
+ *  cron backlog-clearing path; the human "Doğrulamaya devam et" button keeps
+ *  using `PENDING_WHERE` unchanged (never-checked only) so its on-screen count
+ *  keeps meaning exactly what it always meant. */
+function eligibleWhere(now: Date = new Date()) {
+  return {
+    website: { not: null },
+    OR: [
+      { websiteStatus: null },
+      {
+        websiteStatus: "UNREACHABLE",
+        lastCheckedAt: { lt: new Date(now.getTime() - RECHECK_UNREACHABLE_AFTER_MS) },
+      },
+    ],
+  };
+}
 
 export async function countPending(searchId: string): Promise<number> {
   return db.leadCompany.count({ where: { searchId, ...PENDING_WHERE } });
 }
 
-/**
- * Verify the next batch of never-checked firms for ONE search.
- * Returns what it did, so a caller can report progress honestly.
- */
-export async function verifyPendingBatch(
+/** Shared batch runner — `where` decides which rows are in scope; everything
+ *  else (verification, scoring, the write transaction) is identical whether
+ *  this is a first check or a retry. */
+async function runVerifyBatch(
   searchId: string,
-  limit: number = REVERIFY_BATCH,
+  where: Record<string, unknown>,
+  limit: number,
 ): Promise<ReverifyResult> {
   const search = await db.leadSearch.findUnique({
     where: { id: searchId },
@@ -143,7 +166,7 @@ export async function verifyPendingBatch(
   if (!search) return { attempted: 0, reachable: 0, remaining: 0 };
 
   const rows = await db.leadCompany.findMany({
-    where: { searchId, ...PENDING_WHERE },
+    where: { searchId, ...where },
     select: PENDING_SELECT,
     // Highest-scoring first: if the backlog is never fully worked through, the
     // firms most likely to matter are the ones that did get checked.
@@ -310,6 +333,31 @@ export async function verifyPendingBatch(
   return { attempted: rows.length, reachable, remaining: await countPending(searchId) };
 }
 
+/**
+ * Verify the next batch of never-checked firms for ONE search — the human
+ * "Doğrulamaya devam et" button's entry point. Unchanged behaviour.
+ */
+export async function verifyPendingBatch(
+  searchId: string,
+  limit: number = REVERIFY_BATCH,
+): Promise<ReverifyResult> {
+  return runVerifyBatch(searchId, PENDING_WHERE, limit);
+}
+
+/**
+ * Verify the next batch of ELIGIBLE firms for ONE search: never-checked, plus
+ * checked-and-failed rows old enough to retry (§ audit finding — a firm that
+ * failed once on a single request was staying "UNREACHABLE" forever). Used by
+ * the cron backlog-clearing path only, so the human button's semantics and
+ * on-screen count stay exactly what they were.
+ */
+export async function verifyEligibleBatch(
+  searchId: string,
+  limit: number = REVERIFY_BATCH,
+): Promise<ReverifyResult> {
+  return runVerifyBatch(searchId, eligibleWhere(), limit);
+}
+
 /** Registrable host of a URL, for the "is this email on the company's own
  *  domain?" check. Mirrors dedup's normaliser without importing its whole graph. */
 function normalizeHost(website: string): string | undefined {
@@ -322,24 +370,35 @@ function normalizeHost(website: string): string | undefined {
 }
 
 /**
- * Work the backlog across RECENT searches — the cron entry point. Spends its
- * budget on the newest searches first, since those are the ones someone is
- * actually looking at.
+ * Work the backlog across searches — the cron entry point.
+ *
+ * Oldest search with a backlog FIRST, not newest (§ audit finding). Newest-first
+ * meant a search only ever got attention while it was the newest one with a
+ * pending row — once a fresher search appeared, an older backlog could be
+ * pushed behind it indefinitely and never clear, no matter how many high-value
+ * rows it still held. Oldest-first is plain FIFO: every search's backlog is
+ * eventually reached, once whatever is ahead of it finishes. `maxSearches` and
+ * `perSearch` are UNCHANGED from before — the newly-eligible UNREACHABLE rows
+ * are, by construction, biased toward slow or dead sites (that's why they
+ * failed their first attempt), so they cost more time per row than an average
+ * never-checked one; widening the per-tick budget at the same time would risk
+ * the route's own 300s limit. The fix here is which searches and rows are
+ * chosen, not how many.
  */
 export async function verifyPendingAcrossSearches(
   maxSearches = 3,
   perSearch = REVERIFY_BATCH,
 ): Promise<Array<{ searchId: string } & ReverifyResult>> {
   const searches = await db.leadSearch.findMany({
-    where: { companies: { some: PENDING_WHERE } },
-    orderBy: { createdAt: "desc" },
+    where: { companies: { some: eligibleWhere() } },
+    orderBy: { createdAt: "asc" },
     take: maxSearches,
     select: { id: true },
   });
 
   const out: Array<{ searchId: string } & ReverifyResult> = [];
   for (const s of searches) {
-    const r = await verifyPendingBatch(s.id, perSearch);
+    const r = await verifyEligibleBatch(s.id, perSearch);
     out.push({ searchId: s.id, ...r });
   }
   return out;

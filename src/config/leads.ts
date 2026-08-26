@@ -574,6 +574,18 @@ export function normalizeProduct(s: string): string {
     .trim();
 }
 
+/** Word-boundary substring test for two `normalizeProduct()`-normalized strings
+ *  (both are plain a-z0-9 + single spaces, so padding with spaces is a safe,
+ *  cheap boundary check). Unlike plain `.includes()`, a 3-letter term like "bh"
+ *  no longer matches inside an unrelated longer word, and a multi-word term
+ *  ("women's underwear" → "women s underwear") only matches on its own word
+ *  boundaries. Used wherever a curated product term decides productFit, since a
+ *  false substring hit there can ride all the way to "VERIFIED". */
+export function includesProductTerm(haystack: string, term: string): boolean {
+  if (!term) return false;
+  return ` ${haystack} `.includes(` ${term} `);
+}
+
 /** Resolve a natural-language product to its discovery profile, or a broad
  *  fallback profile (marked so callers know fit must be verified separately). */
 /** Ensure a profile always carries product-fit signals: if none were curated,

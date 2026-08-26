@@ -311,6 +311,14 @@ model RadarSnapshot {
   subCategories    Json          @default("[]") // [{ hs6, productGroup, score, trendPct }]
   aiSummary        String? // AI interpretation (sourced-data-only); null until generated
 
+  // Non-fatal provider warnings from the pipeline that produced THIS snapshot
+  // (e.g. "3 kıyas pazarı ölçülemedi — kaynak yanıt vermedi"). Previously
+  // computed in analyze.ts and then discarded before ever reaching the
+  // database — a snapshot from a partial provider outage looked identical to
+  // a fully-measured one. Frozen here like everything else on this row, so a
+  // later re-run with better coverage never rewrites what THIS run actually saw.
+  errors Json @default("[]") // string[]
+
   watchId   String?
   watch     RadarWatch?     @relation(fields: [watchId], references: [id], onDelete: SetNull)
   citations RadarCitation[]
@@ -339,6 +347,14 @@ model RadarCitation {
   unit      String? // "USD" | "%" | ...
   sourceUrl String? // deep link back to the source when available
   fetchedAt DateTime
+
+  // Which of the 5 scoring criteria this citation backs (e.g. ["demand",
+  // "growth"]) — additive, empty for citations that don't map to one of the 5
+  // (e.g. the per-HS Turkey-export figures behind subCategories) and for
+  // citations written before this existed. Previously citations were only
+  // ever attached at the snapshot level with no structured link to which
+  // criterion they supported (§ audit finding).
+  criterionKeys Json @default("[]") // string[]
 
   @@index([snapshotId])
 }

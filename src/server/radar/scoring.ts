@@ -61,6 +61,15 @@ export type ScoringInput = {
   /** Import value by source country for the target market (USD) — for
    *  concentration / competition. Empty = unknown. */
   sourceCountryImports: number[];
+  /** How many of the INTENDED peer basket actually returned real data, vs how
+   *  many were meant to be measured. A country that genuinely reported zero
+   *  trade still counts as "measured" here — this is specifically about
+   *  provider failures (network/throttling), not empty results. null/omitted
+   *  when the caller didn't track it → treated as full coverage, never as a
+   *  penalty for a caller simply not reporting it. */
+  peerCoverage?: { measured: number; expected: number } | null;
+  /** Same idea for the Turkey→peer export basket that supplyAdvantage uses. */
+  trPeerCoverage?: { measured: number; expected: number } | null;
 };
 
 export type CriterionResult = {
@@ -72,6 +81,13 @@ export type CriterionResult = {
   rawInputs: Record<string, RawValue>;
   /** Plain-language Turkish note on how it was derived (no AI — templated). */
   explanation: string;
+  /** 0–1: how COMPLETE the data behind an available score is — distinct from
+   *  `available`, which is binary. A criterion can be available (a score was
+   *  produced) from 1 of 8 intended peer markets and from 8 of 8; both used to
+   *  report the exact same confidence credit. This is what lets `computeScore`
+   *  tell those apart. 1 when the criterion has no such notion (e.g. entry's
+   *  certification table, always fully known) or the caller didn't track it. */
+  completeness: number;
 };
 
 export type ScoreOutcome = {
@@ -124,7 +140,7 @@ function fmtUsd(n: number): string {
 // ----------------------------------------------------------------------------
 
 function scoreDemand(input: ScoringInput): CriterionResult {
-  const { targetImport, peerImports } = input;
+  const { targetImport, peerImports, peerCoverage } = input;
   if (targetImport == null || peerImports.length === 0) {
     return {
       key: "demand",
@@ -132,23 +148,42 @@ function scoreDemand(input: ScoringInput): CriterionResult {
       available: false,
       rawInputs: { targetImport: targetImport ?? null },
       explanation: "İthalat hacmi verisi bulunamadı.",
+      completeness: 0,
     };
   }
   const score = round(minMax(targetImport, peerImports));
+  const completeness =
+    peerCoverage && peerCoverage.expected > 0
+      ? clamp(peerCoverage.measured / peerCoverage.expected, 0, 1)
+      : 1;
   return {
     key: "demand",
     score,
     available: true,
-    rawInputs: { targetImport, peerCount: peerImports.length },
-    explanation: `Hedef pazarın ithalatı ${fmtUsd(
+    rawInputs: {
       targetImport,
-    )}; ${peerImports.length} benzer pazar arasında göreceli konum ${score}/100.`,
+      peerCount: peerImports.length,
+      peerExpected: peerCoverage?.expected ?? null,
+    },
+    explanation:
+      completeness < 1
+        ? `Hedef pazarın ithalatı ${fmtUsd(targetImport)}; ${peerCoverage!.measured}/${peerCoverage!.expected} kıyas pazarı ölçülebildi (göreceli konum ${score}/100 — kısmi veri, güven buna göre düşürüldü).`
+        : `Hedef pazarın ithalatı ${fmtUsd(
+            targetImport,
+          )}; ${peerImports.length} benzer pazar arasında göreceli konum ${score}/100.`,
+    completeness,
   };
 }
 
 // ----------------------------------------------------------------------------
 // Criterion 2 — Growth trend (CAGR against a fixed rubric, not peers).
 // ----------------------------------------------------------------------------
+
+/** The intended trend window (mirrors `defaultYearWindow()` in analyze.ts —
+ *  four years of annual data). Fewer actual years is objectively a thinner
+ *  trend read, not a different one; this only affects confidence, never the
+ *  fixed growth rubric itself. */
+const EXPECTED_GROWTH_YEARS = 4;
 
 function scoreGrowth(input: ScoringInput): CriterionResult {
   const cagr = input.growthCagr;
@@ -159,6 +194,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
       available: false,
       rawInputs: { years: input.growthYears },
       explanation: "Büyüme trendi için yeterli yıllık veri yok (en az 2 yıl).",
+      completeness: 0,
     };
   }
   // Fixed rubric: growth is a universal question, not peer-relative.
@@ -169,6 +205,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
   else if (cagr >= 0) score = 40;
   else score = clamp(20 + cagr, 0, 20); // shrinking → 0–20
   const anomaly = Math.abs(cagr) >= ANOMALY_CAGR_PCT;
+  const completeness = clamp(input.growthYears / EXPECTED_GROWTH_YEARS, 0, 1);
   return {
     key: "growth",
     score: round(score),
@@ -177,6 +214,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
     explanation: `Son ${input.growthYears} yılda yıllık ortalama ithalat değişimi %${cagr.toFixed(
       1,
     )} (ürün bazlı, değer ağırlıklı).`,
+    completeness,
   };
 }
 
@@ -186,7 +224,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
 // ----------------------------------------------------------------------------
 
 function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
-  const { trToTargetExport, trToPeerExports, targetImport, euDutyFree } = input;
+  const { trToTargetExport, trToPeerExports, targetImport, euDutyFree, trPeerCoverage } = input;
   if (trToTargetExport == null || trToPeerExports.length === 0) {
     return {
       key: "supplyAdvantage",
@@ -194,6 +232,7 @@ function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
       available: false,
       rawInputs: { trToTargetExport: trToTargetExport ?? null },
       explanation: "Türkiye ihracat verisi bulunamadı.",
+      completeness: 0,
     };
   }
   // 3a — proven trade strength, normalised across peers.
@@ -211,6 +250,11 @@ function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
   let score = strength * 0.6 + headroom * 0.4;
   if (euDutyFree) score = clamp(score + 8); // real, measurable CU advantage
 
+  const completeness =
+    trPeerCoverage && trPeerCoverage.expected > 0
+      ? clamp(trPeerCoverage.measured / trPeerCoverage.expected, 0, 1)
+      : 1;
+
   return {
     key: "supplyAdvantage",
     score: round(score),
@@ -219,10 +263,17 @@ function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
       trToTargetExport,
       trSharePct: trSharePct == null ? null : Number(trSharePct.toFixed(2)),
       euDutyFree,
+      trPeerExpected: trPeerCoverage?.expected ?? null,
     },
-    explanation: `Türkiye bu pazara ${fmtUsd(trToTargetExport)} ihracat yapıyor${
-      trSharePct != null ? ` (pazar payı %${trSharePct.toFixed(1)})` : ""
-    }${euDutyFree ? "; Gümrük Birliği ile sanayi malları vergisiz." : "."}`,
+    explanation:
+      completeness < 1
+        ? `Türkiye bu pazara ${fmtUsd(trToTargetExport)} ihracat yapıyor${
+            trSharePct != null ? ` (pazar payı %${trSharePct.toFixed(1)})` : ""
+          }; kıyas sepetinin yalnızca ${trPeerCoverage!.measured}/${trPeerCoverage!.expected} pazarı ölçülebildi (güven buna göre düşürüldü).`
+        : `Türkiye bu pazara ${fmtUsd(trToTargetExport)} ihracat yapıyor${
+            trSharePct != null ? ` (pazar payı %${trSharePct.toFixed(1)})` : ""
+          }${euDutyFree ? "; Gümrük Birliği ile sanayi malları vergisiz." : "."}`,
+    completeness,
   };
 }
 
@@ -257,6 +308,9 @@ function scoreEntry(input: ScoringInput): CriterionResult {
         ? `; TR menşeli mal gümrük vergisi %${customsDutyPct}.`
         : "; gümrük vergisi verisi bulunamadı (varsayılan kullanıldı)."
     }`,
+    // Certification is always curated (fully known); duty is the only part of
+    // this criterion that can be a guess, so completeness only degrades for that.
+    completeness: dutyKnown ? 1 : 0.7,
   };
 }
 
@@ -273,6 +327,7 @@ function scoreCompetition(input: ScoringInput): CriterionResult {
       available: false,
       rawInputs: { sources: input.sourceCountryImports.length },
       explanation: "Kaynak ülke kırılımı verisi bulunamadı.",
+      completeness: 0,
     };
   }
   // Low concentration (dispersed suppliers) → easy to enter → high score.
@@ -286,6 +341,10 @@ function scoreCompetition(input: ScoringInput): CriterionResult {
     explanation: `İthalat ${input.sourceCountryImports.length} kaynak ülkeye dağılmış; yoğunlaşma endeksi ${hhi.toFixed(
       2,
     )} (düşük = tedarik daha dağınık, tek ülke baskın değil).`,
+    // No fixed "expected source count" exists to compare against (unlike the
+    // peer baskets above) — whatever breakdown Comtrade returned is all there
+    // is to measure with, so this is left at full completeness.
+    completeness: 1,
   };
 }
 
@@ -316,18 +375,29 @@ export function computeScore(
   const demand = criteria.find((c) => c.key === "demand")!;
   const measuredCriteria = criteria.filter((c) => c.available).length;
 
-  // Confidence = share of total weight covered by available criteria.
+  // Confidence = share of total weight covered by available criteria, scaled by
+  // how COMPLETE each one's underlying data actually was. A criterion available
+  // from 1 of 8 intended peer markets used to earn the exact same confidence
+  // credit as one available from 8 of 8 — this is what stops a partial-outage
+  // snapshot from reading as cleanly as a fully-measured one (§ audit finding).
+  // The SCORE itself is untouched: finalScore below still re-normalises over
+  // full criterion weight, so this only ever affects the confidence number.
   const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0) || 100;
-  const coveredWeight = criteria
+  const confidenceWeight = criteria
     .filter((c) => c.available)
-    .reduce((acc, c) => acc + weights[c.key], 0);
-  const confidence = round((coveredWeight / totalWeight) * 100);
+    .reduce((acc, c) => acc + weights[c.key] * c.completeness, 0);
+  const confidence = round((confidenceWeight / totalWeight) * 100);
 
   if (!demand.available) {
     return { criteria, finalScore: null, measuredCriteria, confidence, insufficient: true };
   }
 
-  // Weighted average over available criteria, re-normalised by covered weight.
+  // Weighted average over available criteria, re-normalised by AVAILABLE
+  // weight (not completeness-scaled) — the score itself never changes based on
+  // how thin the data behind it was, only the confidence number does.
+  const coveredWeight = criteria
+    .filter((c) => c.available)
+    .reduce((acc, c) => acc + weights[c.key], 0);
   const weightedSum = criteria
     .filter((c) => c.available && c.score != null)
     .reduce((acc, c) => acc + (c.score as number) * weights[c.key], 0);

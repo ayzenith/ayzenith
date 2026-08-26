@@ -40,6 +40,7 @@ export async function saveSnapshot(
       confidence: result.confidence,
       measuredCriteria: result.measuredCriteria,
       subCategories: result.subCategories as object,
+      errors: result.errors as object,
       aiSummary: opts.aiSummary ?? null,
       watchId: opts.watchId ?? null,
       citations: {
@@ -51,6 +52,7 @@ export async function saveSnapshot(
           unit: c.unit ?? null,
           sourceUrl: c.sourceUrl ?? null,
           fetchedAt: new Date(c.fetchedAt),
+          criterionKeys: c.criterionKeys ?? [],
         })),
       },
     },

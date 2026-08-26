@@ -258,6 +258,11 @@ const THIRD_PARTY_ORG_NAMES = new Set([
   "google", "alphabet", "facebook", "meta", "youtube", "instagram", "twitter",
   "microsoft", "amazon", "dolby", "stripe", "paypal", "hotjar", "doubleclick",
   "cloudflare", "matomo", "hubspot", "mailchimp", "sentry", "wix", "shopify",
+  // Hosting providers named in the mandatory "2. Hosting" disclosure that
+  // German privacy-policy generators insert — found live on weltladen-pankow.de
+  // ("Anbieter ist die Strato AG…"), the same failure mode as the platforms
+  // above: a real name, printed on the page, that is never the FIRM's own.
+  "strato",
 ]);
 
 /** Is this token a legal-entity suffix rather than part of the name? Dots and
@@ -497,6 +502,10 @@ const SUBPAGE_TIMEOUT_MS = 8_000;
 const PRIVACY_HINT_RE = /(privacy|datenschutz|confidentialite|privacid|prywatnosci|gizlilik|tietosuoja|osobnich)/i;
 const CONTACT_HINT_RE = /(contact|kontakt|contatti|contacto|contactos|iletisim|yhteystiedot)/i;
 
+/** File types a crawler has no business requesting — shared between the footer-link
+ *  scrape and the sitemap fallback below so both apply the exact same rule. */
+const NON_CRAWLABLE_EXT_RE = /\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?|exe|msi|dmg|pkg|apk|rar|7z|bin)$/i;
+
 function discoverInfoPages(html: string, base: string): string[] {
   const found: Array<{ url: string; rank: number; depth: number }> = [];
   const seen = new Set<string>();
@@ -524,7 +533,7 @@ function discoverInfoPages(html: string, base: string): string[] {
     // a TeamViewer remote-support installer — non-HTML file types were excluded
     // by extension, but never executables/archives a crawler has no business
     // requesting at all.
-    if (/\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?|exe|msi|dmg|pkg|apk|rar|7z|bin)$/i.test(abs.pathname)) continue;
+    if (NON_CRAWLABLE_EXT_RE.test(abs.pathname)) continue;
 
     const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
     if (url === base || seen.has(url)) continue;
@@ -544,6 +553,69 @@ function discoverInfoPages(html: string, base: string): string[] {
     // decision-maker discovery are never displaced by it — this only ever
     // spends a leftover slot in the SAME 3-subpage budget, never a new one.
     else if (hit(HIGH_VALUE_PATH_RE)) rank = 4;
+    else continue;
+
+    seen.add(url);
+    found.push({ url, rank, depth: abs.pathname.replace(/\/$/, "").split("/").length });
+  }
+
+  return found
+    .sort((a, b) => a.rank - b.rank || a.depth - b.depth || a.url.length - b.url.length)
+    .map((f) => f.url);
+}
+
+/**
+ * Fallback page discovery via /sitemap.xml, for the exact case `discoverInfoPages`
+ * cannot solve: a script-built footer with no legal/company links anywhere in the
+ * server-rendered HTML (measured live — Esotiq, Women'secret). A sitemap is a
+ * strict superset of what a working footer already gives us for free, so this is
+ * ONLY ever tried when the footer scrape found nothing — running it
+ * unconditionally would just be a second, costlier way to find the same pages, and
+ * would double the sub-page request budget for every firm instead of only the
+ * ones that actually need it.
+ *
+ * Deliberately does NOT follow a <sitemapindex> to its child sitemaps — a large
+ * site can nest dozens of them, and chasing that is unbounded cost for a module
+ * that is supposed to spend a fixed, small budget per candidate. An index sitemap
+ * simply yields nothing here, which is honest: the firm falls back to the
+ * existing guessed-path behaviour, same as before this fallback existed.
+ *
+ * No anchor text exists in a sitemap (unlike a footer link), so this has no way
+ * to tell a privacy policy from a contact page the way `discoverInfoPages` does
+ * with `PRIVACY_HINT_RE`/`CONTACT_HINT_RE` — every company-info hit shares one
+ * rank. That is an acceptable loss: the goal here is finding a page AT ALL on a
+ * site that currently yields none, not fine-tuning which one wins a tie.
+ */
+function discoverSitemapPages(xml: string, base: string): string[] {
+  if (/<sitemapindex[\s>]/i.test(xml)) return [];
+  const found: Array<{ url: string; rank: number; depth: number }> = [];
+  const seen = new Set<string>();
+  let host: string;
+  try {
+    host = new URL(base).hostname.replace(/^www\./, "");
+  } catch {
+    return [];
+  }
+
+  for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) {
+    if (found.length >= 24) break;
+    let abs: URL;
+    try {
+      abs = new URL(m[1] ?? "");
+    } catch {
+      continue;
+    }
+    if (abs.hostname.replace(/^www\./, "") !== host) continue;
+    if (NON_CRAWLABLE_EXT_RE.test(abs.pathname)) continue;
+
+    const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
+    if (url === base || seen.has(url)) continue;
+
+    const path = foldAccents(abs.pathname);
+    let rank: number;
+    if (LEGAL_PAGE_RE.test(path)) rank = 0;
+    else if (COMPANY_INFO_PAGE_RE.test(path)) rank = 3;
+    else if (HIGH_VALUE_PATH_RE.test(path)) rank = 4;
     else continue;
 
     seen.add(url);
@@ -630,7 +702,13 @@ export async function fetchSiteIntel(
   //      script-built. A French site is asked for /mentions-legales, /contact,
   //      /qui-sommes-nous rather than three guaranteed 404s on the German set.
   if (depth === "full") {
-    const discovered = discoverInfoPages(home, base);
+    let discovered = discoverInfoPages(home, base);
+    // Footer scrape found nothing — try the sitemap before falling back to
+    // guessed conventional paths (§ audit backlog: script-built footers).
+    if (discovered.length === 0) {
+      const sitemapXml = await fetchPage(`${base}/sitemap.xml`, SUBPAGE_TIMEOUT_MS);
+      if (sitemapXml) discovered = discoverSitemapPages(sitemapXml, base);
+    }
     const guessed = subpageRounds(lang).flat().map((p) => `${base}/${p}`);
     const queue: string[] = [];
     for (const u of [...discovered, ...guessed]) if (!queue.includes(u)) queue.push(u);

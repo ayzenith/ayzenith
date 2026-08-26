@@ -9,6 +9,7 @@ import {
 import { requireRole } from "@/server/auth";
 import { getSnapshot } from "@/server/radar/snapshot";
 import { listWatches } from "@/server/radar/watch";
+import { getMarketOutcomes } from "@/server/radar/outcomes";
 import {
   CRITERION_LABELS, RADAR_CATEGORIES, DEFAULT_THRESHOLDS,
   B2C_UNMEASURED_SIGNALS, type RadarCriterionKey,
@@ -118,6 +119,11 @@ export default async function AnalysisResultPage({
   const alreadyWatched = watches.some(
     (w) => w.categoryKey === snap.categoryKey && w.countryCode === snap.countryCode,
   );
+
+  // §7 — RADAR → Lead Finder → Business OS geri besleme. Read-only: bu pazardan
+  // gerçekte ne oldu (Lead Finder'da kaç arama, Business OS'a kaç firma taşındı,
+  // kaç satış kapandı). Skoru veya güveni ASLA etkilemez — sadece gerçek zemin.
+  const outcomes = await getMarketOutcomes(snap.categoryKey, snap.countryCode);
 
   const ai = parseAiSummary(snap.aiSummary);
   const meaning = ai.ozet ?? fallbackMeaning(decision, snap.countryLabel, criteria, model);
@@ -718,6 +724,67 @@ export default async function AnalysisResultPage({
         </ul>
         <p className="mt-4 text-caption text-subtle">Analiz zamanı: {fmtDate(snap.createdAt)}</p>
       </section>
+
+      {/* 13. GERÇEK SONUÇLAR — RADAR → Lead Finder → Business OS geri besleme.
+          Bu skoru üreten kriterlerden bağımsız: pazarın kendisinde (bu kategori +
+          ülke için) Lead Finder'da yapılan aramalar gerçekte nereye vardı. Sadece
+          Business OS'a taşınmış ve fiilen kapanmış satışlar sayılır — taslak
+          kayıtlar veya doğrulanmamış lead'ler burada asla "sonuç" olarak görünmez. */}
+      {outcomes ? (
+        <section className="mt-6 rounded-xl border border-border bg-surface p-6">
+          <div className="flex items-center gap-2">
+            <Target className="size-4 text-subtle" aria-hidden="true" />
+            <h2 className="text-h6 font-semibold text-foreground">Bu Pazardan Gerçek Sonuçlar</h2>
+          </div>
+          <p className="mt-1 text-caption text-subtle">
+            Lead Finder ve Business OS'tan gelen gerçek veri — skoru veya güveni etkilemez, sadece
+            tahminin gerçekte nereye vardığını gösterir.
+          </p>
+          <dl className="mt-4 grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <div>
+              <dt className="text-caption text-subtle">Lead Finder araması</dt>
+              <dd className="text-h5 font-semibold text-foreground">{outcomes.searchCount}</dd>
+            </div>
+            <div>
+              <dt className="text-caption text-subtle">Bulunan firma</dt>
+              <dd className="text-h5 font-semibold text-foreground">{outcomes.leadsDiscovered}</dd>
+            </div>
+            <div>
+              <dt className="text-caption text-subtle">Business OS'a taşınan</dt>
+              <dd className="text-h5 font-semibold text-foreground">{outcomes.partiesCreated}</dd>
+            </div>
+            <div>
+              <dt className="text-caption text-subtle">Kapanan satış</dt>
+              <dd className="text-h5 font-semibold text-foreground">{outcomes.confirmedSales}</dd>
+            </div>
+          </dl>
+          {outcomes.totalRevenueByCurrency.length > 0 ? (
+            <div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 border-t border-border pt-4 text-small">
+              {outcomes.totalRevenueByCurrency.map((r) => (
+                <span key={r.currency}>
+                  <span className="text-subtle">Ciro ({r.currency}):</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    {r.total.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} {r.currency}
+                  </span>
+                </span>
+              ))}
+              {outcomes.totalProfitByCurrency.map((p) => (
+                <span key={`profit-${p.currency}`}>
+                  <span className="text-subtle">Kâr ({p.currency}):</span>{" "}
+                  <span className="font-semibold text-foreground">
+                    {p.total.toLocaleString("tr-TR", { maximumFractionDigits: 0 })} {p.currency}
+                  </span>
+                </span>
+              ))}
+            </div>
+          ) : outcomes.confirmedSales === 0 && outcomes.partiesCreated === 0 ? (
+            <p className="mt-4 border-t border-border pt-4 text-caption text-subtle">
+              Bu pazarda Lead Finder araması yapılmış ama henüz Business OS'a taşınan firma veya kapanan
+              satış yok.
+            </p>
+          ) : null}
+        </section>
+      ) : null}
     </>
   );
 }

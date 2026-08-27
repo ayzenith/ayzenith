@@ -3,9 +3,13 @@ import "server-only";
 import { cachedLeadFetch } from "../cache";
 import { SOCIAL_PLATFORMS } from "@/config/leads";
 import {
-  classifyPageType, findNegativeSignals, PAGE_TYPE_WEIGHT,
+  classifyPageType, findNegativeSignals, domainRelatesToName, PAGE_TYPE_WEIGHT,
   type ProductHit, type NegativeSignal, type PageType,
 } from "../evidence";
+import {
+  extractLinks, rankLinks, planCrawl, parseSitemap, parseRobotsSitemaps,
+  rankSitemapUrls, SITEMAP_MAX_CHILDREN, SITEMAP_MAX_URLS, type SitemapParse,
+} from "../crawl";
 import {
   langForSite,
   subpageRounds,
@@ -13,7 +17,6 @@ import {
   includesTermBoundary,
   LEGAL_PAGE_RE,
   COMPANY_INFO_PAGE_RE,
-  foldAccents,
   HIGH_VALUE_PATH_RE,
   LOW_VALUE_PATH_RE,
   ROLE_TERMS_MULTILANG,
@@ -500,6 +503,49 @@ function snippetAround(text: string, term: string, radius = 110): string | undef
   return text.slice(Math.max(0, i - radius), i + term.length + radius).trim();
 }
 
+/**
+ * Find candidate URLs through the site's sitemap, for sites whose navigation is
+ * script-built and therefore invisible in the HTML we can read.
+ *
+ * Bounded on purpose — this is a fallback, not a spider:
+ *   • at most one robots.txt, and only if the conventional path missed;
+ *   • at most SITEMAP_MAX_CHILDREN child sitemaps of an index;
+ *   • at most SITEMAP_MAX_URLS URLs in total;
+ *   • image/video/news sitemaps skipped, they list assets rather than pages.
+ *
+ * Phase 1 refused to follow a `<sitemapindex>` at all because the cost is
+ * unbounded, and the result was that esotiq.com — one of the two sites the
+ * fallback was written for — got nothing, since its /sitemap.xml IS an index.
+ */
+async function discoverViaSitemap(base: string): Promise<string[]> {
+  const collected: string[] = [];
+  const tried = new Set<string>();
+
+  const read = async (url: string): Promise<SitemapParse | null> => {
+    if (tried.has(url)) return null;
+    tried.add(url);
+    const xml = await fetchPage(url, SUBPAGE_TIMEOUT_MS);
+    return xml ? parseSitemap(xml) : null;
+  };
+
+  let root = await read(`${base}/sitemap.xml`);
+  if (!root) {
+    // The site may declare a sitemap elsewhere; robots.txt is where it says so.
+    const robots = await fetchPage(`${base}/robots.txt`, SUBPAGE_TIMEOUT_MS);
+    const declared = robots ? parseRobotsSitemaps(robots) : [];
+    for (const u of declared.slice(0, 1)) root = await read(u);
+  }
+  if (!root) return [];
+
+  collected.push(...root.urls);
+  for (const child of root.children.slice(0, SITEMAP_MAX_CHILDREN)) {
+    if (collected.length >= SITEMAP_MAX_URLS) break;
+    const sub = await read(child);
+    if (sub) collected.push(...sub.urls);
+  }
+  return collected.slice(0, SITEMAP_MAX_URLS);
+}
+
 /** The shallow pass fetches MANY more homepages than the old single-pass design,
  *  so dead/slow hosts dominate its wall time: every unreachable site costs a full
  *  timeout. A tighter budget there keeps the widened coverage affordable — a
@@ -511,154 +557,17 @@ const SHALLOW_TIMEOUT_MS = 7_000;
 const SUBPAGE_TIMEOUT_MS = 8_000;
 
 /**
- * Read the homepage's OWN links to find where this site keeps its legal and
- * company pages, instead of guessing paths at the root (§V3.9).
+ * Page discovery now lives in `../crawl` (§ accuracy Phase 3).
  *
- * Guessing is what breaks on real European sites. Calzedonia, Women'secret and
- * Esotiq all serve their legal notice under a locale prefix — /es/aviso-legal,
- * /it/note-legali — so every root-relative guess 404s and the firm comes back with
- * nothing but a homepage, which is exactly what the first live test showed. The
- * site itself already tells us the right URL in its own footer, and that footer is
- * in HTML we have ALREADY downloaded, so reading it costs no request at all.
+ * What used to be here — `discoverInfoPages` and `discoverSitemapPages` — ranked
+ * legal and disclosure pages ABOVE product pages inside a 3-subpage budget, so a
+ * site publishing Impressum + Datenschutz + Kontakt (every German site) spent the
+ * whole budget before reaching anything commercial. Measured over 1369 real
+ * crawled pages, that produced FOUR product/catalogue pages in total.
  *
- * Links are classified by href AND by anchor text, because a French footer links
- * "/legal/12" with the words "Mentions légales".
- *
- * Only four pages are ever read, so ORDER decides what a firm gets known by. The
- * ranking is by how reliably a page names the legal entity: a statutory notice
- * first, then the privacy policy (the GDPR obliges every EU site to name its data
- * controller there, which makes it the most dependable page on the continent),
- * then contact, then anything else. Shallower paths win ties — Hunkemöller's
- * /privacy carries "Hunkemöller B.V." while its /over-ons/corporate-social-
- * responsibility carries nothing, and without this the deep sub-page displaced it.
+ * `crawl.ts` replaces both with link scoring plus an adaptive budget, and is a
+ * pure module so the plan itself is unit-testable.
  */
-const PRIVACY_HINT_RE = /(privacy|datenschutz|confidentialite|privacid|prywatnosci|gizlilik|tietosuoja|osobnich)/i;
-const CONTACT_HINT_RE = /(contact|kontakt|contatti|contacto|contactos|iletisim|yhteystiedot)/i;
-
-/** File types a crawler has no business requesting — shared between the footer-link
- *  scrape and the sitemap fallback below so both apply the exact same rule. */
-const NON_CRAWLABLE_EXT_RE = /\.(pdf|jpe?g|png|gif|svg|webp|zip|docx?|xlsx?|exe|msi|dmg|pkg|apk|rar|7z|bin)$/i;
-
-function discoverInfoPages(html: string, base: string): string[] {
-  const found: Array<{ url: string; rank: number; depth: number }> = [];
-  const seen = new Set<string>();
-  let host: string;
-  try {
-    host = new URL(base).hostname.replace(/^www\./, "");
-  } catch {
-    return [];
-  }
-
-  for (const m of html.matchAll(/<a\b[^>]*href=["']([^"']+)["'][^>]*>([\s\S]{0,160}?)<\/a>/gi)) {
-    if (found.length >= 24) break;
-    const href = m[1] ?? "";
-    if (/^(mailto:|tel:|javascript:|#|data:)/i.test(href)) continue;
-
-    let abs: URL;
-    try {
-      abs = new URL(href, base);
-    } catch {
-      continue;
-    }
-    // Same site only — a link to a payment provider's imprint is not this firm's.
-    if (abs.hostname.replace(/^www\./, "") !== host) continue;
-    // Found live: a "Datenschutz" link on cebus-computer.de actually pointed at
-    // a TeamViewer remote-support installer — non-HTML file types were excluded
-    // by extension, but never executables/archives a crawler has no business
-    // requesting at all.
-    if (NON_CRAWLABLE_EXT_RE.test(abs.pathname)) continue;
-
-    const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
-    if (url === base || seen.has(url)) continue;
-
-    const label = foldAccents(stripTags(m[2] ?? ""));
-    const path = foldAccents(abs.pathname);
-    const hit = (re: RegExp) => re.test(path) || re.test(label);
-
-    let rank: number;
-    if (hit(LEGAL_PAGE_RE)) rank = 0;
-    else if (hit(COMPANY_INFO_PAGE_RE)) rank = hit(PRIVACY_HINT_RE) ? 1 : hit(CONTACT_HINT_RE) ? 2 : 3;
-    // Product/catalog pages (§ audit finding — crawling only ever asked for
-    // legal/disclosure pages, so product-fit evidence could only ever come from
-    // whatever text happened to sit on the homepage or an about/contact page; a
-    // dedicated product page is what could actually CONFIRM or REFUTE a product
-    // claim). Ranked below every legal/contact category so identity and
-    // decision-maker discovery are never displaced by it — this only ever
-    // spends a leftover slot in the SAME 3-subpage budget, never a new one.
-    else if (hit(HIGH_VALUE_PATH_RE)) rank = 4;
-    else continue;
-
-    seen.add(url);
-    found.push({ url, rank, depth: abs.pathname.replace(/\/$/, "").split("/").length });
-  }
-
-  return found
-    .sort((a, b) => a.rank - b.rank || a.depth - b.depth || a.url.length - b.url.length)
-    .map((f) => f.url);
-}
-
-/**
- * Fallback page discovery via /sitemap.xml, for the exact case `discoverInfoPages`
- * cannot solve: a script-built footer with no legal/company links anywhere in the
- * server-rendered HTML (measured live — Esotiq, Women'secret). A sitemap is a
- * strict superset of what a working footer already gives us for free, so this is
- * ONLY ever tried when the footer scrape found nothing — running it
- * unconditionally would just be a second, costlier way to find the same pages, and
- * would double the sub-page request budget for every firm instead of only the
- * ones that actually need it.
- *
- * Deliberately does NOT follow a <sitemapindex> to its child sitemaps — a large
- * site can nest dozens of them, and chasing that is unbounded cost for a module
- * that is supposed to spend a fixed, small budget per candidate. An index sitemap
- * simply yields nothing here, which is honest: the firm falls back to the
- * existing guessed-path behaviour, same as before this fallback existed.
- *
- * No anchor text exists in a sitemap (unlike a footer link), so this has no way
- * to tell a privacy policy from a contact page the way `discoverInfoPages` does
- * with `PRIVACY_HINT_RE`/`CONTACT_HINT_RE` — every company-info hit shares one
- * rank. That is an acceptable loss: the goal here is finding a page AT ALL on a
- * site that currently yields none, not fine-tuning which one wins a tie.
- */
-function discoverSitemapPages(xml: string, base: string): string[] {
-  if (/<sitemapindex[\s>]/i.test(xml)) return [];
-  const found: Array<{ url: string; rank: number; depth: number }> = [];
-  const seen = new Set<string>();
-  let host: string;
-  try {
-    host = new URL(base).hostname.replace(/^www\./, "");
-  } catch {
-    return [];
-  }
-
-  for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) {
-    if (found.length >= 24) break;
-    let abs: URL;
-    try {
-      abs = new URL(m[1] ?? "");
-    } catch {
-      continue;
-    }
-    if (abs.hostname.replace(/^www\./, "") !== host) continue;
-    if (NON_CRAWLABLE_EXT_RE.test(abs.pathname)) continue;
-
-    const url = `${abs.origin}${abs.pathname}`.replace(/\/$/, "");
-    if (url === base || seen.has(url)) continue;
-
-    const path = foldAccents(abs.pathname);
-    let rank: number;
-    if (LEGAL_PAGE_RE.test(path)) rank = 0;
-    else if (COMPANY_INFO_PAGE_RE.test(path)) rank = 3;
-    else if (HIGH_VALUE_PATH_RE.test(path)) rank = 4;
-    else continue;
-
-    seen.add(url);
-    found.push({ url, rank, depth: abs.pathname.replace(/\/$/, "").split("/").length });
-  }
-
-  return found
-    .sort((a, b) => a.rank - b.rank || a.depth - b.depth || a.url.length - b.url.length)
-    .map((f) => f.url);
-}
 
 /** How deeply to read a site (§V3.3).
  *  "shallow" — homepage only (1 request). Enough for reachability, product terms,
@@ -688,6 +597,11 @@ export async function fetchSiteIntel(
   signals?: ProductSignals,
   depth: SiteDepth = "full",
   country?: string | null,
+  /** The name we believe this site belongs to. Used ONLY to decide how much of
+   *  the page budget identity still needs (§ Phase 3 adaptive budget) — never
+   *  to decide what the site says. Optional: without it the crawler simply
+   *  assumes identity is unproven and keeps the larger identity quota. */
+  companyName?: string | null,
 ): Promise<SiteIntel | null> {
   const base = normalizeUrl(website);
   if (!base) return null;
@@ -738,21 +652,44 @@ export async function fetchSiteIntel(
   //      script-built. A French site is asked for /mentions-legales, /contact,
   //      /qui-sommes-nous rather than three guaranteed 404s on the German set.
   if (depth === "full") {
-    let discovered = discoverInfoPages(home, base);
-    // Footer scrape found nothing — try the sitemap before falling back to
-    // guessed conventional paths (§ audit backlog: script-built footers).
-    if (discovered.length === 0) {
-      const sitemapXml = await fetchPage(`${base}/sitemap.xml`, SUBPAGE_TIMEOUT_MS);
-      if (sitemapXml) discovered = discoverSitemapPages(sitemapXml, base);
-    }
-    const guessed = subpageRounds(lang).flat().map((p) => `${base}/${p}`);
-    const queue: string[] = [];
-    for (const u of [...discovered, ...guessed]) if (!queue.includes(u)) queue.push(u);
+    // ADAPTIVE PLAN (§ accuracy Phase 3). The page budget is unchanged at 4
+    // (homepage + 3); what changed is HOW those 3 are chosen. Previously product
+    // and catalogue pages ranked LAST, so any site publishing Impressum +
+    // Datenschutz + Kontakt — i.e. every German site — spent the whole budget
+    // before reaching the one page that could prove what it sells. Measured on
+    // 1369 real crawled pages: 4 were product/catalogue pages (0.29%).
+    const ranked = rankLinks(extractLinks(home, base));
 
-    // Same shape as before: small parallel rounds of three, at most two of them.
-    // Rounds stay small on purpose — unlike the shallow pass these all hit the
-    // SAME host, and hammering one server with six simultaneous requests is not
-    // something a polite crawler does.
+    // Is identity already settled from the homepage alone? If the domain
+    // matches the company and the page states a legal entity, a second and
+    // third disclosure page teaches us nothing and those slots go to product
+    // discovery. If it is NOT settled, identity keeps the majority — an
+    // unattributable site caps every product claim anyway (Phase 1), so
+    // gathering product evidence first would be gathering evidence we could
+    // not use.
+    const homeText = stripTags(home);
+    const identityStrong =
+      Boolean(companyName) &&
+      domainRelatesToName(new URL(base).hostname, companyName!) &&
+      (LEGAL_FORM_RE.test(homeText) || Boolean(findVatId(homeText)));
+
+    const guessed = subpageRounds(lang).flat().map((p) => `${base}/${p}`);
+    let plan = planCrawl({ ranked, guessedIdentityUrls: guessed, identityStrong, budget: 3 });
+
+    // Sitemap fallback — ONLY when the homepage offered no commercial area at
+    // all (script-built navigation: Esotiq, Women'secret). A site with a working
+    // product menu never pays for this.
+    if (plan.needsSitemap) {
+      const sitemapUrls = await discoverViaSitemap(base);
+      if (sitemapUrls.length > 0) {
+        const merged = [...ranked, ...rankSitemapUrls(sitemapUrls, base)]
+          .sort((a, b) => b.score - a.score || a.depth - b.depth);
+        plan = planCrawl({ ranked: merged, guessedIdentityUrls: guessed, identityStrong, budget: 3 });
+      }
+    }
+
+    // Same politeness shape as before: small parallel rounds against one host.
+    const queue = plan.urls;
     for (let i = 0; i < queue.length && i < 6; i += 3) {
       if (pages.length >= 4) break;
       const round = queue.slice(i, i + 3);

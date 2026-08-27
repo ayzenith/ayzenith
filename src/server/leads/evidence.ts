@@ -337,15 +337,20 @@ export function classifyPageType(
   baseUrl: string,
   patterns: { product: RegExp; legal: RegExp; companyInfo: RegExp },
 ): PageType {
-  const stripped = url.replace(/\/$/, "");
-  if (stripped === baseUrl.replace(/\/$/, "")) return "HOMEPAGE";
-
   let path = url;
   try {
     path = new URL(url).pathname;
   } catch {
     /* keep the raw string — classification is best-effort, never fatal */
   }
+
+  // A ROOT path is the homepage however the host happens to be written. The
+  // previous exact-string compare against `baseUrl` broke on any www / protocol
+  // difference — measured while building the Phase 3 baseline, 419 real cached
+  // homepages classified as OTHER because the cache stored `https://www.x.de`
+  // while the base was `https://x.de`.
+  if (path === "/" || path === "") return "HOMEPAGE";
+  if (url.replace(/\/$/, "") === baseUrl.replace(/\/$/, "")) return "HOMEPAGE";
 
   // A downloadable document is catalogue-grade evidence wherever it sits.
   if (/\.pdf$/i.test(path) || CATALOG_PATH_RE.test(path)) return "CATALOG";

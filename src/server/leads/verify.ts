@@ -335,6 +335,7 @@ export async function verifyCandidate(
       opts.productSignals,
       opts.depth ?? "full",
       opts.country ?? dc.candidate.country,
+      dc.candidate.name,
     );
   } catch {
     intel = null;

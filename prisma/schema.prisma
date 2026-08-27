@@ -308,6 +308,18 @@ model RadarSnapshot {
   weightsUsed      Json // { demand, growth, supplyAdvantage, entry, competition }
   confidence       Int // 0–100, share of criteria backed by real data
   measuredCriteria Int // how many of the 5 criteria had data
+
+  // V4 — WHY the confidence is what it is, per criterion (§ accuracy Phase 4).
+  // `completeness` on each criterion is a single scalar that conflates four
+  // different things: how many peer markets answered, whether the providers were
+  // up, how old the underlying trade year is, and whether a value was measured or
+  // assumed. Collapsing them means the UI can say confidence is 78 but never why.
+  // Stored beside `criteria` rather than inside it so no existing consumer of
+  // that JSON changes shape. Shape: { [criterionKey]: { peerCoverage,
+  // providerAvailability, freshness, dataCompleteness } }, each 0–1.
+  // The FINAL SCORE IS NOT AFFECTED BY ANY OF THIS — it never was, and Phase 4
+  // does not change the score path at all.
+  completenessBreakdown Json @default("{}")
   subCategories    Json          @default("[]") // [{ hs6, productGroup, score, trendPct }]
   aiSummary        String? // AI interpretation (sourced-data-only); null until generated
 
@@ -599,6 +611,30 @@ model LeadCompany {
   leadScore      Int? // deterministic 0–100; null until scored / when insufficient
   leadConfidence Int? // 0–100, how verified the underlying data is (≠ score, §15)
   scoreBreakdown Json @default("{}") // { components: [{ key, weight, score, available }], ... }
+
+  // V4 — the evidence behind the verdict, frozen at verification time
+  // (§ accuracy Phase 4). Phases 1–3 already COMPUTED all of this and then threw
+  // it away: the UI re-derived identity at render time from name/legalName/domain
+  // alone, which could disagree with what the pipeline actually concluded (it had
+  // the VIES name and the page title too). "Why did you believe this?" is only
+  // answerable if the evidence is stored with the decision, exactly as
+  // RadarSnapshot freezes its criteria. All additive and nullable: null means
+  // "not measured", never zero, and every pre-V4 row keeps its meaning.
+  identityStatus       String? // VERIFIED | PARTIAL | MISMATCH | UNVERIFIED
+  identityConfidence   Int? // 0–100
+  identityReasons      Json    @default("[]") // string[] — sourced, human-readable
+  productEvidenceLevel Int? // 0–5, see ProductEvidenceLevel
+  productConfidence    Int? // 0–100 — distinct from the CATEGORY productFit
+  productNegatives     Json    @default("[]") // string[] of NegativeSignalKind
+  /** MANUFACTURER | DISTRIBUTOR | … | UNKNOWN — a SEPARATE axis from product fit. */
+  companyType          String?
+  companyTypeConfidence Int?
+  /** { consulted, available, failed, missing } — `missing` (not applicable to
+   *  this firm) is deliberately NOT the same as `failed` (we asked, no answer). */
+  evidenceCoverage     Json    @default("{}")
+  /** Model C output. Distinct from `leadConfidence`, which stays as it was so no
+   *  existing row silently changes meaning. */
+  overallConfidence    Int?
 
   status    LeadStatus    @default(DISCOVERED)
   freshness LeadFreshness @default(FRESH)

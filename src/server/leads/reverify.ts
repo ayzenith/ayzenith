@@ -288,6 +288,17 @@ async function runVerifyBatch(
           socialVerifiedAt: outcome.socialVerified ? new Date() : null,
           leadScore: score.leadScore,
           leadConfidence: score.leadConfidence,
+          // V4 evidence, frozen with the verdict (§ Phase 4).
+          identityStatus: outcome.identityStatus,
+          identityConfidence: outcome.identityConfidence,
+          identityReasons: outcome.identityReasons,
+          productEvidenceLevel: outcome.productEvidenceLevel,
+          productConfidence: outcome.productConfidence,
+          productNegatives: outcome.productNegatives,
+          companyType: outcome.companyType,
+          companyTypeConfidence: outcome.companyTypeConfidence,
+          evidenceCoverage: outcome.evidenceCoverage as object,
+          overallConfidence: outcome.overallConfidence,
           scoreBreakdown: {
             components: score.components,
             measuredComponents: score.measuredComponents,

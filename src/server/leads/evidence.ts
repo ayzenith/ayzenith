@@ -12,7 +12,7 @@
  * cannot support must come back as UNVERIFIED, not as a quiet pass.
  */
 
-import { normalizeProduct } from "@/config/leads";
+import { normalizeProduct, CONFIDENCE_MODEL } from "@/config/leads";
 
 // ---------------------------------------------------------------------------
 // Company identity
@@ -705,4 +705,125 @@ export function resolveCompanyType(roles: string[], siteText?: string | null): C
 
   reasons.push("Şirket tipi belirlenemedi.");
   return { type: "UNKNOWN", confidence: 0, reasons };
+}
+
+// ---------------------------------------------------------------------------
+// Evidence coverage
+// ---------------------------------------------------------------------------
+
+/**
+ * Which sources the pipeline consulted for one company, and what happened.
+ *
+ * The four buckets are deliberately distinct, because collapsing them is how a
+ * system starts lying about what it knows:
+ *
+ *  • `available` — consulted AND it answered. Real knowledge.
+ *  • `failed`    — consulted and it did NOT answer (timeout, 5xx, blocked). We
+ *                  tried and came back empty-handed; a retry might succeed.
+ *  • `missing`   — not applicable to this firm at all. A company with no website
+ *                  has no website sources to fail at. Nothing was lost here and
+ *                  nothing can be retried.
+ *  • `consulted` — everything we actually reached for (available ∪ failed).
+ *
+ * `missing` and `failed` must never be merged: one is a property of the firm,
+ * the other a property of our run. Reporting a firm with no website as "5
+ * sources failed" would invent a problem, and reporting a timed-out crawl as
+ * "not applicable" would hide one.
+ */
+export type EvidenceCoverage = {
+  consulted: string[];
+  available: string[];
+  failed: string[];
+  missing: string[];
+};
+
+export function emptyCoverage(): EvidenceCoverage {
+  return { consulted: [], available: [], failed: [], missing: [] };
+}
+
+/** Coverage as a 0–1 input to the confidence model: how much of what a fully
+ *  reachable firm could tell us did we actually get. */
+export function coverageRatio(c: EvidenceCoverage): number {
+  return Math.min(1, c.available.length / CONFIDENCE_MODEL.maxChecks);
+}
+
+// ---------------------------------------------------------------------------
+// Overall confidence — MODEL C
+// ---------------------------------------------------------------------------
+
+export type ConfidenceInput = {
+  /** 0–100. Null when no site was read, so identity was never asked. */
+  identity: number | null;
+  /** 0–100. Null when no product evidence was gathered — NOT zero. */
+  product: number | null;
+  /** 0–1. */
+  coverage: number;
+  /** 0–1. */
+  freshness: number;
+  /** Caps the result when the site belongs to a different company. */
+  identityStatus?: IdentityStatus | null;
+};
+
+export type ConfidenceResult = {
+  /** 0–100, or null when neither core dimension was measured. */
+  overall: number | null;
+  /** The core before the reliability multipliers, for explainability. */
+  core: number | null;
+  /** Which dimensions actually took part. */
+  measured: string[];
+  reasons: string[];
+};
+
+/**
+ * Combine the four dimensions into one number — see `CONFIDENCE_MODEL` for the
+ * formula, the coefficients and why this shape beat the alternatives on real
+ * data. Every constant lives there; none is written inline here.
+ */
+export function resolveConfidence(input: ConfidenceInput): ConfidenceResult {
+  const M = CONFIDENCE_MODEL;
+  const reasons: string[] = [];
+  const measured: string[] = [];
+
+  const i = input.identity;
+  const p = input.product;
+  if (i !== null) measured.push("identity");
+  if (p !== null) measured.push("product");
+
+  // Neither core dimension measured → we have nothing to be confident ABOUT.
+  // Null, not zero: "we did not look" is not "we looked and found nothing".
+  if (i === null && p === null) {
+    reasons.push("Kimlik ve ürün kanıtının ikisi de ölçülmedi — güven hesaplanamıyor.");
+    return { overall: null, core: null, measured, reasons };
+  }
+
+  const core =
+    i === null ? p! :
+      p === null ? i :
+        M.coreWeakestWeight * Math.min(i, p) + M.coreMeanWeight * ((i + p) / 2);
+
+  if (i !== null && p !== null) {
+    reasons.push(`Çekirdek güven ${Math.round(core)} (kimlik ${i}, ürün ${p} — zayıf olan ağırlıklı).`);
+  } else {
+    reasons.push(`Çekirdek güven ${Math.round(core)} (yalnızca ${i === null ? "ürün" : "kimlik"} ölçülebildi).`);
+  }
+
+  const cov = Math.max(0, Math.min(1, input.coverage));
+  const fr = Math.max(0, Math.min(1, input.freshness));
+  const covMult = M.coverageFloor + (1 - M.coverageFloor) * cov;
+  const frMult = M.freshnessFloor + (1 - M.freshnessFloor) * fr;
+  measured.push("coverage", "freshness");
+
+  if (cov < 1) reasons.push(`Kaynak kapsamı %${Math.round(cov * 100)} — güven en fazla %${Math.round((1 - M.coverageFloor) * 100)} oranında düşürüldü (az veri, yanlış veri demek değildir).`);
+  if (fr < 1) reasons.push(`Kanıt tazeliği %${Math.round(fr * 100)} — güven en fazla %${Math.round((1 - M.freshnessFloor) * 100)} oranında düşürüldü.`);
+
+  let overall = Math.round(core * covMult * frMult);
+
+  // A site positively attributed to a DIFFERENT company cannot produce a
+  // confident claim about this one, whatever else was found on it.
+  if (input.identityStatus === "MISMATCH" && overall > M.mismatchCeiling) {
+    overall = M.mismatchCeiling;
+    reasons.push(`Kimlik uyuşmazlığı nedeniyle güven %${M.mismatchCeiling} ile sınırlandı — site başka bir işletmeye ait görünüyor.`);
+  }
+
+  return { overall: Math.max(0, Math.min(100, overall)), core: Math.round(core), measured, reasons };
 }

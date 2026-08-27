@@ -38,6 +38,8 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
   // "Neden bu lead?" — deterministic, positive reasons only on the card (§7/§10).
   const breakdown = c.scoreBreakdown as { components?: Array<{ key: string; score: number | null; available: boolean; note: string }> } | null;
   const identity = deriveIdentity(c);
+  // Overall confidence is a SEPARATE number from the lead score: one says how
+  // good the lead is, the other how sure we are of the evidence behind it.
   const whyPositive = positiveWhy(
     buildWhyLead({
       businessModel: c.businessModel,
@@ -81,6 +83,9 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption">
         <span className="font-semibold uppercase tracking-wide" style={{ color: band.fg }}>{priorityLabel}</span>
         <span className="text-subtle">Güven: <span className="font-medium text-foreground">{confidencePct(c.leadConfidence)}</span></span>
+        {c.overallConfidence != null ? (
+          <span className="text-subtle">Kanıt güveni: <span className="font-medium text-foreground">%{c.overallConfidence}</span></span>
+        ) : null}
         {c.contactCount > 0 ? (
           <span className="inline-flex items-center gap-1 font-medium text-[#2f7a48]">
             <Users className="size-3.5" aria-hidden="true" /> {c.contactCount} kişi
@@ -106,10 +111,28 @@ export function LeadCard({ c }: { c: LeadCompanyView }) {
             <Store className="size-3" aria-hidden="true" /> {c.locationCount} lokasyon
           </span>
         ) : null}
+        {/* CATEGORY and CONFIDENCE are two different claims (§ Phase 4 rule 4/5).
+            "Doğrulandı · %63" and "Doğrulandı · %91" are both VERIFIED, and the
+            reader must be able to tell them apart at a glance. */}
         <span className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption font-medium" style={{ color: fit.fg, backgroundColor: fit.bg }}>
           {c.productFit === "VERIFIED" ? <ShieldCheck className="size-3" aria-hidden="true" /> : null}
           Ürün: {fit.label}
+          {c.productConfidence != null ? (
+            <span className="font-normal opacity-80"> · %{c.productConfidence}</span>
+          ) : null}
         </span>
+        {c.identityStatus && c.identityStatus !== "VERIFIED" ? (
+          <span
+            className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-caption font-medium"
+            style={
+              c.identityStatus === "MISMATCH"
+                ? { color: "#8a2b2b", backgroundColor: "#fbeaea" }
+                : { color: "#8a6d1f", backgroundColor: "#f8f1dc" }
+            }
+          >
+            Kimlik: {c.identityStatus === "MISMATCH" ? "Uyuşmuyor" : c.identityStatus === "PARTIAL" ? "Kısmi" : "Doğrulanamadı"}
+          </span>
+        ) : null}
       </div>
 
       {/* Model fit — the B2B/B2C gate + evidence (§1/§8) */}

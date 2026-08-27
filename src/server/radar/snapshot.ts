@@ -41,6 +41,12 @@ export async function saveSnapshot(
       measuredCriteria: result.measuredCriteria,
       subCategories: result.subCategories as object,
       errors: result.errors as object,
+      // Per-criterion WHY behind the confidence number (§ accuracy Phase 4).
+      // Frozen with the snapshot like everything else here, so a later re-run
+      // with better coverage never rewrites what THIS run actually saw.
+      completenessBreakdown: Object.fromEntries(
+        result.criteria.map((c) => [c.key, c.completenessParts]),
+      ) as object,
       aiSummary: opts.aiSummary ?? null,
       watchId: opts.watchId ?? null,
       citations: {

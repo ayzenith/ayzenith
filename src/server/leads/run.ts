@@ -388,6 +388,17 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
       socialVerifiedAt: outcome.socialVerified ? now : null,
       leadScore: score.leadScore,
       leadConfidence: score.leadConfidence,
+      // V4 — the evidence behind the verdict, frozen with it (§ Phase 4).
+      identityStatus: outcome.identityStatus,
+      identityConfidence: outcome.identityConfidence,
+      identityReasons: outcome.identityReasons,
+      productEvidenceLevel: outcome.productEvidenceLevel,
+      productConfidence: outcome.productConfidence,
+      productNegatives: outcome.productNegatives,
+      companyType: outcome.companyType,
+      companyTypeConfidence: outcome.companyTypeConfidence,
+      evidenceCoverage: outcome.evidenceCoverage,
+      overallConfidence: outcome.overallConfidence,
       scoreBreakdown: {
         components: score.components,
         measuredComponents: score.measuredComponents,
@@ -471,6 +482,9 @@ function unverifiedOutcome(
     identityStatus: null,
     identityConfidence: null,
     identityReasons: [],
+    evidenceCoverage: { consulted: [], available: [], failed: [], missing: [] },
+    overallConfidence: null,
+    confidenceReasons: [],
     // No site was read, so no product evidence was gathered either. Null rather
     // than level 0: "we did not look" is not "we looked and found nothing".
     productEvidenceLevel: null,

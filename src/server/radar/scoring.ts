@@ -88,7 +88,36 @@ export type CriterionResult = {
    *  tell those apart. 1 when the criterion has no such notion (e.g. entry's
    *  certification table, always fully known) or the caller didn't track it. */
   completeness: number;
+  /**
+   * The four things `completeness` above collapses into one number
+   * (§ accuracy Phase 4). Each 0–1, and `completeness` is their product, so the
+   * scalar keeps its exact previous meaning while the UI can finally say WHY a
+   * criterion is only partly complete instead of only THAT it is.
+   *
+   *  • peerCoverage         — share of intended comparison markets that answered
+   *  • providerAvailability — whether the data providers were up for this
+   *                           criterion (a network outage is not the same fact
+   *                           as a market genuinely reporting nothing)
+   *  • freshness            — how current the underlying trade year is
+   *  • dataCompleteness     — everything else: growth history length, whether a
+   *                           duty was measured or assumed
+   *
+   * THE FINAL SCORE DOES NOT READ ANY OF THIS, and did not read `completeness`
+   * either — the score path is untouched by Phase 4.
+   */
+  completenessParts: {
+    peerCoverage: number;
+    providerAvailability: number;
+    freshness: number;
+    dataCompleteness: number;
+  };
 };
+
+/** Default parts: everything fully known. Multiplying to 1 keeps `completeness`
+ *  identical for criteria that have no notion of partial coverage. */
+export function fullParts(): CriterionResult["completenessParts"] {
+  return { peerCoverage: 1, providerAvailability: 1, freshness: 1, dataCompleteness: 1 };
+}
 
 export type ScoreOutcome = {
   criteria: CriterionResult[];
@@ -149,6 +178,7 @@ function scoreDemand(input: ScoringInput): CriterionResult {
       rawInputs: { targetImport: targetImport ?? null },
       explanation: "İthalat hacmi verisi bulunamadı.",
       completeness: 0,
+      completenessParts: { ...fullParts(), providerAvailability: 0 },
     };
   }
   const score = round(minMax(targetImport, peerImports));
@@ -172,6 +202,7 @@ function scoreDemand(input: ScoringInput): CriterionResult {
             targetImport,
           )}; ${peerImports.length} benzer pazar arasında göreceli konum ${score}/100.`,
     completeness,
+    completenessParts: { ...fullParts(), peerCoverage: completeness },
   };
 }
 
@@ -195,6 +226,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
       rawInputs: { years: input.growthYears },
       explanation: "Büyüme trendi için yeterli yıllık veri yok (en az 2 yıl).",
       completeness: 0,
+      completenessParts: { ...fullParts(), providerAvailability: 0 },
     };
   }
   // Fixed rubric: growth is a universal question, not peer-relative.
@@ -215,6 +247,7 @@ function scoreGrowth(input: ScoringInput): CriterionResult {
       1,
     )} (ürün bazlı, değer ağırlıklı).`,
     completeness,
+    completenessParts: { ...fullParts(), dataCompleteness: completeness },
   };
 }
 
@@ -233,6 +266,7 @@ function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
       rawInputs: { trToTargetExport: trToTargetExport ?? null },
       explanation: "Türkiye ihracat verisi bulunamadı.",
       completeness: 0,
+      completenessParts: { ...fullParts(), providerAvailability: 0 },
     };
   }
   // 3a — proven trade strength, normalised across peers.
@@ -274,6 +308,7 @@ function scoreSupplyAdvantage(input: ScoringInput): CriterionResult {
             trSharePct != null ? ` (pazar payı %${trSharePct.toFixed(1)})` : ""
           }${euDutyFree ? "; Gümrük Birliği ile sanayi malları vergisiz." : "."}`,
     completeness,
+    completenessParts: { ...fullParts(), peerCoverage: completeness },
   };
 }
 
@@ -311,6 +346,7 @@ function scoreEntry(input: ScoringInput): CriterionResult {
     // Certification is always curated (fully known); duty is the only part of
     // this criterion that can be a guess, so completeness only degrades for that.
     completeness: dutyKnown ? 1 : 0.7,
+    completenessParts: { ...fullParts(), dataCompleteness: dutyKnown ? 1 : 0.7 },
   };
 }
 
@@ -328,6 +364,7 @@ function scoreCompetition(input: ScoringInput): CriterionResult {
       rawInputs: { sources: input.sourceCountryImports.length },
       explanation: "Kaynak ülke kırılımı verisi bulunamadı.",
       completeness: 0,
+      completenessParts: { ...fullParts(), providerAvailability: 0 },
     };
   }
   // Low concentration (dispersed suppliers) → easy to enter → high score.
@@ -345,6 +382,7 @@ function scoreCompetition(input: ScoringInput): CriterionResult {
     // peer baskets above) — whatever breakdown Comtrade returned is all there
     // is to measure with, so this is left at full completeness.
     completeness: 1,
+    completenessParts: fullParts(),
   };
 }
 

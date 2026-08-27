@@ -222,7 +222,20 @@ export function deriveIdentity(c: {
   legalName: string | null;
   domain: string | null;
   websiteStatus: string | null;
+  /** Persisted since Phase 4. When present it is used VERBATIM — it is what the
+   *  pipeline actually concluded, from inputs this function does not have (the
+   *  VIES registrant name, the page title). Re-deriving would risk showing the
+   *  reader a different verdict from the one the lead was scored with. */
+  identityStatus?: string | null;
+  identityReasons?: unknown;
 }): { status: WhyInput["identityStatus"]; detail: string | null } {
+  if (c.identityStatus) {
+    const reasons = Array.isArray(c.identityReasons)
+      ? (c.identityReasons as unknown[]).filter((r): r is string => typeof r === "string")
+      : [];
+    return { status: c.identityStatus as WhyInput["identityStatus"], detail: reasons.join(" ") || null };
+  }
+  // Pre-Phase-4 row: fall back to re-deriving from what was stored back then.
   if (c.websiteStatus !== "ACTIVE") return { status: null, detail: null };
   const r = resolveIdentity({ candidateName: c.name, legalName: c.legalName, domain: c.domain });
   return { status: r.status, detail: r.reasons.join(" ") || null };

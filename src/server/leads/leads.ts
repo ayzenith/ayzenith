@@ -34,6 +34,13 @@ export type LeadCompanyView = {
   productFit: string;
   productFitTier: string | null;
   productFitNote: string | null;
+  identityStatus: string | null;
+  identityReasons: unknown;
+  productEvidenceLevel: number | null;
+  productConfidence: number | null;
+  companyType: string | null;
+  evidenceCoverage: unknown;
+  overallConfidence: number | null;
   detectedModel: string | null;
   modelFit: string | null;
   modelFitEvidence: string[];
@@ -169,6 +176,13 @@ export async function listCompaniesForSearch(searchId: string): Promise<LeadComp
     productFit: c.productFit,
     productFitTier: c.productFitTier,
     productFitNote: c.productFitNote,
+    identityStatus: c.identityStatus,
+    identityReasons: c.identityReasons,
+    productEvidenceLevel: c.productEvidenceLevel,
+    productConfidence: c.productConfidence,
+    companyType: c.companyType,
+    evidenceCoverage: c.evidenceCoverage,
+    overallConfidence: c.overallConfidence,
     detectedModel: c.detectedModel,
     modelFit: c.modelFit,
     modelFitEvidence: Array.isArray(c.modelFitEvidence) ? (c.modelFitEvidence as string[]) : [],

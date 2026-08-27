@@ -61,6 +61,18 @@ export type CompanyDraft = {
   socialVerifiedAt?: Date | null;
   leadScore: number | null;
   leadConfidence: number;
+  // V4 evidence, frozen with the verdict (§ accuracy Phase 4). All optional so a
+  // caller that has not gathered them writes null — "not measured", never zero.
+  identityStatus?: string | null;
+  identityConfidence?: number | null;
+  identityReasons?: string[];
+  productEvidenceLevel?: number | null;
+  productConfidence?: number | null;
+  productNegatives?: string[];
+  companyType?: string | null;
+  companyTypeConfidence?: number | null;
+  evidenceCoverage?: unknown;
+  overallConfidence?: number | null;
   scoreBreakdown: unknown;
   status:
     | "DISCOVERED" | "SCREENING" | "QUALIFIED" | "HIGH_PRIORITY"
@@ -181,6 +193,16 @@ export async function saveDiscovery(
         socialVerifiedAt: c.socialVerifiedAt ?? null,
         leadScore: c.leadScore,
         leadConfidence: c.leadConfidence,
+        identityStatus: c.identityStatus ?? null,
+        identityConfidence: c.identityConfidence ?? null,
+        identityReasons: (c.identityReasons ?? []) as object,
+        productEvidenceLevel: c.productEvidenceLevel ?? null,
+        productConfidence: c.productConfidence ?? null,
+        productNegatives: (c.productNegatives ?? []) as object,
+        companyType: c.companyType ?? null,
+        companyTypeConfidence: c.companyTypeConfidence ?? null,
+        evidenceCoverage: (c.evidenceCoverage ?? {}) as object,
+        overallConfidence: c.overallConfidence ?? null,
         scoreBreakdown: c.scoreBreakdown as object,
         status: c.status,
         freshness: "FRESH",
@@ -302,6 +324,16 @@ export async function saveDiscovery(
     socialVerifiedAt: c.socialVerifiedAt ?? null,
     leadScore: c.leadScore,
     leadConfidence: c.leadConfidence,
+    identityStatus: c.identityStatus ?? null,
+    identityConfidence: c.identityConfidence ?? null,
+    identityReasons: (c.identityReasons ?? []) as object,
+    productEvidenceLevel: c.productEvidenceLevel ?? null,
+    productConfidence: c.productConfidence ?? null,
+    productNegatives: (c.productNegatives ?? []) as object,
+    companyType: c.companyType ?? null,
+    companyTypeConfidence: c.companyTypeConfidence ?? null,
+    evidenceCoverage: (c.evidenceCoverage ?? {}) as object,
+    overallConfidence: c.overallConfidence ?? null,
     scoreBreakdown: c.scoreBreakdown as object,
     status: c.status,
     freshness: "FRESH" as const,

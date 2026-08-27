@@ -4,7 +4,8 @@ import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } f
 import { checkVatId } from "./providers/vies";
 import {
   resolveIdentity, capProductFitByIdentity, resolveProductEvidence, resolveCompanyType,
-  ProductEvidenceLevel, type IdentityStatus, type CompanyType,
+  resolveConfidence, emptyCoverage, coverageRatio,
+  ProductEvidenceLevel, type IdentityStatus, type CompanyType, type EvidenceCoverage,
 } from "./evidence";
 import type { DedupedCandidate } from "./dedup";
 import type { Classification } from "./classify";
@@ -98,6 +99,13 @@ export type VerifyOutcome = {
   socialBusinessSignal: "B2B" | "B2C" | null;
   socialVerified: boolean;
   verified: boolean; // did a website check actually run?
+  /** Which sources were consulted and what came back (§ Phase 4). `missing` (not
+   *  applicable to this firm) is deliberately distinct from `failed` (asked, no
+   *  answer): one is a property of the company, the other of this run. */
+  evidenceCoverage: EvidenceCoverage;
+  /** Model C confidence. Null when neither core dimension could be measured. */
+  overallConfidence: number | null;
+  confidenceReasons: string[];
 };
 
 const ROLE_SET: ReadonlySet<LeadRole> = new Set<LeadRole>([
@@ -298,6 +306,9 @@ export async function verifyCandidate(
     socialBusinessSignal: null,
     socialVerified: false,
     verified: false,
+    evidenceCoverage: emptyCoverage(),
+    overallConfidence: null,
+    confidenceReasons: [],
   };
 
   // Preliminary model-fit from OSM roles alone (no website yet). Store labels are
@@ -324,6 +335,7 @@ export async function verifyCandidate(
 
   if (!dc.candidate.website) {
     base.verifications.push({ check: "website-present", passed: null, evidence: "Website bilgisi bulunamadı." });
+    finalizeConfidence(base, dc);
     return base;
   }
 
@@ -349,6 +361,7 @@ export async function verifyCandidate(
       evidence: "Website mevcut ama bu denemede ulaşılamadı (site kapalı anlamına gelmez).",
       sourceUrl: dc.candidate.website,
     });
+    finalizeConfidence(base, dc);
     return base;
   }
 
@@ -629,5 +642,59 @@ export async function verifyCandidate(
     base.socialMatchStatus = "UNVERIFIED";
   }
 
+  finalizeConfidence(base, dc);
   return base;
+}
+
+/**
+ * Build the evidence coverage and the Model C confidence from what this run
+ * actually established (§ accuracy Phase 4).
+ *
+ * Coverage is read off the verification rows the pipeline ALREADY writes,
+ * because those carry the honest three-state answer the module has always
+ * recorded: passed true/false means the source answered, null means it could
+ * not. Deriving coverage from them rather than from a second bookkeeping list
+ * means the two can never disagree about what was consulted.
+ *
+ * The one thing the rows cannot say is WHY a check came back null, so that is
+ * decided here, where the reason is known: a firm with no website has website
+ * sources MISSING (nothing to ask), while a firm whose site did not answer has
+ * them FAILED (asked, no reply). Merging those two would either invent a
+ * problem or hide one.
+ */
+function finalizeConfidence(base: VerifyOutcome, dc: DedupedCandidate): void {
+  const cov = emptyCoverage();
+  const siteReachable = base.websiteStatus === "ACTIVE";
+  const hasSite = Boolean(dc.candidate.website);
+
+  for (const v of base.verifications) {
+    if (v.passed !== null) {
+      cov.consulted.push(v.check);
+      cov.available.push(v.check);
+    } else if (!hasSite && v.check !== "in-target-country" && v.check !== "address-verifiable") {
+      // Nothing to ask: this firm publishes no website at all.
+      cov.missing.push(v.check);
+    } else if (hasSite && !siteReachable) {
+      cov.consulted.push(v.check);
+      cov.failed.push(v.check);
+    } else {
+      // We read the site and still could not determine it — a real gap in what
+      // the page said, not a transport failure.
+      cov.consulted.push(v.check);
+      cov.missing.push(v.check);
+    }
+  }
+  base.evidenceCoverage = cov;
+
+  // Freshness is 1 here by construction: this outcome was produced just now.
+  // It only decays later, and the read path recomputes it from lastCheckedAt.
+  const conf = resolveConfidence({
+    identity: base.identityConfidence,
+    product: base.productConfidence,
+    coverage: coverageRatio(cov),
+    freshness: 1,
+    identityStatus: base.identityStatus,
+  });
+  base.overallConfidence = conf.overall;
+  base.confidenceReasons = conf.reasons;
 }

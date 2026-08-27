@@ -227,6 +227,80 @@ export const DEFAULT_LEAD_THRESHOLDS: LeadThresholds = { strong: 80, potential: 
 /** How long a lead stays "fresh" before re-verification is recommended (§20). */
 export const DEFAULT_RECHECK_DAYS = 30;
 
+// ---------------------------------------------------------------------------
+// Confidence model (§ accuracy Phase 4)
+// ---------------------------------------------------------------------------
+
+/**
+ * How the four confidence dimensions combine into one number.
+ *
+ * THE MODEL, in one line:
+ *
+ *     core    = 0.6 × min(identity, product) + 0.4 × mean(identity, product)
+ *     overall = core × (0.80 + 0.20 × coverage) × (0.90 + 0.10 × freshness)
+ *
+ * WHY THIS SHAPE, and not the two obvious alternatives — all three were run over
+ * 1183 real leads before choosing:
+ *
+ *  • A plain `min()` across all four dimensions was rejected because it breaks
+ *    the module's own rule that scarce data is not wrong data: a firm with
+ *    perfect identity and product evidence reached by only one source scored 13.
+ *    Under this model it scores 74.
+ *  • A flat weighted average was rejected because it lets a strong dimension pay
+ *    for a broken one: C&A on cunda.de — an unattributable site, the exact bug
+ *    this whole audit exists to close — came out at 66, i.e. "fairly reliable".
+ *    Under this model it scores 31.
+ *
+ * So IDENTITY and PRODUCT are the CORE: they decide whether the claim is even
+ * right, and the weaker of the two dominates (0.6) without the pair collapsing
+ * to it (0.4 on the mean). COVERAGE and FRESHNESS are RELIABILITY dimensions —
+ * how much of the picture we saw and how recently — so they can only ever shave
+ * a bounded amount off a sound core, never determine it.
+ *
+ * A dimension that was genuinely NOT MEASURED is excluded and the rest
+ * re-normalise; it is never read as zero. Counting an unmeasured product
+ * dimension as zero — the first draft of this model did — dropped 902 of 1183
+ * real leads into the bottom band purely because their sites never mentioned the
+ * searched product.
+ */
+export const CONFIDENCE_MODEL = {
+  /** Weight on the WEAKER of identity/product. The higher this is, the less a
+   *  strong dimension can compensate for a broken one. */
+  coreWeakestWeight: 0.6,
+  /** Weight on the mean of identity/product, so a single soft dimension does not
+   *  collapse an otherwise well-evidenced lead. Must sum to 1 with the above. */
+  coreMeanWeight: 0.4,
+  /** Multiplier floor for coverage: at zero coverage the core keeps 80%. This is
+   *  the number that enforces "scarce data ≠ wrong data". */
+  coverageFloor: 0.80,
+  /** Multiplier floor for freshness: fully stale evidence keeps 90%. Lower than
+   *  coverage's effect on purpose — old evidence is still evidence. */
+  freshnessFloor: 0.90,
+  /**
+   * Ceiling applied when identity came back MISMATCH.
+   *
+   * A site we can positively attribute to a DIFFERENT company cannot yield a
+   * confident claim about this one, however good the product evidence on it is.
+   * Without this the arithmetic alone would let Expert/tilly-gmbh.de (identity 10,
+   * product 88) reach the mid-30s; this pins it lower and keeps it there.
+   */
+  mismatchCeiling: 30,
+  /**
+   * Denominator for coverage: the number of verification checks the pipeline can
+   * run for a fully-reachable firm. Coverage is answered/this, so a firm with no
+   * website scores low on coverage — which lowers CONFIDENCE (how sure we are)
+   * and never the SCORE (how good the lead is).
+   */
+  maxChecks: 10,
+} as const;
+
+/** Freshness as a 0–1 multiplier input, from the existing three-state band. */
+export const FRESHNESS_FACTOR: Record<"FRESH" | "RECHECK" | "STALE", number> = {
+  FRESH: 1,
+  RECHECK: 0.6,
+  STALE: 0.3,
+};
+
 export type LeadBand =
   | "VERY_STRONG"
   | "STRONG"

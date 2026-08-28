@@ -416,6 +416,36 @@ export const NAME_STOPWORDS_MULTILANG = [
  * AB are safe here only because the match is case-SENSITIVE — the French
  * possessive "sa" and the English "as" are lowercase in prose.
  */
+/**
+ * The legal-form alternation ALONE, without the preceding-name window.
+ *
+ * Single source of truth for both regexes below: `LEGAL_FORM_RE` (name + form,
+ * for the old flat-text scan and for the "does this page look like a legal
+ * notice at all?" boolean) and `LEGAL_FORM_ONLY_RE`, which the block-aware
+ * extractor uses to locate the form and then decide for itself how far left the
+ * name reaches. Keeping one string means a newly supported entity form can
+ * never be added to one path and forgotten in the other.
+ */
+export const LEGAL_FORM_ALT =
+  "(?:GmbH(?: & Co\\.? KG)?|AG|KG|OHG|e\\.K\\.|UG(?: \\(haftungsbeschränkt\\))?|GbR" +
+  "|S\\.?A\\.?R\\.?L\\.?|SASU|SAS|EURL|SCI" +
+  "|S\\.?r\\.?l\\.?s?|S\\.?p\\.?A\\.?|S\\.?n\\.?c\\.?|S\\.?a\\.?s\\.?" +
+  "|S\\.?L\\.?U\\.?|S\\.?L\\.?|S\\.?A\\.?U\\.?" +
+  "|B\\.?V\\.?|N\\.?V\\.?|V\\.?O\\.?F\\.?|BVBA|SPRL" +
+  "|Sp\\. z o\\.?o\\.?|Sp\\.j\\.|S\\.?K\\.?A\\.?" +
+  "|s\\.r\\.o\\.|a\\.s\\.|d\\.o\\.o\\." +
+  "|Lda\\.?|Unipessoal Lda\\.?" +
+  "|A/S|ApS|AB|Oy|Oyj|AS" +
+  "|Kft\\.?|Zrt\\.?" +
+  "|A\\.?Ş\\.?|Ltd\\.? Şti\\.?" +
+  "|Ltd\\.?|Inc\\.?|PLC|LLC" +
+  ")";
+
+/** The form on its own, with the same trailing guard that keeps "AG" out of "AGB". */
+export const LEGAL_FORM_ONLY_RE = new RegExp(
+  `(?<![A-Za-zÀ-ÖØ-öø-ÿ])${LEGAL_FORM_ALT}(?![A-Za-zÀ-ÖØ-öø-ÿ])`,
+);
+
 export const LEGAL_FORM_RE = new RegExp(
   "((?:[A-Za-zÀ-ÖØ-öø-ÿ0-9][\\wÀ-ÖØ-öø-ÿ.&'-]+\\s+){1,3}" +
     "(?:GmbH(?: & Co\\.? KG)?|AG|KG|OHG|e\\.K\\.|UG(?: \\(haftungsbeschränkt\\))?|GbR" +

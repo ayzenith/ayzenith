@@ -3,13 +3,16 @@ import "server-only";
 import { cachedLeadFetch } from "../cache";
 import { SOCIAL_PLATFORMS } from "@/config/leads";
 import {
-  classifyPageType, findNegativeSignals, domainRelatesToName, PAGE_TYPE_WEIGHT,
+  classifyPageType, findNegativeSignals, domainRelatesToName, PAGE_TYPE_WEIGHT, repeatedSegments,
   type ProductHit, type NegativeSignal, type PageType,
 } from "../evidence";
 import {
   extractLinks, rankLinks, planCrawl, parseSitemap, parseRobotsSitemaps,
   rankSitemapUrls, SITEMAP_MAX_CHILDREN, SITEMAP_MAX_URLS, type SitemapParse,
 } from "../crawl";
+import {
+  segmentHtml, flattenSegments, extractLegalName, NAME_STOPWORDS,
+} from "../legalname";
 import {
   langForSite,
   subpageRounds,
@@ -24,7 +27,6 @@ import {
   B2C_TERMS_MULTILANG,
   DM_ROLE_PATTERNS_MULTILANG,
   NAME_TITLE_MULTILANG_RE,
-  NAME_STOPWORDS_MULTILANG,
   PERSON_NAME_RE,
   LEGAL_FORM_RE,
   STORE_TERMS_MULTILANG,
@@ -211,148 +213,10 @@ const DM_ROLE_PATTERNS: Array<{ label: string; re: RegExp }> = [
  *  name (§6 — no fabricated-looking name). */
 const NAME_TITLE_RE = NAME_TITLE_MULTILANG_RE;
 
-/** Tokens that must never be accepted as a person's name (geography, org forms,
- *  common legal-page words). Guards against turning an address into a "contact". */
-const NAME_STOPWORDS = new Set([
-  "berlin", "hamburg", "münchen", "munchen", "köln", "koln", "frankfurt", "stuttgart",
-  "düsseldorf", "dusseldorf", "deutschland", "germany", "österreich", "osterreich",
-  "schweiz", "straße", "strasse", "str", "platz", "weg", "allee", "gmbh", "kg", "ag",
-  "geschäft", "geschaft", "handel", "vertrieb", "die", "der", "das", "und", "post",
-  "email", "mail", "telefon", "kontakt", "impressum", "inhalte", "inhalt",
-  "unser", "unsere", "für", "fur", "von", "bei", "mit", "im", "am", "zur", "zum",
-  "startseite", "home", "über", "uber", "firma", "company",
-  ...NAME_STOPWORDS_MULTILANG,
-]);
-
 function looksLikeName(first?: string, last?: string): boolean {
   if (!first || !last) return false;
   const parts = normalizeForMatch(`${first} ${last}`).split(/\s+/);
   return parts.every((p) => p.length >= 2 && !NAME_STOPWORDS.has(p));
-}
-
-const ORG_FORM_RE = /^(gmbh|ag|kg|ohg|ug|ek|ltd|inc|gbr|sarl|sas|sasu|eurl|srl|srls|spa|snc|sl|slu|sau|sa|bv|nv|vof|bvba|sprl|lda|oy|oyj|ab|as|aps|kft|zrt|sro|doo|plc|llc|sti)$/i;
-
-/**
- * UI/navigation/legal-boilerplate words that sit right next to a legal-form
- * token SOMEWHERE on a crawled page without being part of anyone's name — a
- * "Datenschutz" heading, a cookie banner's "Widerruf · Retouren · Entsorgung"
- * footer nav, a checkout page's "Zahlarten · Versandarten". `LEGAL_FORM_RE`
- * only knows "word(s) then GmbH/AG/Inc.", so on a page with no clean Impressum
- * paragraph it can walk straight into one of these instead of the real entity.
- * Fed into the same leading-token stripper `cleanLegalName` already uses, so a
- * hit here is dropped exactly like the existing "Inhalte loveco GmbH" case,
- * regardless of capitalisation (found live: "About Us AG", "Suchvorschläge
- * Günter Tilly GmbH" — real name only surfaces once "Suchvorschläge" strips).
- */
-const LEGAL_NAME_LEAK_WORDS = new Set([
-  "about", "us", "contact", "privacy", "cookie", "cookies", "terms", "agb",
-  "widerruf", "widerrufsbelehrung", "retouren", "retoure", "entsorgung",
-  "versandarten", "versandkosten", "zahlarten", "zahlungsarten",
-  "lieferung", "lieferzeit", "faq", "hilfe", "help", "suchvorschlage",
-  "suchvorschläge", "erreichbarkeit",
-  "anfahrt", "rechtliches", "sitemap", "menu", "navigation", "anzeigen",
-  "deal", "sonderposten", "newsletter", "login", "registrieren", "warenkorb",
-  "checkout", "bestellung", "datenschutzerklarung", "datenschutzerklärung",
-  "webanalysedienst", "analysedienst", "cookiehinweis", "datenschutzhinweis",
-  // NOT included, deliberately, despite looking like page-nav words: "versand"
-  // and "dienstleistung(en)" — both are also genuine, common leading words in
-  // real German legal-entity names ("Otto Versand GmbH", and a live case here,
-  // "WIEDEMANN Dienstleistung und Verwaltung GmbH" — stripping "Dienstleistung"
-  // would have further truncated an already brand-clipped capture). Ambiguous
-  // words are left in, not out — a false NEGATIVE here just means occasionally
-  // failing to drop real leaked text, which the identity-overlap check in
-  // verify.ts still catches downstream; a false POSITIVE silently destroys a
-  // real company name, which is worse and unrecoverable.
-]);
-const LEGAL_NAME_STOPWORDS = new Set([...NAME_STOPWORDS, ...LEGAL_NAME_LEAK_WORDS]);
-
-/**
- * Well-known THIRD-PARTY organisations that show up on almost every commercial
- * site's own privacy/cookie/analytics disclosure ("this site uses Google
- * Analytics, provided by Google Inc.") — matching `LEGAL_FORM_RE` perfectly
- * while never being the searched firm's own entity. Live cases: "Alphabet
- * Inc.", "Dolby Laboratories Inc." (a hifi shop's certification blurb),
- * "Webanalysedienst der Google Inc.". Checked against the tokens that remain
- * AFTER boilerplate stripping, so this only fires when the third-party name is
- * the whole remaining result, not merely mentioned nearby.
- */
-const THIRD_PARTY_ORG_NAMES = new Set([
-  "google", "alphabet", "facebook", "meta", "youtube", "instagram", "twitter",
-  "microsoft", "amazon", "dolby", "stripe", "paypal", "hotjar", "doubleclick",
-  "cloudflare", "matomo", "hubspot", "mailchimp", "sentry", "wix", "shopify",
-  // Hosting providers named in the mandatory "2. Hosting" disclosure that
-  // German privacy-policy generators insert — found live on weltladen-pankow.de
-  // ("Anbieter ist die Strato AG…"), the same failure mode as the platforms
-  // above: a real name, printed on the page, that is never the FIRM's own.
-  "strato",
-]);
-
-/** Is this token a legal-entity suffix rather than part of the name? Dots and
- *  commas are stripped first so "S.p.A." and "B.V." are recognised alongside
- *  "GmbH". Used to tell "loveco GmbH" (name + form) from "adresinde Calzedonia
- *  S.p.A" (leaked word + name + form). */
-function isOrgFormToken(token: string): boolean {
-  return ORG_FORM_RE.test(token.replace(/[.,&]/g, ""));
-}
-
-/** Drop leading non-name words (e.g. "Inhalte") that can leak into a captured
- *  legal name, keeping "loveco GmbH" rather than "Inhalte loveco GmbH". Returns
- *  null if nothing but the org form remains (a bare "GmbH" is not a company name). */
-function cleanLegalName(raw: string): string | null {
-  let tokens = raw.trim().split(/\s+/);
-
-  // A non-final token ending in "." means the capture crossed a sentence/section
-  // boundary (stripped HTML leaves no other punctuation cue) — e.g. "Hausgeräte.
-  // ERREICHBARKEIT ANFAHRT AG" is two unrelated page fragments glued together by
-  // proximity, not a name. Keep only what comes after the last such break. The
-  // length guard (>5 incl. the period) keeps genuine short abbreviations inside a
-  // real name intact — "Müller u. Söhne GmbH", "Meyer Co. KG" — while still
-  // catching a full word that happened to end a sentence.
-  const breakIdx = tokens.findIndex((t, i) => {
-    if (i >= tokens.length - 1 || isOrgFormToken(t)) return false;
-    const bare = t.replace(/[,&]/g, "");
-    return /\.$/.test(bare) && bare.length > 5;
-  });
-  if (breakIdx >= 0) tokens = tokens.slice(breakIdx + 1);
-  if (tokens.length === 0) return null;
-
-  // Also drop a leading bare number or copyright mark: the legal entity is very
-  // often printed in the footer right after the year, and Hunkemöller's came back
-  // as "2026 Hunkemöller B.V." on the first multi-language run (§V3.9).
-  while (
-    tokens.length > 1 &&
-    (LEGAL_NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) || /^(?:[©®]|\d{2,4}|[©®]\d{2,4})$/.test(tokens[0]!))
-  ) {
-    tokens.shift();
-  }
-  // Drop leading ORDINARY WORDS that the surrounding sentence leaked in.
-  //
-  // The capture takes up to three tokens before the legal form, so a sentence like
-  // "…adresinde Calzedonia S.p.A…" yields "adresinde Calzedonia S.p.A". The tell is
-  // capitalisation: a leaked sentence word is lowercase while the name that follows
-  // is not. The org-form token is excluded from that test on purpose — otherwise
-  // "loveco GmbH", a genuinely lowercase brand, would be stripped down to "GmbH".
-  while (
-    tokens.length > 1 &&
-    tokens[0]! === tokens[0]!.toLocaleLowerCase("de") &&
-    tokens.slice(1).some((t) => !isOrgFormToken(t) && t !== t.toLocaleLowerCase("de"))
-  ) {
-    tokens.shift();
-  }
-  if (tokens.length < 2 && isOrgFormToken(tokens[0] ?? "")) return null;
-
-  // Purely numeric remainder ("4672 60 966 AG") is not a name, whatever slipped
-  // past the leading-token stripper above.
-  const nonOrgTokens = tokens.filter((t) => !isOrgFormToken(t));
-  if (nonOrgTokens.length === 0 || nonOrgTokens.every((t) => /^\d+$/.test(t))) return null;
-
-  // A well-known THIRD PARTY (Google, Meta, Dolby…) named in a privacy/cookie/
-  // analytics disclosure elsewhere on the page is never the searched firm's own
-  // entity, even though it matches the exact same "Name Inc./AG" shape.
-  const normNonOrg = nonOrgTokens.map((t) => normalizeForMatch(t.replace(/[.,]/g, "")));
-  if (normNonOrg.every((t) => THIRD_PARTY_ORG_NAMES.has(t))) return null;
-
-  return tokens.join(" ");
 }
 
 /** Obvious placeholder / example emails that appear in templates, not real
@@ -606,6 +470,11 @@ export async function fetchSiteIntel(
   const base = normalizeUrl(website);
   if (!base) return null;
   const lang = langForSite(website, country);
+  /** The host we are actually reading, used to pick the firm's OWN entity out of
+   *  a page that also discloses its data processors (§ accuracy Phase 5). */
+  const domainOfBase = (() => {
+    try { return new URL(base).hostname; } catch { return null; }
+  })();
 
   const home = await fetchPage(base, depth === "shallow" ? SHALLOW_TIMEOUT_MS : 12_000);
   if (home == null) {
@@ -722,6 +591,13 @@ export async function fetchSiteIntel(
   const productHits: ProductHit[] = [];
   const negativeSignals: NegativeSignal[] = [];
   const crawledPageTypes: PageType[] = [];
+  /** Every page's text blocks, and the block each hit came from — index-aligned
+   *  with `productHits`. Both are only needed to spot site-wide chrome once all
+   *  pages have been read, so they stay local and are never stored. */
+  const segmentsByPage: string[][] = [];
+  const hitSegments: string[] = [];
+  /** Company-disclosure pages, in crawl order, awaiting the site-wide block set. */
+  const legalNameSources: string[][] = [];
   let legalName: string | undefined;
   let title: string | undefined;
   let vatId: string | undefined;
@@ -735,8 +611,16 @@ export async function fetchSiteIntel(
   const mediumTerms = (signals?.medium ?? []).map((t) => normalizeForMatch(t)).filter((t) => t.length >= 3);
 
   for (const { url, html } of pages) {
-    const text = stripTags(html);
+    // Block-aware from here on (§ accuracy Phase 5). `segments` keeps the page's
+    // visual line breaks so a legal name can never be assembled out of two
+    // unrelated parts of the layout, and so a nav item can be recognised as the
+    // same repeated block on every page. `text` is the identical flat string the
+    // old `stripTags` produced, so every other reader below is unaffected.
+    const segments = segmentHtml(html);
+    segmentsByPage.push(segments);
+    const text = flattenSegments(segments);
     const lower = normalizeForMatch(text);
+    const lowerSegments = segments.map((s) => normalizeForMatch(s));
     // Two tiers of company-disclosure page (§V3.9).
     //
     // Germany's Impressum is a legal obligation to name the managing directors, so
@@ -811,7 +695,13 @@ export async function fetchSiteIntel(
       for (const t of terms) {
         if (!includesTermBoundary(lower, t)) continue;
         if (productHits.length >= 40) return;
+        // Which BLOCK carried the term. Recorded so that a hit sitting in the
+        // site-wide mega-menu can be told apart from one in the page's own copy
+        // after every page has been read (§ accuracy Phase 5 — daemmisol.de
+        // matched "Unterwäsche" on 9 of 9 pages, always the identical nav block).
+        const seg = lowerSegments.find((s) => includesTermBoundary(s, t));
         productHits.push({ term: t, tier, pageUrl: url, pageType, snippet: snippetAround(lower, t) });
+        hitSegments.push(seg ?? "");
       }
     };
     addHits(strongTerms, "strong");
@@ -857,9 +747,10 @@ export async function fetchSiteIntel(
     // Legal name, VAT id and decision-makers from a company-disclosure page (§6).
     if (isCompanyInfo) {
       vatId = vatId ?? findVatId(text);
-      const legal = text.match(LEGAL_FORM_RE);
-      const cleaned = legal && legal[1] ? cleanLegalName(legal[1]) : null;
-      if (cleaned) legalName = legalName ?? cleaned;
+      // Resolved AFTER the loop: which blocks are site-wide furniture is only
+      // knowable once every page has been read, and that is exactly what tells a
+      // cookie banner's vendor name from the Impressum body.
+      legalNameSources.push(segments);
       for (const { label, re } of DM_ROLE_PATTERNS) {
         const nm = nameAfter(text, re);
         if (nm && looksLikeName(nm.first, nm.last)) {
@@ -878,6 +769,25 @@ export async function fetchSiteIntel(
           }
         }
       }
+    }
+  }
+
+  // Site-wide chrome can only be recognised once every page has been read
+  // (§ accuracy Phase 5). A block that came back verbatim on most of the pages
+  // is a menu, a header or a footer — the hit stays, with the truth attached to
+  // it, and the evidence engine refuses to count it as independent corroboration.
+  {
+    const chrome = repeatedSegments(segmentsByPage);
+    if (chrome.size > 0) {
+      const chromeLower = new Set([...chrome].map((s) => normalizeForMatch(s)));
+      productHits.forEach((h, i) => {
+        const seg = hitSegments[i];
+        if (seg && chromeLower.has(seg)) h.boilerplate = true;
+      });
+    }
+    for (const segments of legalNameSources) {
+      if (legalName) break;
+      legalName = extractLegalName(segments, domainOfBase, chrome) ?? undefined;
     }
   }
 

@@ -57,24 +57,62 @@ function compactName(name: string): string {
 export type NameComparison = "match" | "mismatch" | "inconclusive";
 
 /**
+ * Are two words one typo apart? (Levenshtein ≤ 1, computed without building a
+ * matrix — we only ever need to know "at most one edit".)
+ *
+ * Used to stop a spelling variant from being reported as a contradiction. Live
+ * case: a lead recorded as "Kobau" whose own Impressum reads "Kohbau Holz- und
+ * Baustoffhandel GmbH" — one letter — was ruled a MISMATCH and had its whole
+ * confidence capped at 10, on the strength of a difference that is almost
+ * certainly a data-entry variant. One character is not proof of a different
+ * company; it is proof that we cannot tell.
+ */
+function withinOneEdit(a: string, b: string): boolean {
+  if (a === b) return true;
+  if (Math.abs(a.length - b.length) > 1) return false;
+  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
+  let i = 0, j = 0, edits = 0;
+  while (i < short.length && j < long.length) {
+    if (short[i] === long[j]) { i++; j++; continue; }
+    if (++edits > 1) return false;
+    if (short.length === long.length) i++;
+    j++;
+  }
+  return edits + (long.length - j) + (short.length - i) <= 1;
+}
+
+/** A near-miss is only credible on words long enough for one edit to be a typo
+ *  rather than a different word — "koh"/"kob" says nothing, "kohbau"/"kobau" does. */
+const NEAR_MISS_MIN_LENGTH = 5;
+
+function hasNearMiss(a: string[], b: string[]): boolean {
+  return a.some((t) =>
+    t.length >= NEAR_MISS_MIN_LENGTH &&
+    b.some((u) => u.length >= NEAR_MISS_MIN_LENGTH && withinOneEdit(t, u)));
+}
+
+/**
  * Compare the name we believe a record is about against a name found on its
  * (supposed) own website.
  *
- * Token overlap is the primary test. The fix this carries over the previous
- * implementation is the FALLBACK: when either side has no significant tokens at
- * all — which is exactly what happens to two-letter brands, "C&A" normalising to
- * the useless ["c","a"] — the old code returned "inconclusive" and the whole
- * identity check switched itself off for precisely the case it was written for.
- * Now such names are compared in compact form instead, so a real disagreement is
- * still detectable. Comparison stays NEGATIVE-ONLY in spirit: it is used to
- * doubt an attribution, never to manufacture a positive one on its own.
+ * Token overlap is the primary test. The fallback matters as much: when either
+ * side has no significant tokens at all — two-letter brands, "C&A" normalising to
+ * the useless ["c","a"] — the comparison switches to the compact form so a real
+ * disagreement is still detectable. And a NEAR-MISS on either path returns
+ * "inconclusive": one edit is not a contradiction. Comparison stays
+ * NEGATIVE-ONLY in spirit: it is used to doubt an attribution, never to
+ * manufacture a positive one on its own.
  */
 export function compareNames(candidateName: string, otherName: string): NameComparison {
   const a = significantTokens(foldGerman(normalizeProduct(candidateName)));
   const b = significantTokens(foldGerman(normalizeProduct(otherName)));
   if (a.length > 0 && b.length > 0) {
     const overlap = a.some((t) => b.some((u) => u.includes(t) || t.includes(u)));
-    return overlap ? "match" : "mismatch";
+    if (overlap) return "match";
+    // Not a match — but one edit apart is not a disagreement either. Returning
+    // "inconclusive" here is what turns a false MISMATCH into an honest
+    // "could not verify", which is the whole doctrine of this module.
+    return hasNearMiss(a, b) ? "inconclusive" : "mismatch";
   }
 
   // At least one side is all-short-tokens (a brand like C&A, H&M, S.Oliver).
@@ -84,7 +122,7 @@ export function compareNames(candidateName: string, otherName: string): NameComp
   // "C&A" → "ca" inside "C&A Mode GmbH & Co. KG" → "camodegmbhcokg" ✓
   // "C&A" → "ca" against "Cunda Handels" → "cundahandels" ✗ (the real bug)
   if (cb.startsWith(ca) || ca.startsWith(cb) || cb.includes(ca) || ca.includes(cb)) return "match";
-  return "mismatch";
+  return hasNearMiss([ca], [cb]) ? "inconclusive" : "mismatch";
 }
 
 /**
@@ -127,8 +165,29 @@ export function domainRelatesToName(domain: string | undefined | null, candidate
   }
   if (labels.length === 0) return false;
 
-  const tokens = significantTokens(foldGerman(normalizeProduct(candidateName))).filter((t) => t.length >= 4);
+  const allTokens = significantTokens(foldGerman(normalizeProduct(candidateName)));
+
+  // A token of four characters or more may appear ANYWHERE inside a label:
+  // "loveco" inside "loveco-shop", "falke" inside "falke". Substring freedom is
+  // safe at this length.
+  const tokens = allTokens.filter((t) => t.length >= 4);
   if (labels.some((core) => tokens.some((t) => core.includes(t)))) return true;
+
+  // A SHORT token (2–3 characters) must EQUAL a label outright.
+  //
+  // Short tokens used to be dropped entirely, which silently threw away the one
+  // piece of ownership evidence a short-branded firm has. Live: "AMR
+  // Dachbaustoffe" on amr-shop.de — the label list already contains "amr" as a
+  // hyphen part — came back UNVERIFIED on its own website, because "amr" was
+  // filtered out before the comparison ever ran (12 rows).
+  //
+  // Equality, not containment, is what makes this safe, and it is the same rule
+  // the compact form below has always used for names like C&A: "ca" still fails
+  // against "carl-anderson" because no label EQUALS "ca". This strictly ADDS a
+  // way to prove ownership; it removes none, so no previously-flagged domain
+  // becomes acceptable through this branch.
+  const shortTokens = allTokens.filter((t) => t.length >= 2 && t.length < 4);
+  if (labels.some((core) => shortTokens.some((t) => core === t))) return true;
 
   const compact = foldGerman(compactName(candidateName));
   if (compact.length >= 5 && labels.some((core) => core.includes(compact))) return true;
@@ -198,6 +257,24 @@ export function resolveIdentity(input: IdentityInput): IdentityResult {
   const mismatched = legalCmp === "mismatch" || viesCmp === "mismatch";
   if (mismatched) {
     const other = viesCmp === "mismatch" ? input.viesName : input.legalName;
+
+    // NO DOMAIN AT ALL → we never had site-ownership evidence to contradict, so
+    // there is nothing to disagree WITH (§ accuracy Phase 5).
+    //
+    // MISMATCH is the harshest verdict this module can reach: it caps overall
+    // confidence at 30 and drags product fit down with it. Reaching it required
+    // only that a name on some page differed from ours — and with no domain, a
+    // differing name is the ordinary case for a brand whose parent company owns
+    // the site. Live: "Intimissimi" against "Calzedonia S.p.A", which is
+    // genuinely its parent group, was ruled an impostor. Absence of evidence is
+    // not evidence: this is UNVERIFIED, and it says so.
+    if (!input.domain) {
+      reasons.push(
+        `Sitede okunan yasal unvan ("${other}") aranan firma adından farklı; ancak bu firmaya ait doğrulanmış bir alan adı yok, dolayısıyla sitenin sahipliği hakkında bir çelişki saptanamadı (marka/ana şirket ilişkisi de olabilir).`,
+      );
+      return { status: "UNVERIFIED", confidence: 20, reasons };
+    }
+
     if (domainOk) {
       // Brand vs registered entity. The domain vouches for ownership, so this is
       // a naming divergence, not an impostor.
@@ -442,7 +519,48 @@ export type ProductHit = {
   pageType: PageType;
   /** Surrounding text, for the "why" panel and for negative-signal scanning. */
   snippet?: string;
+  /** The term was found inside a text block that repeats across the site — a
+   *  header, a mega-menu, a footer. Such a hit is real (the words ARE on the
+   *  page) but it is ONE piece of evidence reprinted N times, never N
+   *  independent ones. See `repeatedSegments`. */
+  boilerplate?: boolean;
 };
+
+/**
+ * Which text blocks are site-wide furniture rather than page content.
+ *
+ * Live case that forced this (§ accuracy Phase 5): daemmisol.de, a
+ * building-materials dealer, came back as a strong match for a women's-underwear
+ * search. The audit dumped the cache and found "Unterwäsche" — a workwear
+ * category in the shop's mega-menu — on 9 of 9 crawled pages, in a byte-identical
+ * 300-character context every time. The evidence engine read that as the product
+ * appearing all over the site and counted the page variety as corroboration. It
+ * is the opposite: one menu, printed nine times.
+ *
+ * The test is structural and needs no vocabulary — a block that appears verbatim
+ * on most of the pages we read is chrome, whatever it says. Two thresholds have
+ * to hold at once so a small crawl can never trip it: the block must repeat on at
+ * least `minPages` pages AND on at least 60% of them. With the 4-page budget that
+ * means 3 of 4; with 2 pages nothing is ever classified, which is correct — with
+ * two samples we genuinely cannot tell a menu from a coincidence.
+ */
+export function repeatedSegments(pages: string[][], minPages = 3): Set<string> {
+  const out = new Set<string>();
+  if (pages.length < minPages) return out;
+  const seen = new Map<string, number>();
+  for (const segments of pages) {
+    // Per PAGE, not per occurrence: a block repeated twice on one page is still
+    // one page's worth of evidence.
+    for (const s of new Set(segments)) {
+      const key = s.trim();
+      if (key.length === 0) continue;
+      seen.set(key, (seen.get(key) ?? 0) + 1);
+    }
+  }
+  const threshold = Math.max(minPages, Math.ceil(pages.length * 0.6));
+  for (const [seg, n] of seen) if (n >= threshold) out.add(seg);
+  return out;
+}
 
 export type ProductEvidenceInput = {
   hits: ProductHit[];
@@ -508,7 +626,22 @@ export function resolveProductEvidence(input: ProductEvidenceInput): ProductEvid
 
   // Boilerplate pages carry no product weight at all. They are still crawled and
   // still mined for identity — that is precisely why they are fetched.
-  const usable = input.hits.filter((h) => PAGE_TYPE_WEIGHT[h.pageType] >= 0.3);
+  const onUsablePage = input.hits.filter((h) => PAGE_TYPE_WEIGHT[h.pageType] >= 0.3);
+
+  // Site-wide chrome is separated out, NOT discarded (§ accuracy Phase 5). The
+  // words really are on the page, so silently dropping them would be the same
+  // "absence of evidence as evidence" mistake in the other direction; they are
+  // simply not allowed to carry a verdict or to corroborate anything, because a
+  // menu reprinted on every page is one signal, not many.
+  const chromeAll = onUsablePage.filter((h) => h.boilerplate === true);
+  const usable = onUsablePage.filter((h) => h.boilerplate !== true);
+
+  // ONE menu is ONE signal, however many pages reprint it: dedupe by term before
+  // anything counts it. This is the precise thing that was wrong — nine copies
+  // of a nav entry looked like the product turning up all over the site.
+  const chrome = [...new Map(chromeAll.map((h) => [h.term, h])).values()];
+  const chromeStrong = chrome.filter((h) => h.tier === "strong");
+  const chromeMedium = chrome.filter((h) => h.tier === "medium");
   const strong = usable.filter((h) => h.tier === "strong");
   const medium = usable.filter((h) => h.tier === "medium");
   const generic = usable.filter((h) => h.tier === "generic");
@@ -561,10 +694,42 @@ export function resolveProductEvidence(input: ProductEvidenceInput): ProductEvid
         ? `Ürün terimi bulundu ama ürün/katalog sayfasında değil (${decisive[0]!.pageType}): ${strong.map((h) => h.term).join(", ")}.`
         : `Kategori düzeyinde ürün sinyali (${decisive[0]!.pageType}): ${decisive.map((h) => h.term).join(", ")}.`,
     );
+  } else if (chromeStrong.length > 0 || chromeMedium.length > 0) {
+    // A product term in the site-wide menu, and nowhere in any page's own copy.
+    //
+    // This is real, if weak, commercial evidence and it is treated exactly like a
+    // strong term on a homepage: CONTEXTUAL. It is NOT dismissed — for a clothing
+    // retailer the mega-menu is where the actual categories live, and the first
+    // cut of this rule capped chrome at WEAK_TEXT, which demoted Loveco, FALKE and
+    // KiK (genuine textile firms, correctly found) to "belirsiz". That is the
+    // false negative this doctrine exists to prevent.
+    //
+    // What chrome may never do is CLIMB: it cannot prove a product page and it
+    // cannot corroborate anything (see `contextualFromChromeOnly` below), so a
+    // building-materials dealer whose menu happens to list workwear underwear
+    // can never be VERIFIED off that alone.
+    //
+    // Medium (category-level) chrome counts here for the same reason a medium
+    // term on the HOMEPAGE does: the mega-menu IS the homepage's category list.
+    // Excluding it demoted Loveco, FALKE and KiK — measured on live data — and
+    // no amount of text analysis can separate a lingerie shop's "Unterwäsche"
+    // menu entry from a builders' merchant's workwear one. That distinction
+    // belongs to the company-type axis, not to product evidence, and inventing a
+    // word rule to fake it would be exactly the symptom-suppression this phase
+    // was told to avoid.
+    level = ProductEvidenceLevel.CONTEXTUAL;
+    decisive = chromeStrong.length > 0 ? chromeStrong : chromeMedium;
+    reasons.push(
+      `Ürün terimi yalnızca sitenin her sayfasında tekrar eden menü/başlık/altbilgi metninde bulundu (${decisive.map((h) => h.term).join(", ")}) — gerçek bir sinyal, ancak sayfaya özgü kanıt değil ve tekrarı bağımsız doğrulama sayılmadı.`,
+    );
   } else if (medium.length > 0) {
     level = ProductEvidenceLevel.WEAK_TEXT;
     decisive = medium;
-    reasons.push(`Yalnızca genel kategori terimi bulundu: ${medium.map((h) => h.term).join(", ")}.`);
+    reasons.push(
+      medium.length > 0
+        ? `Yalnızca genel kategori terimi bulundu: ${medium.map((h) => h.term).join(", ")}.`
+        : `Yalnızca site geneli menü/altbilgi metninde genel kategori terimi bulundu: ${chromeMedium.map((h) => h.term).join(", ")}.`,
+    );
   } else if (generic.length > 0) {
     level = ProductEvidenceLevel.WEAK_TEXT;
     decisive = generic;
@@ -574,11 +739,24 @@ export function resolveProductEvidence(input: ProductEvidenceInput): ProductEvid
     reasons.push("Taranan sayfalarda aranan ürünle ilgili terim bulunamadı.");
   }
 
+  if (chrome.length > 0 && level > ProductEvidenceLevel.WEAK_TEXT) {
+    reasons.push(
+      `Ayrıca site geneli menü/altbilgi metninde de geçiyor (${[...new Set(chrome.map((h) => h.term))].join(", ")}) — bu tekrar bağımsız kanıt sayılmadı.`,
+    );
+  }
+
   // Promotions. Independent agreement is what turns a good sign into a claim.
   if (level >= ProductEvidenceLevel.PRODUCT_PAGE && corroborations.length >= 1) {
     level = ProductEvidenceLevel.STRONG_COMMERCIAL;
     reasons.push(`Bağımsız doğrulama: ${corroborations.join("; ")}.`);
-  } else if (level === ProductEvidenceLevel.CONTEXTUAL && corroborations.length >= (crawledSellingPage ? 2 : 1)) {
+  } else if (
+    level === ProductEvidenceLevel.CONTEXTUAL &&
+    // A CONTEXTUAL that rests ONLY on the site-wide menu must not be promoted to
+    // a product-page claim, whatever else agrees with it. Repetition of one menu
+    // is not the "independent agreement" this promotion is for.
+    !(strong.length === 0 && mediumOnSelling.length === 0 && mediumOnPrimary.length === 0) &&
+    corroborations.length >= (crawledSellingPage ? 2 : 1)
+  ) {
     // A real shop without a readable /produkte path still deserves a verdict.
     //
     // The bar depends on whether we LOOKED: when a selling page was crawled and

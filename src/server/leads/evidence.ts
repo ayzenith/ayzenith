@@ -92,6 +92,50 @@ function hasNearMiss(a: string[], b: string[]): boolean {
 }
 
 /**
+ * Can this single word be built by running together the OPENINGS of the other
+ * name's words, in order?
+ *
+ * Trading names are routinely blends of the founders' surnames: the live case is
+ * "DEWEtech" on deinzer-weyland.de, whose Impressum reads "DEINZER + WEYLAND
+ * GmbH" — DE(inzer) + WE(yland) + a trade suffix. Token overlap sees nothing in
+ * common and reports a contradiction, so a firm was ruled an impostor on its own
+ * site.
+ *
+ * The bar is deliberately high, because a loose version of this would excuse real
+ * mismatches: at least TWO of the other name's words must be consumed, each by a
+ * prefix of at least two characters, starting at the very beginning of the word,
+ * and the consumed part must be a PREFIX of the word under test. Checked both
+ * ways round. It never produces a positive verdict — only "inconclusive".
+ */
+const BLEND_MIN_PREFIX = 2;
+const BLEND_MIN_TOKENS = 2;
+
+function isInitialBlend(word: string, parts: string[]): boolean {
+  if (word.length < 4 || parts.length < BLEND_MIN_TOKENS) return false;
+  let pos = 0;
+  let consumed = 0;
+  for (const part of parts) {
+    if (pos >= word.length) break;
+    let take = 0;
+    while (
+      take < part.length &&
+      pos + take < word.length &&
+      part[take] === word[pos + take]
+    ) take++;
+    if (take < BLEND_MIN_PREFIX) continue; // this word of the name is skipped
+    pos += take;
+    consumed++;
+  }
+  return consumed >= BLEND_MIN_TOKENS && pos >= BLEND_MIN_PREFIX * BLEND_MIN_TOKENS;
+}
+
+function hasBlendRelation(a: string[], b: string[]): boolean {
+  if (a.length === 1 && b.length >= BLEND_MIN_TOKENS && isInitialBlend(a[0]!, b)) return true;
+  if (b.length === 1 && a.length >= BLEND_MIN_TOKENS && isInitialBlend(b[0]!, a)) return true;
+  return false;
+}
+
+/**
  * Compare the name we believe a record is about against a name found on its
  * (supposed) own website.
  *
@@ -109,10 +153,10 @@ export function compareNames(candidateName: string, otherName: string): NameComp
   if (a.length > 0 && b.length > 0) {
     const overlap = a.some((t) => b.some((u) => u.includes(t) || t.includes(u)));
     if (overlap) return "match";
-    // Not a match — but one edit apart is not a disagreement either. Returning
-    // "inconclusive" here is what turns a false MISMATCH into an honest
-    // "could not verify", which is the whole doctrine of this module.
-    return hasNearMiss(a, b) ? "inconclusive" : "mismatch";
+    // Not a match — but neither a typo nor an acronym of the other name is a
+    // disagreement. Returning "inconclusive" here is what turns a false MISMATCH
+    // into an honest "could not verify", the whole doctrine of this module.
+    return hasNearMiss(a, b) || hasBlendRelation(a, b) ? "inconclusive" : "mismatch";
   }
 
   // At least one side is all-short-tokens (a brand like C&A, H&M, S.Oliver).

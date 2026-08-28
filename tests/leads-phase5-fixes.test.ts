@@ -18,7 +18,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { segmentHtml, extractLegalName, cleanLegalName } from "../src/server/leads/legalname";
+import { segmentHtml, extractLegalName, cleanLegalName, resolveLegalName } from "../src/server/leads/legalname";
 import {
   resolveIdentity,
   resolveProductEvidence,
@@ -355,4 +355,159 @@ test("P5-4f. AMR end to end — its own site no longer reads as unverified", () 
   const r = resolveIdentity({ candidateName: "AMR Dachbaustoffe", legalName: null, domain: "amr-shop.de" });
   assert.equal(r.status, "PARTIAL");
   assert.ok(r.confidence >= 60);
+});
+
+// ===========================================================================
+// P5-5 — the statutory legal notice outranks every other disclosure page
+// ===========================================================================
+
+test("P5-5a. viviry.de — the legal notice beats the privacy page's booking vendor", () => {
+  const sources = [
+    { segments: segmentHtml(`<h3>Buchungslösung der Calendly LLC</h3>`), isLegalPage: false },
+    { segments: segmentHtml(`<p>VIVIRY GmbH<br>Musterweg 3</p>`), isLegalPage: true },
+  ];
+  assert.equal(resolveLegalName(sources, "viviry.de"), "VIVIRY GmbH");
+});
+
+test("P5-5b. vooberlin.com — Pickware loses to the imprint's Müjdeci GmbH", () => {
+  const sources = [
+    { segments: segmentHtml(`<p>— Pickware GmbH, Goebelstr. 21, 64293 Darmstadt</p>`), isLegalPage: false },
+    { segments: segmentHtml(`<div>IMPRINT</div><div>Müjdeci GmbH</div><div>Oranienstrasse 24,</div>`), isLegalPage: true },
+  ];
+  assert.equal(resolveLegalName(sources, "vooberlin.com"), "Müjdeci GmbH");
+});
+
+test("P5-5c. nobiliakuechen — the hoster on /datenschutz never wins", () => {
+  const sources = [
+    { segments: segmentHtml(`<h3>Anschrift</h3><p>KüchenKonzepte Bartkowiak GmbH</p>`), isLegalPage: true },
+    { segments: segmentHtml(`<p>Hosting: Hetzner Online GmbH</p>`), isLegalPage: false },
+  ];
+  assert.equal(resolveLegalName(sources, "nobiliakuechen-berlin.de"), "KüchenKonzepte Bartkowiak GmbH");
+});
+
+test("P5-5d. widda-berlin.de — a sole trader we cannot parse yields NULL, not a vendor", () => {
+  // The real imprint says "WiDDA Inh.: Sabine Kelle" — no legal form at all, so
+  // nothing is capturable. The privacy page offers a perfectly formed "Brevo
+  // GmbH". Once the statutory page has been READ, a foreign name from elsewhere
+  // is a processor, and "we could not establish it" is the honest answer.
+  const sources = [
+    { segments: segmentHtml(`<p>WiDDA Inh.: Sabine Kelle<br>Gärtnerstr. 24<br>10245 Berlin</p>`), isLegalPage: true },
+    { segments: segmentHtml(`<p>Newsletter über die Brevo GmbH</p>`), isLegalPage: false },
+  ];
+  assert.equal(resolveLegalName(sources, "widda-berlin.de"), null);
+});
+
+test("P5-5e. with NO statutory page read, a company-info page is still used", () => {
+  // Preserves V3.9: outside Germany there is often no Impressum at all.
+  const sources = [
+    { segments: segmentHtml(`<p>Chi siamo: Rossi Commerciale S.r.l.</p>`), isLegalPage: false },
+  ];
+  assert.equal(resolveLegalName(sources, "rossi.it"), "Rossi Commerciale S.r.l.");
+});
+
+test("P5-5f. REGRESSION — Dämmisol keeps the group entity from its Impressum", () => {
+  const sources = [
+    { segments: segmentHtml(`<p>STARK Deutschland GmbH</p>`), isLegalPage: true },
+    { segments: segmentHtml(`<p>STARK Deutschland GmbH</p>`), isLegalPage: false },
+  ];
+  assert.equal(resolveLegalName(sources, "daemmisol.de"), "STARK Deutschland GmbH");
+});
+
+test("P5-5g. on the legal page itself, a name that vouches for the domain wins", () => {
+  const sources = [
+    { segments: segmentHtml(`<p>Hosting durch die Fremdhoster GmbH</p><p>Kohbau Holz- und Baustoffhandel GmbH</p>`), isLegalPage: true },
+  ];
+  assert.equal(resolveLegalName(sources, "kohbau.de"), "Kohbau Holz- und Baustoffhandel GmbH");
+});
+
+// ===========================================================================
+// P5-6 — "<label> der GmbH" is a sentence about a company, not a company
+// ===========================================================================
+
+test("P5-6a. nobiliakuechen — 'Registergericht der GmbH' is not a name", () => {
+  assert.equal(cleanLegalName("Registergericht der GmbH"), null);
+});
+
+test("P5-6b. the whole grammatical class, not one word", () => {
+  for (const s of [
+    "Sitz der GmbH", "Geschäftsführer der AG", "Gesellschafter einer GmbH",
+    "Vertretungsberechtigter des e.K.", "les statuts de la SARL", "the articles of the Ltd",
+  ]) {
+    assert.equal(cleanLegalName(s), null, `should be rejected: ${s}`);
+  }
+});
+
+test("P5-6c. REGRESSION — real names ending in a NOUN before the form survive", () => {
+  for (const s of [
+    "Kohbau Holz- und Baustoffhandel GmbH",
+    "WIEDEMANN Dienstleistung und Verwaltung GmbH",
+    "KiK Textilien und Non-Food GmbH",
+    "Harry Lott Baustoffe GmbH",
+  ]) {
+    assert.equal(cleanLegalName(s), s, `should survive: ${s}`);
+  }
+});
+
+// ===========================================================================
+// P5-7 — an acronym of the other name is not a contradiction
+// ===========================================================================
+
+test("P5-7a. DEWEtech / DEINZER + WEYLAND is inconclusive, never MISMATCH", () => {
+  assert.equal(compareNames("DEWEtech", "DEINZER + WEYLAND GmbH"), "inconclusive");
+  const r = resolveIdentity({
+    candidateName: "DEWEtech",
+    legalName: "DEINZER + WEYLAND GmbH",
+    domain: "deinzer-weyland.de",
+  });
+  assert.notEqual(r.status, "MISMATCH");
+});
+
+test("P5-7b. REGRESSION — the blend rule must not excuse real mismatches", () => {
+  assert.equal(compareNames("Expert", "Günter Tilly GmbH"), "mismatch");
+  assert.equal(compareNames("Smart Repair", "Shops PA Nord GmbH"), "mismatch");
+  assert.equal(compareNames("Küchenhaus Köpenick", "Hetzner Online GmbH"), "mismatch");
+  assert.equal(compareNames("Voo", "Pickware GmbH"), "mismatch");
+});
+
+test("P5-7c. the blend needs two real openings, not one letter each", () => {
+  // "abc" against "Alpha Beta Ceta" must NOT pass: one-letter prefixes only.
+  assert.equal(compareNames("ABC", "Alpha Beta Ceta"), "mismatch");
+});
+
+test("P5-6d. a preposition before the form is the same class as an article", () => {
+  assert.equal(cleanLegalName("Tel. Ladenatelier mit AB"), null);
+  assert.equal(cleanLegalName("Zahlung durch die AG"), null);
+});
+
+test("P5-6e. REGRESSION — a noun before the form always survives, even after 'für'", () => {
+  assert.equal(cleanLegalName("Bank für Sozialwirtschaft AG"), "Bank für Sozialwirtschaft AG");
+  assert.equal(
+    cleanLegalName("Gesellschaft für Internationale Zusammenarbeit GmbH"),
+    "Gesellschaft für Internationale Zusammenarbeit GmbH",
+  );
+});
+
+test("P5-6f. a capture made only of legal forms and punctuation is not a name", () => {
+  assert.equal(cleanLegalName("G.m.b.H. & Co. KG"), null);
+  assert.equal(cleanLegalName("& Co. KG"), null);
+});
+
+test("P5-6g. leading noise with no letters is dropped, whatever its shape", () => {
+  // Live captures: a phone number and a copyright year RANGE in front of a name.
+  assert.equal(cleanLegalName("030/ 3996873 Ladenatelier AB"), "Ladenatelier AB");
+  assert.equal(cleanLegalName("© 2005-2026 Marktplaats B.V."), "Marktplaats B.V.");
+  assert.equal(cleanLegalName("2026 Hunkemöller B.V."), "Hunkemöller B.V.");
+});
+
+test("P5-6h. REGRESSION — a name that BEGINS with a number keeps it", () => {
+  // "1&1", "3M", "4711" are real. The rule only strips tokens with NO letters,
+  // and only while something with letters still follows.
+  assert.equal(cleanLegalName("3M Deutschland GmbH"), "3M Deutschland GmbH");
+  assert.equal(cleanLegalName("1&1 Telecom GmbH"), "1&1 Telecom GmbH");
+});
+
+test("P5-6i. a leading bullet or dash is noise; a digit-bearing brand token is not", () => {
+  assert.equal(cleanLegalName("- DEINZER + WEYLAND GmbH"), "DEINZER + WEYLAND GmbH");
+  assert.equal(cleanLegalName("• Muster Handels GmbH"), "Muster Handels GmbH");
+  assert.equal(cleanLegalName("1&1 Telecom GmbH"), "1&1 Telecom GmbH");
 });

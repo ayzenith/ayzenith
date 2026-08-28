@@ -11,7 +11,7 @@ import {
   rankSitemapUrls, SITEMAP_MAX_CHILDREN, SITEMAP_MAX_URLS, type SitemapParse,
 } from "../crawl";
 import {
-  segmentHtml, flattenSegments, extractLegalName, NAME_STOPWORDS,
+  segmentHtml, flattenSegments, resolveLegalName, NAME_STOPWORDS, type LegalNameSource,
 } from "../legalname";
 import {
   langForSite,
@@ -597,7 +597,7 @@ export async function fetchSiteIntel(
   const segmentsByPage: string[][] = [];
   const hitSegments: string[] = [];
   /** Company-disclosure pages, in crawl order, awaiting the site-wide block set. */
-  const legalNameSources: string[][] = [];
+  const legalNameSources: LegalNameSource[] = [];
   let legalName: string | undefined;
   let title: string | undefined;
   let vatId: string | undefined;
@@ -750,7 +750,7 @@ export async function fetchSiteIntel(
       // Resolved AFTER the loop: which blocks are site-wide furniture is only
       // knowable once every page has been read, and that is exactly what tells a
       // cookie banner's vendor name from the Impressum body.
-      legalNameSources.push(segments);
+      legalNameSources.push({ segments, isLegalPage });
       for (const { label, re } of DM_ROLE_PATTERNS) {
         const nm = nameAfter(text, re);
         if (nm && looksLikeName(nm.first, nm.last)) {
@@ -785,10 +785,7 @@ export async function fetchSiteIntel(
         if (seg && chromeLower.has(seg)) h.boilerplate = true;
       });
     }
-    for (const segments of legalNameSources) {
-      if (legalName) break;
-      legalName = extractLegalName(segments, domainOfBase, chrome) ?? undefined;
-    }
+    legalName = resolveLegalName(legalNameSources, domainOfBase, chrome) ?? undefined;
   }
 
   return {

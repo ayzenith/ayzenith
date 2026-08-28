@@ -117,7 +117,7 @@ const NAME_STOPWORDS_BASE = [
 
 export const NAME_STOPWORDS = new Set([...NAME_STOPWORDS_BASE, ...NAME_STOPWORDS_MULTILANG]);
 
-const ORG_FORM_RE = /^(gmbh|ag|kg|ohg|ug|ek|ltd|inc|gbr|sarl|sas|sasu|eurl|srl|srls|spa|snc|sl|slu|sau|sa|bv|nv|vof|bvba|sprl|lda|oy|oyj|ab|as|aps|kft|zrt|sro|doo|plc|llc|sti)$/i;
+const ORG_FORM_RE = /^(co|gmbh|ag|kg|ohg|ug|ek|ltd|inc|gbr|sarl|sas|sasu|eurl|srl|srls|spa|snc|sl|slu|sau|sa|bv|nv|vof|bvba|sprl|lda|oy|oyj|ab|as|aps|kft|zrt|sro|doo|plc|llc|sti)$/i;
 
 /**
  * Leading page-furniture words, KEPT as a safety net but no longer load-bearing.
@@ -173,8 +173,47 @@ export function isOrgFormToken(token: string): boolean {
  * receives a candidate that never crossed a block boundary, so it has far less
  * to undo.
  */
+/**
+ * Articles and determiners. When one of these sits IMMEDIATELY before the legal
+ * form, the form is a common noun, not the tail of a name.
+ *
+ * This is grammar, not a vocabulary of banned phrases. German legal pages are
+ * full of lines that talk ABOUT the company — "Registergericht der GmbH:",
+ * "Sitz der GmbH", "Geschäftsführer der AG", "les statuts de la SARL" — and the
+ * form-matcher happily read the label in front as the name (live:
+ * "Registergericht der GmbH" on nobiliakuechen-berlin.de, which then produced a
+ * MISMATCH). No company on earth is registered as "<something> der GmbH": a
+ * genuine name puts a NOUN there ("Kohbau Holz- und Baustoffhandel GmbH",
+ * "WIEDEMANN Dienstleistung und Verwaltung GmbH"), never an article. One closed
+ * grammatical class covers the whole family at once.
+ */
+const DETERMINERS_BEFORE_FORM = new Set([
+  // de
+  "der", "die", "das", "des", "dem", "den", "einer", "eines", "einem", "einen", "eine", "ein",
+  "unserer", "unseres", "unserem", "ihrer", "ihres", "dieser", "diese", "dieses", "diesem",
+  // en / fr / it / es / nl — same construction, same tell
+  "the", "a", "an", "of", "de", "du", "la", "le", "les", "des", "del", "della", "dello",
+  "el", "los", "las", "van", "het", "een",
+  // Prepositions belong to the same closed class and fail the same way: no
+  // registered name ends "<preposition> AG". Live: "Tel. Ladenatelier mit AB"
+  // on traumkeramik-julion.de, where the Swedish form "AB" closed a German
+  // sentence. "Bank für Sozialwirtschaft AG" is unaffected — the word before
+  // its form is a noun, as it is in every genuine name.
+  "mit", "durch", "bei", "in", "an", "auf", "aus", "nach", "vor", "über", "uber",
+  "with", "by", "at", "for", "from", "par", "per", "con", "por",
+]);
+
 export function cleanLegalName(raw: string): string | null {
   let tokens = raw.trim().split(/\s+/);
+
+  // "<label> der GmbH" is a sentence about a company, not a company.
+  if (tokens.length >= 2) {
+    const beforeForm = tokens[tokens.length - 2]!;
+    if (isOrgFormToken(tokens[tokens.length - 1]!) &&
+        DETERMINERS_BEFORE_FORM.has(normalizeForMatch(beforeForm))) {
+      return null;
+    }
+  }
 
   const breakIdx = tokens.findIndex((t, i) => {
     if (i >= tokens.length - 1 || isOrgFormToken(t)) return false;
@@ -184,14 +223,29 @@ export function cleanLegalName(raw: string): string | null {
   if (breakIdx >= 0) tokens = tokens.slice(breakIdx + 1);
   if (tokens.length === 0) return null;
 
+  // Leading noise: a stopword, or a letterless token that is either pure
+  // punctuation (a bullet, a dash) or carries a run of TWO OR MORE digits.
+  //
+  // The numeric half used to be a narrow `\d{2,4}` for the footer year. Live
+  // captures showed the same junk-in-front shape in other clothing: a year RANGE
+  // ("© 2005-2026 Marktplaats B.V.") and a phone number ("030/ 3996873 … AB" on
+  // traumkeramik-julion.de). The two-digit-run condition is what keeps this from
+  // eating real names — my own regression test caught "1&1 Telecom GmbH" being
+  // reduced to "Telecom GmbH" when the rule was merely "no letters".
   while (
     tokens.length > 1 &&
-    (LEGAL_NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) || /^(?:[©®]|\d{2,4}|[©®]\d{2,4})$/.test(tokens[0]!))
+    (LEGAL_NAME_STOPWORDS.has(normalizeForMatch(tokens[0]!)) ||
+      (!/\p{L}/u.test(tokens[0]!) && (/\d{2,}/.test(tokens[0]!) || !/\d/.test(tokens[0]!))))
   ) {
     tokens.shift();
   }
+  // A leaked prose word is lowercase while the name that follows is not. The
+  // token must actually CONTAIN a lowercase letter: without that test a
+  // letterless token trivially equals its own lowercase form and gets eaten —
+  // found by regression test, "1&1 Telecom GmbH" was being cut to "Telecom GmbH".
   while (
     tokens.length > 1 &&
+    /\p{Ll}/u.test(tokens[0]!) &&
     tokens[0]! === tokens[0]!.toLocaleLowerCase("de") &&
     tokens.slice(1).some((t) => !isOrgFormToken(t) && t !== t.toLocaleLowerCase("de"))
   ) {
@@ -199,7 +253,11 @@ export function cleanLegalName(raw: string): string | null {
   }
   if (tokens.length < 2 && isOrgFormToken(tokens[0] ?? "")) return null;
 
-  const nonOrgTokens = tokens.filter((t) => !isOrgFormToken(t));
+  // Punctuation-only tokens are not a name either. Without this a capture of
+  // pure legal forms survived on the strength of a lone ampersand — live:
+  // "G.m.b.H. & Co. KG" on dunekacke.de, where "&" was the only token the
+  // org-form test did not consume.
+  const nonOrgTokens = tokens.filter((t) => !isOrgFormToken(t) && /[\p{L}\p{N}]/u.test(t));
   if (nonOrgTokens.length === 0 || nonOrgTokens.every((t) => /^\d+$/.test(t))) return null;
 
   // ANY of these tokens, not merely all of them (§ accuracy Phase 5).
@@ -307,7 +365,7 @@ export function extractLegalName(
     candidates.find((c) => !c.fromChrome) ??
     candidates[0]!;
 
-  // NOTE: an earlier revision also trimmed everything before the first token
+  // NOTE (kept): an earlier revision also trimmed everything before the first token
   // that matched the domain, to turn "Vorstand der Aurubis AG" into "Aurubis AG".
   // The live replay showed what that costs: "Harry Lott Baustoffe GmbH" on
   // lott-baustoffe.de became "Lott Baustoffe GmbH", because "lott" matches the
@@ -317,4 +375,74 @@ export function extractLegalName(
   // on token overlap. The trim was removed; the leading-prose case is left as it
   // is on purpose.
   return pick.name;
+}
+
+// ---------------------------------------------------------------------------
+// Choosing between pages
+// ---------------------------------------------------------------------------
+
+export type LegalNameSource = {
+  segments: string[];
+  /** True for a STATUTORY legal notice (Impressum, legal-notice, mentions
+   *  légales) — the page where the operator is required to name ITSELF. */
+  isLegalPage: boolean;
+};
+
+/**
+ * Pick the operator's registered name across every company-disclosure page we
+ * read, instead of taking whichever page the crawler happened to reach first.
+ *
+ * THE BUG THIS CLOSES (§ accuracy Phase 5, second pass). Privacy pages were
+ * consulted for a legal name with exactly the same priority as the statutory
+ * legal notice. But those two pages are required to name DIFFERENT companies:
+ * an Impressum names the operator, a privacy policy names every processor the
+ * operator uses. Measured on the live cache, page by page:
+ *
+ *    viviry.de           /policies/legal-notice → VIVIRY GmbH
+ *                        /policies/privacy-policy → "Buchungslösung der Calendly LLC"
+ *    vooberlin.com       /policies/legal-notice → Müjdeci GmbH
+ *                        /policies/privacy-policy → Pickware GmbH
+ *    nobiliakuechen…     /service/impressum → KüchenKonzepte Bartkowiak GmbH
+ *                        /service/datenschutz → Hetzner Online GmbH
+ *
+ * In every case the right answer was already on a page we had read. No list of
+ * vendor names is needed — and could not have worked anyway, since the next site
+ * uses a vendor nobody has written down yet.
+ *
+ * widda-berlin.de is the interesting one: its Impressum names a SOLE TRADER
+ * ("WiDDA Inh.: Sabine Kelle"), which carries no legal form and so cannot be
+ * captured at all, while its privacy page offers a perfectly well-formed
+ * "Brevo GmbH". That is why rule 4 below is conditional: once we have READ the
+ * statutory page and it named nobody, a foreign-looking name from a privacy page
+ * is far more likely a processor than the operator, and `null` — "we could not
+ * establish it" — is the honest answer.
+ */
+export function resolveLegalName(
+  sources: LegalNameSource[],
+  domain?: string | null,
+  siteWideBlocks?: Set<string> | null,
+): string | null {
+  const legal = sources.filter((s) => s.isLegalPage);
+  const other = sources.filter((s) => !s.isLegalPage);
+  const readAStatutoryPage = legal.length > 0;
+
+  const firstOf = (list: LegalNameSource[], requireOwn: boolean): string | null => {
+    for (const s of list) {
+      const name = extractLegalName(s.segments, domain, siteWideBlocks);
+      if (!name) continue;
+      if (requireOwn && !(domain && domainRelatesToName(domain, name))) continue;
+      return name;
+    }
+    return null;
+  };
+
+  return (
+    // 1–2. The statutory page, preferring a name that also vouches for the domain.
+    firstOf(legal, true) ??
+    firstOf(legal, false) ??
+    // 3. Elsewhere, but only a name that vouches for the domain.
+    firstOf(other, true) ??
+    // 4. Any other name at all — ONLY when no statutory page was ever read.
+    (readAStatutoryPage ? null : firstOf(other, false))
+  );
 }

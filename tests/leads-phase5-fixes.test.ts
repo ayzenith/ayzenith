@@ -18,7 +18,10 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 
-import { segmentHtml, extractLegalName, cleanLegalName, resolveLegalName } from "../src/server/leads/legalname";
+import {
+  segmentHtml, extractLegalName, cleanLegalName, resolveLegalName,
+  legalNameWrite, assessLegalName, looksLikePostalAddress,
+} from "../src/server/leads/legalname";
 import {
   resolveIdentity,
   resolveProductEvidence,
@@ -379,7 +382,7 @@ test("P5-5b. vooberlin.com — Pickware loses to the imprint's Müjdeci GmbH", (
 
 test("P5-5c. nobiliakuechen — the hoster on /datenschutz never wins", () => {
   const sources = [
-    { segments: segmentHtml(`<h3>Anschrift</h3><p>KüchenKonzepte Bartkowiak GmbH</p>`), isLegalPage: true },
+    { segments: segmentHtml(`<h3>Anschrift</h3><p>KüchenKonzepte Bartkowiak GmbH<br>Rüsternallee 19 f<br>12623 Berlin</p>`), isLegalPage: true },
     { segments: segmentHtml(`<p>Hosting: Hetzner Online GmbH</p>`), isLegalPage: false },
   ];
   assert.equal(resolveLegalName(sources, "nobiliakuechen-berlin.de"), "KüchenKonzepte Bartkowiak GmbH");
@@ -407,7 +410,7 @@ test("P5-5e. with NO statutory page read, a company-info page is still used", ()
 
 test("P5-5f. REGRESSION — Dämmisol keeps the group entity from its Impressum", () => {
   const sources = [
-    { segments: segmentHtml(`<p>STARK Deutschland GmbH</p>`), isLegalPage: true },
+    { segments: segmentHtml(`<p>STARK Deutschland GmbH<br>Hanauer Landstraße 150<br>60314 Frankfurt</p>`), isLegalPage: true },
     { segments: segmentHtml(`<p>STARK Deutschland GmbH</p>`), isLegalPage: false },
   ];
   assert.equal(resolveLegalName(sources, "daemmisol.de"), "STARK Deutschland GmbH");
@@ -510,4 +513,142 @@ test("P5-6i. a leading bullet or dash is noise; a digit-bearing brand token is n
   assert.equal(cleanLegalName("- DEINZER + WEYLAND GmbH"), "DEINZER + WEYLAND GmbH");
   assert.equal(cleanLegalName("• Muster Handels GmbH"), "Muster Handels GmbH");
   assert.equal(cleanLegalName("1&1 Telecom GmbH"), "1&1 Telecom GmbH");
+});
+
+// ===========================================================================
+// P5-8 — a re-check must be able to CLEAR a legal name, but only when it looked
+// ===========================================================================
+
+test("P5-8a. site read, no name found → the stored name is CLEARED", () => {
+  assert.equal(legalNameWrite({ legalName: null, websiteStatus: "ACTIVE" }), null);
+});
+
+test("P5-8b. site read, a name found → the name is written", () => {
+  assert.equal(legalNameWrite({ legalName: "VIVIRY GmbH", websiteStatus: "ACTIVE" }), "VIVIRY GmbH");
+});
+
+test("P5-8c. site did NOT answer → the stored value is left ALONE, never erased", () => {
+  // The cron retries UNREACHABLE rows. A failed request says nothing about the
+  // name we learned on a day the site was up.
+  assert.equal(legalNameWrite({ legalName: null, websiteStatus: "UNREACHABLE" }), undefined);
+  assert.equal(legalNameWrite({ legalName: null, websiteStatus: null }), undefined);
+  assert.equal(legalNameWrite({ legalName: null, websiteStatus: "NONE" }), undefined);
+});
+
+// ===========================================================================
+// P5-9 — the legal-name QUALITY GATE
+// ===========================================================================
+
+const DISCLOSED = { fromLegalPage: true, hasAddressNearby: true };
+const MENTIONED = { fromLegalPage: true, hasAddressNearby: false };
+
+test("P5-9a. SHAPE — a copyright line is never a registered name", () => {
+  assert.equal(assessLegalName("Copyright © 2022 HexaShop Co., Ltd.", { ...DISCLOSED, domain: "renotti-jeans.de" }).accept, false);
+  assert.equal(assessLegalName("Copyright © 2005-2026 Marktplaats B.V.", { ...DISCLOSED, domain: "svline.de" }).accept, false);
+  assert.equal(assessLegalName("© 2026 Muster GmbH", { ...DISCLOSED, domain: "x.de" }).accept, false);
+});
+
+test("P5-9b. SHAPE — phone / register / postcode digits are not a name", () => {
+  assert.equal(assessLegalName("030 3996873 Ladenatelier AB", { ...DISCLOSED, domain: "x.de" }).accept, false);
+  assert.equal(assessLegalName("HRB 12345 Muster GmbH", { ...DISCLOSED, domain: "x.de" }).accept, false);
+});
+
+test("P5-9c. SHAPE — nothing but legal forms and punctuation", () => {
+  assert.equal(assessLegalName("& Co. KG", { ...DISCLOSED, domain: "x.de" }).accept, false);
+});
+
+test("P5-9d. ATTRIBUTION — a provider named in passing is rejected", () => {
+  // DHL is disclosed on the shipping paragraph, not in the address block.
+  assert.equal(assessLegalName("DHL Paket GmbH", { ...MENTIONED, domain: "trueffelschweinberlin.com" }).accept, false);
+  // A product in a carousel, and a stocked brand in a category list.
+  assert.equal(assessLegalName("Lian Li UNI FAN SL", { ...MENTIONED, domain: "pcservice-direkt.de" }).accept, false);
+  assert.equal(assessLegalName("Q-Connect GmbH", { ...MENTIONED, domain: "premium-fachhandel.de" }).accept, false);
+});
+
+test("P5-9e. ATTRIBUTION — a name off a non-legal page that does not vouch is rejected", () => {
+  const r = assessLegalName("Hetzner Online GmbH", { domain: "nobiliakuechen-berlin.de", fromLegalPage: false, hasAddressNearby: true });
+  assert.equal(r.accept, false);
+});
+
+test("P5-9f. NO FALSE REJECTS — every real name the audit found is accepted", () => {
+  const real: Array<[string, string, typeof DISCLOSED | typeof MENTIONED]> = [
+    ["1&1 Telecom GmbH", "1und1.de", DISCLOSED],
+    ["Bank für Sozialwirtschaft AG", "sozialbank.de", DISCLOSED],
+    ["Gesellschaft für Internationale Zusammenarbeit GmbH", "giz.de", DISCLOSED],
+    ["C&A België BV", "c-and-a.com", DISCLOSED],
+    ["KiK Textilien und Non-Food GmbH", "kik.de", MENTIONED],       // vouched by domain alone
+    ["Kohbau Holz- und Baustoffhandel GmbH", "kohbau.de", MENTIONED], // vouched by domain alone
+    ["DEINZER + WEYLAND GmbH", "deinzer-weyland.de", MENTIONED],      // vouched by domain alone
+    ["Müjdeci GmbH", "vooberlin.com", DISCLOSED],
+    ["VIVIRY GmbH", "viviry.de", MENTIONED],
+    ["Michael Teppich e.K.", "tatem.de", DISCLOSED],
+    ["STARK Deutschland GmbH", "daemmisol.de", DISCLOSED],
+    ["KüchenKonzepte Bartkowiak GmbH", "nobiliakuechen-berlin.de", DISCLOSED],
+    ["WIEDEMANN Dienstleistung und Verwaltung GmbH", "wiedemann.de", DISCLOSED],
+    ["Harry Lott Baustoffe GmbH", "lott-baustoffe.de", MENTIONED],
+  ];
+  for (const [name, domain, ctx] of real) {
+    const r = assessLegalName(name, { ...ctx, domain });
+    assert.equal(r.accept, true, `WRONGLY REJECTED "${name}" on ${domain}: ${r.reason}`);
+  }
+});
+
+test("P5-9g. a brand/entity split is kept — this is the normal case, not junk", () => {
+  // Raab Karcher trades as STARK Deutschland GmbH. The name vouches for nothing
+  // and looks foreign, but it is properly disclosed, so it stays.
+  const r = assessLegalName("STARK Deutschland GmbH", { domain: "raabkarcher.de", ...DISCLOSED });
+  assert.equal(r.accept, true);
+});
+
+test("P5-9h. every verdict carries a human-readable reason", () => {
+  for (const [name, ctx] of [
+    ["Copyright © 2022 X GmbH", DISCLOSED],
+    ["DHL Paket GmbH", MENTIONED],
+    ["Müjdeci GmbH", DISCLOSED],
+  ] as Array<[string, typeof DISCLOSED]>) {
+    const r = assessLegalName(name, { ...ctx, domain: "example.de" });
+    assert.ok(r.reason.length > 10, `no reason for ${name}`);
+  }
+});
+
+test("P5-9i. address detection is address grammar, not company vocabulary", () => {
+  assert.equal(looksLikePostalAddress("12623 Berlin"), true);
+  assert.equal(looksLikePostalAddress("Rüsternallee 19 f"), true);
+  assert.equal(looksLikePostalAddress("Oranienstrasse 24,"), true);
+  assert.equal(looksLikePostalAddress("Unsere Marken und Partner"), false);
+  assert.equal(looksLikePostalAddress("Kopfhörer und Headsets"), false);
+});
+
+test("P5-9j. end to end — a product carousel deep in an Impressum page yields nothing", () => {
+  // Faithful to the live page: the product strip sits at block 93 of 554, far
+  // from the title and with no address anywhere near it.
+  const filler = Array.from({ length: 30 }, (_, i) => `<li>Menü ${i}</li>`).join("");
+  const sources = [{
+    segments: segmentHtml(
+      `<h1>PC Service Direkt — Impressum</h1>${filler}` +
+      `<ul><li>Lian Li UNI FAN SL</li><li>Corsair RM750</li></ul><p>Inhaber: Max Muster</p>`,
+    ),
+    isLegalPage: true,
+  }];
+  assert.equal(resolveLegalName(sources, "pcservice-direkt.de"), null);
+});
+
+test("P5-9k. a company named in the page TITLE of a disclosure page is that page's company", () => {
+  // Live: bwzonline.de, abwshop.de, coledampfs.de and premium-fachhandel.de
+  // print their entity ONLY in the <title>, with no address block at all.
+  const filler = Array.from({ length: 40 }, (_, i) => `<li>Menü ${i}</li>`).join("");
+  const sources = [{
+    segments: segmentHtml(`<h1>Impressum | BWZ Elektronik Vertrieb GmbH</h1>${filler}`),
+    isLegalPage: true,
+  }];
+  assert.equal(resolveLegalName(sources, "bwzonline.de"), "BWZ Elektronik Vertrieb GmbH");
+});
+
+test("P5-9l. a registered-trademark mark does not disqualify a real name", () => {
+  // Rejecting on ® threw away "IQ Windowfilm by CFC®CarFilmComponents® e.K.",
+  // which is the site's own entity. © is a copyright line; ® decorates a brand.
+  const r = assessLegalName("IQ Windowfilm by CFC®CarFilmComponents® e.K.", {
+    domain: "iq-windowfilm.com", fromLegalPage: true, hasAddressNearby: false, blockIndex: 40,
+  });
+  assert.equal(r.accept, true);
 });

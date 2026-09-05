@@ -318,11 +318,22 @@ export function extractLegalName(
   /** Blocks that repeat across the whole site — see `repeatedSegments`. A cookie
    *  banner or a footer is on every page; a statutory Impressum body is on one. */
   siteWideBlocks?: Set<string> | null,
+  /** When given, every candidate must pass `assessLegalName` with this page's
+   *  provenance. Omitted by callers that only want the raw capture. */
+  gate?: { fromLegalPage: boolean } | null,
 ): string | null {
-  const candidates: Array<{ name: string; fromChrome: boolean }> = [];
+  const candidates: Array<{ name: string; fromChrome: boolean; hasAddressNearby: boolean; blockIndex: number }> = [];
 
-  for (const segment of segments) {
+  for (let si = 0; si < segments.length; si++) {
+    const segment = segments[si]!;
     const fromChrome = siteWideBlocks?.has(segment.trim()) ?? false;
+    // A disclosure prints the address with the name; a passing mention does not.
+    // Window sized from real pages, not guessed: vooberlin.com prints
+    // name / "represented by" / street / postcode+city, so the address sits THREE
+    // blocks below the name. Five leaves room for a c/o or a second manager line.
+    const hasAddressNearby = segments
+      .slice(si, si + 6)
+      .some((s) => looksLikePostalAddress(s));
     for (const piece of labelledPieces(segment)) {
       const m = piece.match(LEGAL_FORM_ONLY_RE);
       if (!m || m.index === undefined) continue;
@@ -340,13 +351,27 @@ export function extractLegalName(
 
       const cleaned = cleanLegalName(`${nameTokens.join(" ")} ${m[0]}`);
       if (cleaned && !candidates.some((c) => c.name === cleaned)) {
-        candidates.push({ name: cleaned, fromChrome });
+        candidates.push({ name: cleaned, fromChrome, hasAddressNearby, blockIndex: si });
       }
       if (candidates.length >= 12) break; // a legal page never needs more
     }
   }
 
   if (candidates.length === 0) return null;
+
+  // NOTE: a separate array, never a mutation of `candidates`. Without a gate the
+  // filter would alias the same array, and clearing it in place emptied the list
+  // it was about to be repopulated from — my own bug, caught by these tests.
+  const eligible = gate
+    ? candidates.filter((c) =>
+      assessLegalName(c.name, {
+        domain,
+        fromLegalPage: gate.fromLegalPage,
+        hasAddressNearby: c.hasAddressNearby,
+        blockIndex: c.blockIndex,
+      }).accept)
+    : candidates.slice();
+  if (eligible.length === 0) return null;
 
   const relates = (c: { name: string }) => Boolean(domain) && domainRelatesToName(domain, c.name);
 
@@ -360,10 +385,10 @@ export function extractLegalName(
   // Impressum body appears on exactly one. Nothing about their words gives them
   // away — their position does.
   const pick =
-    candidates.find((c) => !c.fromChrome && relates(c)) ??
-    candidates.find((c) => relates(c)) ??
-    candidates.find((c) => !c.fromChrome) ??
-    candidates[0]!;
+    eligible.find((c) => !c.fromChrome && relates(c)) ??
+    eligible.find((c) => relates(c)) ??
+    eligible.find((c) => !c.fromChrome) ??
+    eligible[0]!;
 
   // NOTE (kept): an earlier revision also trimmed everything before the first token
   // that matched the domain, to turn "Vorstand der Aurubis AG" into "Aurubis AG".
@@ -428,7 +453,9 @@ export function resolveLegalName(
 
   const firstOf = (list: LegalNameSource[], requireOwn: boolean): string | null => {
     for (const s of list) {
-      const name = extractLegalName(s.segments, domain, siteWideBlocks);
+      const name = extractLegalName(s.segments, domain, siteWideBlocks, {
+        fromLegalPage: s.isLegalPage,
+      });
       if (!name) continue;
       if (requireOwn && !(domain && domainRelatesToName(domain, name))) continue;
       return name;
@@ -445,4 +472,129 @@ export function resolveLegalName(
     // 4. Any other name at all — ONLY when no statutory page was ever read.
     (readAStatutoryPage ? null : firstOf(other, false))
   );
+}
+
+// ---------------------------------------------------------------------------
+// What a re-check is allowed to write
+// ---------------------------------------------------------------------------
+
+/**
+ * The value a re-verification should write to `LeadCompany.legalName`:
+ * a string to set it, `null` to CLEAR it, `undefined` to leave it alone.
+ *
+ * Pure and exported so the rule is testable — `reverify.ts` cannot be imported
+ * from tests (`server-only`). See the call site for why the three-way answer
+ * matters: erasing on a site that simply failed to answer would destroy a good
+ * name on a bad network day.
+ */
+export function legalNameWrite(outcome: {
+  legalName: string | null | undefined;
+  websiteStatus: string | null | undefined;
+}): string | null | undefined {
+  if (outcome.websiteStatus !== "ACTIVE") return undefined; // we could not ask
+  return outcome.legalName ?? null; // we asked; this is the answer, empty or not
+}
+
+// ---------------------------------------------------------------------------
+// Quality gate
+// ---------------------------------------------------------------------------
+
+/** A postal address, in the shape every European disclosure law requires next
+ *  to the entity name: a 4–6 digit postcode followed by a place, or a street
+ *  line with a house number. Address grammar only — no company vocabulary. */
+const POSTCODE_PLACE_RE = /\b\d{4,6}\s+\p{Lu}[\p{L}.'-]{2,}/u;
+const STREET_LINE_RE =
+  /[\p{L}.'-]{3,}\s?(?:stra(?:ß|ss)e|str\.|weg|allee|platz|gasse|ring|damm|ufer|chaussee|rue|via|calle|street|road|avenue|laan|straat)\s*\.?,?\s*\d/iu;
+
+export function looksLikePostalAddress(text: string): boolean {
+  return POSTCODE_PLACE_RE.test(text) || STREET_LINE_RE.test(text);
+}
+
+export type LegalNameContext = {
+  /** The host we actually read. */
+  domain?: string | null;
+  /** The candidate came off a STATUTORY legal notice. */
+  fromLegalPage: boolean;
+  /** The candidate's own block, or one shortly after it, carries a postal
+   *  address — the shape of a real disclosure rather than a passing mention. */
+  hasAddressNearby: boolean;
+  /** Which text block it came from. Block 0 is the page's own <title>. */
+  blockIndex?: number;
+};
+
+/** A <title> is, by construction, about the page. On a company-disclosure page
+ *  a company named there is that page's company. Measured on the live cache:
+ *  bwzonline.de, abwshop.de, coledampfs.de and premium-fachhandel.de all print
+ *  their entity ONLY in the title ("Impressum | BWZ Elektronik Vertrieb GmbH"),
+ *  with no address block anywhere near it — while every provider leak sat deep
+ *  in the body (Lian Li at block 93, Hasenecker at 873, DHL Paket at 1349). */
+const TITLE_BLOCK_MAX_INDEX = 1;
+
+export type LegalNameVerdict = { accept: boolean; reason: string };
+
+/** A four-digit year, the signature of a copyright line. */
+const YEAR_RE = /\b(?:19|20)\d{2}\b/;
+/** Four or more consecutive digits: a phone number, a register number, a
+ *  postcode — never part of a trading name. ("1&1", "3M" are unaffected.) */
+const LONG_DIGIT_RUN_RE = /\d{4,}/;
+
+/**
+ * Is this text plausibly a REGISTERED COMPANY NAME, and is it plausibly THIS
+ * company's?
+ *
+ * Two layers, both general and both explainable in one line each. Nothing here
+ * knows the name of a single vendor, hoster or product — a list of those could
+ * only ever cover the sites somebody has already looked at, and the next site
+ * uses a provider nobody has written down.
+ *
+ *  SHAPE (is this a name at all?)
+ *    • a copyright mark or a year → a footer line, not a registered name
+ *    • four or more consecutive digits → a phone/register/postcode fragment
+ *    • nothing left but punctuation and legal forms → not a name
+ *
+ *  ATTRIBUTION (is it THIS firm's?)
+ *    • a name that vouches for the domain is accepted outright
+ *    • otherwise it must come off the statutory page AND sit next to a postal
+ *      address — the shape the disclosure laws impose. A provider named in a
+ *      shipping paragraph, a product in a carousel and a brand in a category
+ *      list all fail this, without anyone having to enumerate them.
+ *
+ * Deliberately NOT rejected: an unfamiliar-looking name that is properly
+ * disclosed. A brand trading under a different legal entity is the normal case
+ * (Raab Karcher → STARK Deutschland GmbH), and treating it as junk would throw
+ * away exactly the evidence identity needs.
+ */
+export function assessLegalName(name: string, ctx: LegalNameContext): LegalNameVerdict {
+  const trimmed = name.trim();
+  if (!trimmed) return { accept: false, reason: "Boş." };
+
+  if (/©/u.test(trimmed)) {
+    return { accept: false, reason: "Telif işareti içeriyor — altbilgi metni, tescilli unvan değil." };
+  }
+  if (YEAR_RE.test(trimmed)) {
+    return { accept: false, reason: "Yıl içeriyor — telif/tarih satırı, tescilli unvan değil." };
+  }
+  if (LONG_DIGIT_RUN_RE.test(trimmed)) {
+    return { accept: false, reason: "Uzun rakam dizisi içeriyor — telefon/sicil/posta kodu parçası." };
+  }
+  const words = trimmed.split(/\s+/).filter((t) => !isOrgFormToken(t) && /\p{L}{2,}/u.test(t));
+  if (words.length === 0) {
+    return { accept: false, reason: "Hukuki form ve noktalama dışında bir ad kalmıyor." };
+  }
+
+  if (ctx.domain && domainRelatesToName(ctx.domain, trimmed)) {
+    return { accept: true, reason: "Unvan, sitenin alan adıyla bağdaşıyor." };
+  }
+  if (ctx.fromLegalPage && ctx.hasAddressNearby) {
+    return { accept: true, reason: "Yasal bildirim sayfasında, posta adresiyle birlikte açıklanmış." };
+  }
+  if ((ctx.blockIndex ?? Infinity) <= TITLE_BLOCK_MAX_INDEX) {
+    return { accept: true, reason: "Sayfanın kendi başlığında geçiyor — bu sayfanın ait olduğu şirket." };
+  }
+  return {
+    accept: false,
+    reason: ctx.fromLegalPage
+      ? "Yasal bildirim sayfasında ama adres bloğunun içinde değil — sayfada anılan başka bir şirket olabilir."
+      : "Yasal bildirim sayfasında değil ve alan adı bu unvanı doğrulamıyor.",
+  };
 }

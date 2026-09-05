@@ -259,7 +259,19 @@ async function runVerifyBatch(
       db.leadCompany.update({
         where: { id: row.id },
         data: {
-          legalName: outcome.legalName ?? undefined,
+          // A re-check must be able to REMOVE a name, not only replace one.
+          //
+          // `?? undefined` told Prisma "leave the column alone", so once a bad
+          // capture was stored nothing could ever clear it: the Phase 5 audit
+          // found 63 rows whose extraction now correctly yields nothing but
+          // which would have kept their old wrong entity forever.
+          //
+          // The distinction that decides it is the one Phase 4 already draws
+          // between "asked and got no answer" and "could not ask". We only
+          // erase when we actually READ the site and it named nobody. A site
+          // that did not answer this time tells us nothing about the name we
+          // learned last time, so that value stays.
+          legalName: outcome.websiteStatus === "ACTIVE" ? (outcome.legalName ?? null) : undefined,
           email,
           phone,
           commercialRoles: outcome.roles,

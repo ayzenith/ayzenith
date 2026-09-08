@@ -33,7 +33,7 @@ export type WhyInput = {
   productFit: string; // VERIFIED | LIKELY | UNCLEAR | NOT_RELEVANT | UNVERIFIED
   modelFit: string | null; // VERIFIED | POSSIBLE | NOT_SUITABLE | UNVERIFIED
   modelFitEvidence?: string[];
-  websiteStatus: string | null; // ACTIVE | UNREACHABLE | NONE | null
+  websiteStatus: string | null; // ACTIVE | UNREACHABLE | BLOCKED | NONE | null
   hasEmail: boolean;
   hasPhone: boolean;
   contactCount: number;
@@ -142,6 +142,8 @@ export function buildWhyLead(i: WhyInput): WhyReason[] {
   // 3. Website.
   if (i.websiteStatus === "ACTIVE") {
     out.push(reason("website", "Website", "Aktif şirket websitesi doğrulandı.", "verified"));
+  } else if (i.websiteStatus === "BLOCKED") {
+    out.push(reason("website", "Website", "Site ayakta ama otomatik erişimi engelliyor; sayfa okunamadı. Firmanın var olmadığı anlamına gelmez — elle kontrol edilebilir.", "unverified"));
   } else if (i.websiteStatus === "UNREACHABLE") {
     out.push(reason("website", "Website", "Website mevcut ama bu turda ulaşılamadı (kapalı anlamına gelmez).", "unverified"));
   } else if (i.websiteStatus === "NONE") {

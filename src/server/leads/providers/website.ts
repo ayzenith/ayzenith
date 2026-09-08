@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cachedLeadFetch } from "../cache";
+import { HttpStatusError, type BlockKind } from "../http";
 import { SOCIAL_PLATFORMS } from "@/config/leads";
 import {
   classifyPageType, findNegativeSignals, domainRelatesToName, PAGE_TYPE_WEIGHT, repeatedSegments,
@@ -67,7 +68,17 @@ export type DecisionMaker = {
 export type SocialLink = { platform: string; url: string };
 
 export type SiteIntel = {
-  status: "ACTIVE" | "UNREACHABLE";
+  status: "ACTIVE" | "UNREACHABLE" | "BLOCKED";
+  /** Set only when `status` is "BLOCKED": how the site refused us. */
+  blockKind?: BlockKind | null;
+  /** HTTP status behind an UNREACHABLE/BLOCKED verdict, when there was one. */
+  httpStatus?: number | null;
+  /**
+   * Did we actually READ a legal-notice page (Impressum / legal notice / chi
+   * siamo)? Decides whether "no legal name found" is evidence of absence or
+   * merely absence of evidence — see `decideStoredLegalName`.
+   */
+  legalPageRead?: boolean;
   finalUrl: string;
   pagesFetched: string[];
   emails: string[];
@@ -334,7 +345,12 @@ function numberBefore(text: string, unitTerms: string[]): number | null {
   return null;
 }
 
-async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null> {
+/** A page read, plus WHY it failed when it did. `block` is set only when the
+ *  site refused the client (bot rule, WAF, rate limit) — never for a 404, a 500
+ *  or a dead host, which say something about the URL rather than about us. */
+type PageRead = { html: string | null; block: BlockKind | null; status: number | null };
+
+async function fetchPageDetailed(url: string, timeoutMs = 12_000): Promise<PageRead> {
   try {
     const res = await cachedLeadFetch({
       provider: "website",
@@ -347,10 +363,17 @@ async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null
       // lead) reliably crashed the process through undici's parser (§V3.4).
       safeHttp: true,
     });
-    return typeof res.payload === "string" ? res.payload : null;
-  } catch {
-    return null;
+    return { html: typeof res.payload === "string" ? res.payload : null, block: null, status: 200 };
+  } catch (e) {
+    if (e instanceof HttpStatusError) return { html: null, block: e.blockKind, status: e.status };
+    return { html: null, block: null, status: null };
   }
+}
+
+/** Body-only helper for the callers that genuinely do not care why a page was
+ *  missing (sitemap probes, robots.txt, optional sub-pages). */
+async function fetchPage(url: string, timeoutMs = 12_000): Promise<string | null> {
+  return (await fetchPageDetailed(url, timeoutMs)).html;
 }
 
 /**
@@ -476,10 +499,16 @@ export async function fetchSiteIntel(
     try { return new URL(base).hostname; } catch { return null; }
   })();
 
-  const home = await fetchPage(base, depth === "shallow" ? SHALLOW_TIMEOUT_MS : 12_000);
+  const homeRead = await fetchPageDetailed(base, depth === "shallow" ? SHALLOW_TIMEOUT_MS : 12_000);
+  const home = homeRead.html;
   if (home == null) {
+    // "Blocked" is a different fact from "dead", and the operator needs both:
+    // one is a crawler problem we can work on, the other is a lead that no
+    // longer exists. Neither is ACTIVE — we still never read the page.
     return {
-      status: "UNREACHABLE",
+      status: homeRead.block ? "BLOCKED" : "UNREACHABLE",
+      blockKind: homeRead.block,
+      httpStatus: homeRead.status,
       finalUrl: base,
       pagesFetched: [],
       emails: [],
@@ -790,6 +819,10 @@ export async function fetchSiteIntel(
 
   return {
     status: "ACTIVE",
+    // Whether a statutory disclosure page was among the pages we actually read.
+    // A site with no such page tells us nothing about its legal name; a site
+    // whose Impressum we read and which named nobody tells us a great deal.
+    legalPageRead: legalNameSources.some((s) => s.isLegalPage),
     finalUrl: base,
     pagesFetched: pages.map((p) => p.url),
     emails: Array.from(emails).slice(0, 10),

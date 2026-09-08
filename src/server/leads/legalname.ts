@@ -598,3 +598,60 @@ export function assessLegalName(name: string, ctx: LegalNameContext): LegalNameV
       : "Yasal bildirim sayfasında değil ve alan adı bu unvanı doğrulamıyor.",
   };
 }
+
+// ---------------------------------------------------------------------------
+// What actually gets STORED (§ accuracy Phase 8)
+// ---------------------------------------------------------------------------
+
+export type StoredLegalNameInput = {
+  /** The name THIS pass managed to extract, if any. */
+  extracted: string | null | undefined;
+  /** Did the site answer and get read at all? */
+  siteRead: boolean;
+  /**
+   * Was a statutory disclosure page (Impressum, legal notice, chi siamo …)
+   * among the pages actually read?
+   */
+  legalPageRead: boolean;
+};
+
+/**
+ * Decide what a re-check should write to `legalName`, in Prisma's own vocabulary:
+ * a string writes it, `null` erases it, `undefined` leaves the column alone.
+ *
+ * WHY THIS IS NOT "ACTIVE ? extracted : keep"
+ *
+ * Phase 5 made a re-check able to ERASE a legal name, which was right: a bad
+ * capture could otherwise never be removed. But it drew the line at "did the
+ * site answer?", and that is the wrong question. The extractor finds names on
+ * statutory disclosure pages, which German law requires and most other
+ * countries do not. On a site that simply has no such page, "site answered,
+ * extractor found nothing" is not a finding at all — yet it erased the column.
+ *
+ * The 50-row backfill caught it doing exactly that to two correct Italian
+ * entities, `OVS S.p.A.` and `Calzedonia S.p.A`, both captured properly by an
+ * earlier pass and both deleted by a later one that read pages containing no
+ * Impressum. Twelve of fifty rows were cleared in that run; the eight German
+ * ones were genuine junk removals, and these were not.
+ *
+ * So the erase now needs the stronger precondition it always implied: we may
+ * only conclude "this firm publishes no legal name" if we actually READ the
+ * page where a legal name is published. Absence of evidence is kept apart from
+ * evidence of absence — the same distinction Phase 4 draws between "asked and
+ * got no answer" and "could not ask".
+ */
+export function storedLegalNameValue(input: StoredLegalNameInput): string | null | undefined {
+  const extracted = input.extracted?.trim();
+  if (extracted) return extracted;
+
+  // Could not ask: the site never answered. Says nothing about what we knew.
+  if (!input.siteRead) return undefined;
+
+  // Asked in the right place and got no name back — that IS a finding, so a
+  // stale or wrong value goes.
+  if (input.legalPageRead) return null;
+
+  // Read the site, but never reached a page that would carry a legal name.
+  // Keep whatever an earlier pass legitimately learned.
+  return undefined;
+}

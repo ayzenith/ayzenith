@@ -51,7 +51,7 @@ export type ScoreInput = {
   /** Model-fit for the searched model — the primary B2B/B2C gate (§1/§5). */
   modelFit: "VERIFIED" | "POSSIBLE" | "NOT_SUITABLE" | "UNVERIFIED";
   /** null = website not checked in this run (unknown, not penalised). */
-  websiteStatus: "ACTIVE" | "UNREACHABLE" | "NONE" | null;
+  websiteStatus: "ACTIVE" | "UNREACHABLE" | "BLOCKED" | "NONE" | null;
   businessModel: string;
   inTargetMarket: boolean;
   cityMatched: boolean | null;
@@ -80,6 +80,11 @@ function sizeScore(size: ScoreInput["size"]): number | null {
 
 function websiteScore(status: ScoreInput["websiteStatus"]): number {
   if (status == null) return 50; // not checked → neutral, never penalised
+  // BLOCKED is also neutral, and deliberately scores ABOVE unreachable: the host
+  // answered — it just refused to answer US — so the site demonstrably exists.
+  // Penalising a firm for our crawler being turned away would be scoring our own
+  // access, not the lead.
+  if (status === "BLOCKED") return 50;
   return status === "ACTIVE" ? 100 : status === "UNREACHABLE" ? 40 : 20;
 }
 

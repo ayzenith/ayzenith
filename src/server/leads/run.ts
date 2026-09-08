@@ -1,4 +1,5 @@
 import "server-only";
+import { decideLeadStatus } from "./status";
 
 import { COUNTRY_LABELS, resolveProductProfile, B2B_SUPPLIER_ROLES, B2C_ROLES } from "@/config/leads";
 import { discoverOsm } from "./providers/overpass";
@@ -228,9 +229,17 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
   const runVerify = async (idx: number, depth: "shallow" | "full") => {
     const dc = deduped[idx]!;
     try {
-      return await verifyCandidate(dc, classifications[idx]!, {
+      const cls = classifications[idx]!;
+      return await verifyCandidate(dc, cls, {
         productTerms,
         productMatched: matched,
+        // Discovery is the ONE caller that legitimately holds these: `cls` is a
+        // fresh `classify()` result over OSM tags and Wikidata brand facts, not
+        // a value read back off a row this pipeline wrote earlier.
+        discovery: {
+          osmSpecificShop: cls.productFitTier === "STRONG" && cls.productFit === "LIKELY",
+          brandFactsMatch: (cls.productFitNote ?? "").includes("Wikidata"),
+        },
         domain: normalizeDomain(dc.candidate.website),
         searchModel: params.businessModel,
         productSignals,
@@ -301,14 +310,14 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
       settings.weights,
     );
 
-    const status =
-      score.leadScore == null
-        ? "INSUFFICIENT_DATA"
-        : outcome.verified
-          ? score.leadScore >= settings.thresholds.potential
-            ? "QUALIFIED"
-            : "SCREENING"
-          : "DISCOVERED";
+    // One rule, one place (`status.ts`) — and it now makes suitability defer to
+    // measured evidence, so a chain store cannot be QUALIFIED on 4% confidence.
+    const status = decideLeadStatus({
+      leadScore: score.leadScore,
+      verified: outcome.verified,
+      overallConfidence: outcome.overallConfidence ?? null,
+      thresholds: settings.thresholds,
+    });
 
     // Provenance (§19): OSM rows + website-derived rows.
     const osmLabel = dc.candidate.sourceLabel ?? "OpenStreetMap";
@@ -464,6 +473,7 @@ function unverifiedOutcome(
   const mf = computeModelFit(searchModel, classification.roles, null, false);
   return {
     websiteStatus: dc.candidate.website ? null : "NONE",
+    legalPageRead: false,
     productFit: classification.productFit,
     productFitTier: classification.productFitTier,
     productFitNote: classification.productFitNote,

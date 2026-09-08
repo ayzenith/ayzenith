@@ -2,7 +2,7 @@ import "server-only";
 
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
-import { httpGetText } from "./http";
+import { httpGetText, HttpStatusError } from "./http";
 import type { LeadProviderId } from "./providers/types";
 
 /**
@@ -92,7 +92,9 @@ export async function cachedLeadFetch(opts: LeadFetchOptions): Promise<LeadFetch
     // can stop — it kills the process. See http.ts (§V3.4).
     const res = await httpGetText(opts.url, { timeoutMs: opts.timeoutMs ?? 25_000, headers: opts.headers });
     if (res.status < 200 || res.status >= 300) {
-      throw new Error(`${opts.provider} HTTP ${res.status} — ${opts.url}`);
+      // Typed, so the caller can tell "this URL is dead" from "this client was
+      // refused" instead of collapsing both into one opaque failure.
+      throw new HttpStatusError(res.status, opts.url, res.blockKind);
     }
     text = res.text;
   } else {

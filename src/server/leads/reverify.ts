@@ -1,4 +1,6 @@
 import "server-only";
+import { decideLeadStatus } from "./status";
+import { storedLegalNameValue } from "./legalname";
 
 import { db } from "@/lib/db";
 import { verifyCandidate } from "./verify";
@@ -191,6 +193,14 @@ async function runVerifyBatch(
     let outcome;
     try {
       outcome = await verifyCandidate(dc, classification, {
+        // No column preserves what discovery saw: `productFit` and friends hold
+        // the LATEST verdict, so reading corroborations back out of them would
+        // feed this function its own previous answer (see `DiscoverySignals`).
+        // Null is the honest value, and it costs only the OSM/Wikidata
+        // corroborations — the name-based one is recomputed from the name.
+        // Persisting the discovery classification would restore them; that needs
+        // a migration and is deliberately left for a separate change.
+        discovery: null,
         productTerms,
         productMatched: matched,
         domain: row.website ? normalizeHost(row.website) : undefined,
@@ -228,14 +238,14 @@ async function runVerifyBatch(
       settings.weights,
     );
 
-    const status =
-      score.leadScore == null
-        ? "INSUFFICIENT_DATA"
-        : outcome.verified
-          ? score.leadScore >= settings.thresholds.potential
-            ? "QUALIFIED"
-            : "SCREENING"
-          : "DISCOVERED";
+    // One rule, one place (`status.ts`) — and it now makes suitability defer to
+    // measured evidence, so a chain store cannot be QUALIFIED on 4% confidence.
+    const status = decideLeadStatus({
+      leadScore: score.leadScore,
+      verified: outcome.verified,
+      overallConfidence: outcome.overallConfidence ?? null,
+      thresholds: settings.thresholds,
+    });
 
     if (outcome.websiteStatus === "ACTIVE") reachable++;
 
@@ -259,19 +269,16 @@ async function runVerifyBatch(
       db.leadCompany.update({
         where: { id: row.id },
         data: {
-          // A re-check must be able to REMOVE a name, not only replace one.
-          //
-          // `?? undefined` told Prisma "leave the column alone", so once a bad
-          // capture was stored nothing could ever clear it: the Phase 5 audit
-          // found 63 rows whose extraction now correctly yields nothing but
-          // which would have kept their old wrong entity forever.
-          //
-          // The distinction that decides it is the one Phase 4 already draws
-          // between "asked and got no answer" and "could not ask". We only
-          // erase when we actually READ the site and it named nobody. A site
-          // that did not answer this time tells us nothing about the name we
-          // learned last time, so that value stays.
-          legalName: outcome.websiteStatus === "ACTIVE" ? (outcome.legalName ?? null) : undefined,
+          // A re-check must be able to REMOVE a name, not only replace one —
+          // but "the site answered" is too weak a licence to erase on, because
+          // the extractor reads STATUTORY DISCLOSURE pages and most countries
+          // outside Germany do not require one. See `storedLegalNameValue`,
+          // which owns this rule and the two live cases that forced it.
+          legalName: storedLegalNameValue({
+            extracted: outcome.legalName,
+            siteRead: outcome.websiteStatus === "ACTIVE",
+            legalPageRead: outcome.legalPageRead,
+          }),
           email,
           phone,
           commercialRoles: outcome.roles,
@@ -379,6 +386,49 @@ export async function verifyEligibleBatch(
   limit: number = REVERIFY_BATCH,
 ): Promise<ReverifyResult> {
   return runVerifyBatch(searchId, eligibleWhere(), limit);
+}
+
+/**
+ * Re-verify an EXPLICIT set of companies, whatever their current websiteStatus.
+ *
+ * The backfill entry point. Every other path here selects rows by a *predicate*
+ * (never-checked, or checked-and-stale), which by construction can never reach
+ * a row already marked ACTIVE — so the firms whose sites do answer keep the
+ * verdict from whichever pipeline version first looked at them, and no amount
+ * of waiting for the cron will refresh them. Re-scoring those against the
+ * current engine needs a caller that names the rows outright.
+ *
+ * Deliberately NOT wired to the cron or to any route: a caller has to pass ids,
+ * so this can only ever run over a set someone chose. Rows are grouped by
+ * search because the verification needs its search's product query and model,
+ * and `runVerifyBatch` is per-search for that reason.
+ */
+export async function verifyCompaniesByIds(
+  ids: string[],
+): Promise<Array<{ searchId: string } & ReverifyResult>> {
+  if (ids.length === 0) return [];
+
+  const rows = await db.leadCompany.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, searchId: true },
+  });
+
+  // A company can exist without a search (imported rows); it has no product
+  // query to verify against, so it is skipped rather than guessed at.
+  const bySearch = new Map<string, string[]>();
+  for (const r of rows) {
+    if (!r.searchId) continue;
+    const list = bySearch.get(r.searchId);
+    if (list) list.push(r.id);
+    else bySearch.set(r.searchId, [r.id]);
+  }
+
+  const out: Array<{ searchId: string } & ReverifyResult> = [];
+  for (const [searchId, group] of bySearch) {
+    const r = await runVerifyBatch(searchId, { id: { in: group } }, group.length);
+    out.push({ searchId, ...r });
+  }
+  return out;
 }
 
 /** Registrable host of a URL, for the "is this email on the company's own

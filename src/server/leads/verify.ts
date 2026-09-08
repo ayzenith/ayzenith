@@ -1,10 +1,12 @@
 import "server-only";
 
 import { fetchSiteIntel, type SiteIntel, type ProductSignals, type SiteDepth } from "./providers/website";
+import type { BlockKind } from "./http";
 import { checkVatId } from "./providers/vies";
 import {
   resolveIdentity, capProductFitByIdentity, resolveProductEvidence, resolveCompanyType,
-  resolveConfidence, emptyCoverage, coverageRatio,
+  resolveConfidence, emptyCoverage, coverageRatio, fitWhenNoProductEvidence,
+  type DiscoverySignals,
   ProductEvidenceLevel, type IdentityStatus, type CompanyType, type EvidenceCoverage,
 } from "./evidence";
 import type { DedupedCandidate } from "./dedup";
@@ -53,8 +55,20 @@ export type ExtraSource = {
 
 export type SocialProfile = { platform: string; url: string };
 
+/** Turkish labels for the refusal kinds, for the evidence line an operator reads. */
+const BLOCK_LABELS: Record<BlockKind, string> = {
+  BOT_REFUSED: "bot koruması",
+  WAF_CHALLENGE: "güvenlik duvarı doğrulaması",
+  RATE_LIMITED: "istek sınırı",
+};
+
 export type VerifyOutcome = {
-  websiteStatus: "ACTIVE" | "UNREACHABLE" | "NONE" | null;
+  websiteStatus: "ACTIVE" | "UNREACHABLE" | "BLOCKED" | "NONE" | null;
+  /** Set only when `websiteStatus` is "BLOCKED": how the site refused us. */
+  blockKind?: BlockKind | null;
+  /** Was a statutory disclosure page actually read? Decides whether a missing
+   *  legal name may erase a stored one (`storedLegalNameValue`). */
+  legalPageRead: boolean;
   productFit: "VERIFIED" | "LIKELY" | "UNCLEAR" | "NOT_RELEVANT" | "UNVERIFIED";
   productFitTier: "STRONG" | "MEDIUM" | "WEAK" | null;
   productFitNote: string | null;
@@ -253,12 +267,19 @@ function socialSignals(socials: SocialProfile[], strongTerms: string[]): {
   return { product: strong ? "STRONG" : null, business };
 }
 
+export type { DiscoverySignals } from "./evidence";
+
 export async function verifyCandidate(
   dc: DedupedCandidate,
   classification: Classification,
   opts: {
     productTerms: string[];
     productMatched: boolean;
+    /**
+     * Discovery-time corroborations, or null when they are not recoverable.
+     * NEVER derive these from the company row — see `DiscoverySignals`.
+     */
+    discovery?: DiscoverySignals | null;
     domain?: string;
     searchModel: string;
     productSignals?: ProductSignals;
@@ -273,6 +294,8 @@ export async function verifyCandidate(
 ): Promise<VerifyOutcome> {
   const base: VerifyOutcome = {
     websiteStatus: dc.candidate.website ? "UNREACHABLE" : "NONE",
+    blockKind: null,
+    legalPageRead: false,
     productFit: classification.productFit,
     productFitTier: classification.productFitTier,
     productFitNote: classification.productFitNote,
@@ -353,12 +376,19 @@ export async function verifyCandidate(
     intel = null;
   }
 
-  if (!intel || intel.status === "UNREACHABLE") {
-    base.websiteStatus = "UNREACHABLE";
+  if (!intel || intel.status === "UNREACHABLE" || intel.status === "BLOCKED") {
+    // Refused-as-a-client and genuinely-dead are different facts. Neither is
+    // ACTIVE — we did not read the page either way — but only one of them is a
+    // reason to stop believing the lead exists.
+    const blocked = intel?.status === "BLOCKED";
+    base.websiteStatus = blocked ? "BLOCKED" : "UNREACHABLE";
+    base.blockKind = intel?.blockKind ?? null;
     base.verifications.push({
       check: "website-present",
       passed: null,
-      evidence: "Website mevcut ama bu denemede ulaşılamadı (site kapalı anlamına gelmez).",
+      evidence: blocked
+        ? `Site ayakta ama otomatik erişimi engelliyor (${BLOCK_LABELS[base.blockKind ?? "BOT_REFUSED"]}${intel?.httpStatus ? `, HTTP ${intel.httpStatus}` : ""}). Firmanın var olmadığı anlamına GELMEZ.`
+        : "Website mevcut ama bu denemede ulaşılamadı (site kapalı anlamına gelmez).",
       sourceUrl: dc.candidate.website,
     });
     finalizeConfidence(base, dc);
@@ -367,6 +397,7 @@ export async function verifyCandidate(
 
   base.verified = true;
   base.websiteStatus = "ACTIVE";
+  base.legalPageRead = intel.legalPageRead ?? false;
   const src = intel.finalUrl;
   base.extraSources.push({ dataField: "website", sourceType: "OFFICIAL_WEBSITE", label: "Resmi website", sourceUrl: src });
   base.verifications.push({ check: "website-present", passed: true, evidence: "Website aktif.", sourceUrl: src });
@@ -426,14 +457,19 @@ export async function verifyCandidate(
   // Corroborations come from DISCOVERY, not from the site — a specific OSM shop
   // tag, the firm's own name, a Wikidata brand fact — so they are genuinely
   // independent of whatever the crawler happened to read.
-  const evidence = resolveProductEvidence({
-    hits: intel.productHits,
-    osmSpecificShop: classification.productFitTier === "STRONG" && classification.productFit === "LIKELY",
-    nameMatchesProduct: opts.productSignals?.strong?.some((t) => {
+  // Computed from the firm's NAME, which no run ever rewrites — the one
+  // discovery-side corroboration that survives a re-check intact.
+  const nameMatchesProduct =
+    opts.productSignals?.strong?.some((t) => {
       const n = normalizeProduct(t);
       return n.length >= 3 && normalizeProduct(dc.candidate.name).includes(n);
-    }) ?? false,
-    brandFactsMatch: (classification.productFitNote ?? "").includes("Wikidata"),
+    }) ?? false;
+
+  const evidence = resolveProductEvidence({
+    hits: intel.productHits,
+    osmSpecificShop: opts.discovery?.osmSpecificShop ?? false,
+    nameMatchesProduct,
+    brandFactsMatch: opts.discovery?.brandFactsMatch ?? false,
     negatives: intel.negativeSignals,
     // Every page we actually opened, so "no product page among the hits" can be
     // told apart from "we never fetched one" — with the current crawl budget the
@@ -448,19 +484,23 @@ export async function verifyCandidate(
   base.productNegatives = evidence.negatives.map((n) => n.kind);
 
   if (evidence.level === ProductEvidenceLevel.NONE) {
-    // Unchanged from before: a site we READ that carries no trace of the product
-    // is weak evidence against it — but only when discovery had a real product
-    // hint to contradict in the first place.
-    const wasWeak = classification.productFitTier === "WEAK" || classification.productFit === "UNCLEAR";
-    if (opts.productMatched && wasWeak) {
-      base.productFit = "NOT_RELEVANT";
-      base.productFitTier = null;
-      base.productFitNote = "Aktif website'de aranan ürünle ilgili terim bulunamadı.";
-    } else {
-      base.productFit = "UNCLEAR";
-      base.productFitTier = "WEAK";
-      base.productFitNote = "Website aktif; ürün terimleri sınırlı sayfa taramasında bulunamadı.";
-    }
+    // A site we READ that carries no trace of the product is weak evidence
+    // against it — but only when nothing independent argues the other way.
+    //
+    // This used to ask whether the STORED productFit looked weak, which on a
+    // re-check meant asking this function what it had itself concluded last
+    // time; see `DiscoverySignals` for the two-cycle that produced. The
+    // question it was really trying to ask is whether any evidence independent
+    // of the crawl vouches for the product, so it now asks that directly, of
+    // inputs no run rewrites.
+    const verdict = fitWhenNoProductEvidence({
+      productMatched: opts.productMatched,
+      discovery: opts.discovery,
+      nameMatchesProduct,
+    });
+    base.productFit = verdict.fit;
+    base.productFitTier = verdict.tier;
+    base.productFitNote = verdict.note;
   } else {
     base.productFit = evidence.fit;
     base.productFitTier = evidence.tier;

@@ -1049,3 +1049,83 @@ export function resolveConfidence(input: ConfidenceInput): ConfidenceResult {
 
   return { overall: Math.max(0, Math.min(100, overall)), core: Math.round(core), measured, reasons };
 }
+
+// ---------------------------------------------------------------------------
+// Discovery-side corroboration, and the verdict when a read site shows nothing
+// (§ accuracy Phase 8)
+// ---------------------------------------------------------------------------
+
+/**
+ * What DISCOVERY knew about this firm's product, as discovery knew it.
+ *
+ * Corroborations that exist independently of anything the crawler reads — an
+ * OSM shop tag, a Wikidata brand fact — which is precisely why the evidence
+ * engine is allowed to lean on them.
+ *
+ * They must be PASSED IN, never read back off the company row. `productFit`,
+ * `productFitTier` and `productFitNote` are single mutable columns holding the
+ * LATEST verdict, so on a re-check anything sniffed out of them is the
+ * pipeline's own previous output. That closed a feedback loop with a period of
+ * two: a firm whose site carries no product term alternated
+ * UNCLEAR → NOT_RELEVANT → UNCLEAR on successive runs, swinging its lead score
+ * by 13 points each time. Over the 50-row live sample, 26 of 50 flipped on the
+ * second run and 18 landed back on discovery's original value. The verdict was
+ * a function of how many times the pipeline had run, not of the evidence.
+ *
+ * `null` means "no record of what discovery saw" — the honest state on a
+ * re-check today, because no column preserves the discovery-time
+ * classification. Unknown is treated as absent corroboration, never as its
+ * opposite.
+ */
+export type DiscoverySignals = {
+  /** OSM gave a SPECIFIC shop tag for the searched product, not a generic one. */
+  osmSpecificShop: boolean;
+  /** A Wikidata brand fact tied this company to the product. */
+  brandFactsMatch: boolean;
+};
+
+export type NoEvidenceFitInput = {
+  /** Did the search's product query resolve to a curated profile at all? */
+  productMatched: boolean;
+  /** Discovery-time corroborations, or null when not recoverable. */
+  discovery: DiscoverySignals | null | undefined;
+  /** Does the firm's own NAME carry the product term? Recomputed from the name
+   *  on every run, so it survives a re-check intact. */
+  nameMatchesProduct: boolean;
+};
+
+/**
+ * The verdict for a site we DID read and which carried no trace of the product.
+ *
+ * That is weak evidence against the firm — but only when nothing independent of
+ * the crawl vouches for it. If a shop tag, a brand fact or the company's own
+ * name says "lingerie", one limited crawl finding no lingerie is our gap, not
+ * their disqualification, and the honest answer stays UNCLEAR.
+ *
+ * Every input is either supplied by the caller or recomputed from immutable
+ * data, so this is a pure function of the evidence: calling it again with the
+ * same inputs returns the same verdict, no matter what was stored in between.
+ */
+export function fitWhenNoProductEvidence(input: NoEvidenceFitInput): {
+  fit: "NOT_RELEVANT" | "UNCLEAR";
+  tier: "WEAK" | null;
+  note: string;
+} {
+  const strongPrior =
+    (input.discovery?.osmSpecificShop ?? false) ||
+    (input.discovery?.brandFactsMatch ?? false) ||
+    input.nameMatchesProduct;
+
+  if (input.productMatched && !strongPrior) {
+    return {
+      fit: "NOT_RELEVANT",
+      tier: null,
+      note: "Aktif website'de aranan ürünle ilgili terim bulunamadı.",
+    };
+  }
+  return {
+    fit: "UNCLEAR",
+    tier: "WEAK",
+    note: "Website aktif; ürün terimleri sınırlı sayfa taramasında bulunamadı.",
+  };
+}

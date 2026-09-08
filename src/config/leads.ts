@@ -104,6 +104,7 @@ export const DETECTED_MODEL_LABELS: Record<string, string> = {
 export const WEBSITE_STATUS_LABELS: Record<string, string> = {
   ACTIVE: "Aktif",
   UNREACHABLE: "Ulaşılamadı",
+  BLOCKED: "Bot koruması engelledi",
   NONE: "Website yok",
 };
 
@@ -223,6 +224,25 @@ export type LeadThresholds = { strong: number; potential: number };
 
 /** ≥ strong → güçlü aday; ≥ potential → potansiyel; below → düşük. */
 export const DEFAULT_LEAD_THRESHOLDS: LeadThresholds = { strong: 80, potential: 60 };
+
+/**
+ * Evidence floor a lead must clear before it may be called QUALIFIED.
+ *
+ * `leadScore` and `overallConfidence` answer two different questions —
+ * "how well does this firm FIT?" and "how much of that do we actually KNOW?" —
+ * and nothing used to make the first defer to the second. The live 50-row
+ * backfill found the gap in the open: Apple Store scored 78 on fit with 18%
+ * evidence, and a Nike outlet was promoted to QUALIFIED on 4% evidence, because
+ * a chain store's homepage satisfies every structural signal fit is made of
+ * while proving nothing whatsoever about the product line we sell into.
+ *
+ * A floor is the right shape for this rather than a name list: it fires on the
+ * measured evidence, so it catches the next Apple we have never heard of, and
+ * it disappears on its own the moment a firm's evidence improves. Deliberately
+ * placed on the STATUS only — how `overallConfidence` and the identity/product
+ * confidences are each computed is untouched.
+ */
+export const MIN_CONFIDENCE_FOR_QUALIFIED = 40;
 
 /** How long a lead stays "fresh" before re-verification is recommended (§20). */
 export const DEFAULT_RECHECK_DAYS = 30;

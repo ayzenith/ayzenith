@@ -431,7 +431,7 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
   });
 
   // 6. SAVE.
-  const { searchId, savedCount } = await saveDiscovery(
+  const { searchId, savedCount, alreadyKnown } = await saveDiscovery(
     {
       country: countryIso,
       countryLabel,
@@ -453,7 +453,10 @@ export async function runDiscovery(params: DiscoverParams): Promise<DiscoverResu
     drafts,
   );
 
-  return { searchId, discovered: savedCount, verified: verifiedCount, discoveryStatus, errors };
+  // A re-run writes only the firms the search did not already hold, so the
+  // firms it found again count as discovered too — otherwise repeating a
+  // search would report that it found almost nothing.
+  return { searchId, discovered: savedCount + alreadyKnown, verified: verifiedCount, discoveryStatus, errors };
 }
 
 /** Map social profiles by platform to named URL fields. */

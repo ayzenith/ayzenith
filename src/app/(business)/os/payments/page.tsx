@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listPayments } from "@/server/os/finance";
 import { listParties } from "@/server/os/parties";
-import { PAYMENT_METHOD_LABELS } from "@/config/os";
+import { getOsSettings } from "@/server/os/settings";
+import { CURRENCIES, PAYMENT_METHOD_LABELS } from "@/config/os";
 import { cancelPaymentAction, createPaymentAction, settlePaymentAction } from "./actions";
 import { Card, EmptyState, Field, Money, PageHead, Pagination, StatusBadge, Table, Td, Th, Tr, btn, input } from "@/components/os/ui";
 import { AmountInput } from "@/components/os/amount-input";
@@ -14,9 +15,10 @@ type SP = Promise<{ direction?: "IN" | "OUT"; overdue?: string; new?: "IN" | "OU
 
 export default async function Payments({ searchParams }: { searchParams: SP }) {
   const q = await searchParams;
-  const [d, parties] = await Promise.all([
+  const [d, parties, settings] = await Promise.all([
     listPayments({ direction: q.direction, overdueOnly: q.overdue === "1", page: Number(q.page) || 1 }),
     listParties({ perPage: 200 }),
+    getOsSettings(),
   ]);
   const title = q.direction === "OUT" ? "Ödemeler" : q.direction === "IN" ? "Tahsilatlar" : "Tahsilat & ödeme";
   const baseHref = `/os/payments${q.direction ? `?direction=${q.direction}` : ""}`;
@@ -49,10 +51,12 @@ export default async function Payments({ searchParams }: { searchParams: SP }) {
               <input name="amount" required inputMode="decimal" className={input} />
             </Field>
             <Field label="Para birimi">
-              <input name="currency" defaultValue="TRY" className={input} />
+              <select name="currency" defaultValue={settings.baseCurrency} className={input}>
+                {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
             </Field>
-            <Field label="Kur">
-              <input name="fxRate" defaultValue="1" inputMode="decimal" className={input} />
+            <Field label="Kur" hint="Boş = bugünün TCMB kuru">
+              <input name="fxRate" inputMode="decimal" placeholder="Otomatik (TCMB)" className={input} />
             </Field>
             <Field label="Vade" required>
               <input name="dueDate" type="date" required className={input} />

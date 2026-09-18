@@ -3,6 +3,9 @@ import { getOsSettings } from "@/server/os/settings";
 import { listSignatories } from "@/server/os/signatories";
 import { listBankAccounts } from "@/server/os/bank-accounts";
 import { CURRENCIES } from "@/config/os";
+import { fxStatus } from "@/server/os/fx";
+import { FX_DATE_RULES, FX_DATE_RULE_LABELS, FX_RATE_TYPES, FX_RATE_TYPE_LABELS } from "@/server/os/fx-tcmb";
+import { syncTcmbAction } from "../fx-actions";
 import { LANGUAGES, LANGUAGE_LABELS } from "@/config/trade-documents";
 import {
   saveSettingsAction, seedChannelsAction, saveCompanyProfileAction,
@@ -31,6 +34,8 @@ export default async function Settings({ searchParams }: { searchParams: SP }) {
     listSignatories(),
     listBankAccounts(),
   ]);
+  const fx = tab === "genel" ? await fxStatus(s) : null;
+  const fmtDay = (d: string) => d.split("-").reverse().join(".");
 
   return (
     <>
@@ -59,7 +64,50 @@ export default async function Settings({ searchParams }: { searchParams: SP }) {
               </div>
             </Card>
 
-            <Card title="Kur tablosu" description="Yeni belgeler açılırken kur alanı buradan önerilir; kaydedilmiş belgeler kendi kurunu korur.">
+            <Card
+              title="TCMB kurları"
+              description="Yeni belgelerde kur, belge tarihine göre Merkez Bankası'nın resmî bülteninden otomatik gelir. Formda istediğin zaman elle değiştirebilirsin; kaydedilmiş belgeler kendi kurunu korur."
+            >
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Kur türü" hint="Hangi kurun kullanılacağını mali müşavirinle teyit et.">
+                  <select name="fxRateType" defaultValue={s.fxRateType} className={input}>
+                    {FX_RATE_TYPES.map((t) => <option key={t} value={t}>{FX_RATE_TYPE_LABELS[t]}</option>)}
+                  </select>
+                </Field>
+                <Field label="Hangi günün bülteni" hint="Bülten her iş günü 15:30'da yayımlanır; hafta sonu ve tatilde bir önceki iş gününün bülteni geçerlidir.">
+                  <select name="fxDateRule" defaultValue={s.fxDateRule} className={input}>
+                    {FX_DATE_RULES.map((r) => <option key={r} value={r}>{FX_DATE_RULE_LABELS[r]}</option>)}
+                  </select>
+                </Field>
+              </div>
+              {fx ? (
+                <div className="mt-4 flex flex-col gap-3">
+                  <p className="text-small text-muted">
+                    {fx.latestDay
+                      ? <>Son bülten: <strong>{fmtDay(fx.latestDay)}</strong>{fx.latestNo ? ` (No ${fx.latestNo})` : ""} · sistemde {fx.stored} bülten kayıtlı</>
+                      : "Henüz TCMB bülteni alınamadı. Aşağıdaki düğmeyle dene; ulaşılamazsa manuel kurlar kullanılır."}
+                  </p>
+                  <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                    {CURRENCIES.filter((c) => c.code !== s.baseCurrency).map((c) => {
+                      const r = fx.rates[c.code];
+                      return (
+                        <div key={c.code} className="rounded-lg border border-border px-3 py-2">
+                          <div className="text-caption text-subtle">1 {c.code}</div>
+                          <div className="text-small font-medium tabular-nums">
+                            {r?.rate ? `${Number(r.rate).toLocaleString("tr-TR", { maximumFractionDigits: 4 })} ${s.baseCurrency}` : "—"}
+                          </div>
+                          <div className={`text-caption ${r?.source === "TCMB" ? "text-subtle" : "text-warning"}`}>
+                            {r?.source === "TCMB" ? "TCMB" : r?.source === "MANUAL" ? "Manuel" : "Yok"}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+            </Card>
+
+            <Card title="Manuel yedek kurlar" description="Sadece TCMB'nin yayımlamadığı para birimleri (örn. PLN) veya TCMB'ye ulaşılamadığı durumlar için kullanılır.">
               <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
                 {CURRENCIES.filter((c) => c.code !== s.baseCurrency).map((c) => (
                   <Field key={c.code} label={`1 ${c.code} = ? ${s.baseCurrency}`}>
@@ -72,6 +120,10 @@ export default async function Settings({ searchParams }: { searchParams: SP }) {
 
             <div><button type="submit" className={btn.primary}>Ayarları kaydet</button></div>
           </form>
+
+          <Card className="mt-4" title="TCMB bültenlerini güncelle" description="Normalde gerek yok: bir belge bir güne ihtiyaç duyduğunda o günün bülteni kendiliğinden alınır. Bu düğme son 10 günü tek seferde tamamlar.">
+            <form action={syncTcmbAction}><button type="submit" className={btn.secondary}>TCMB'den şimdi güncelle</button></form>
+          </Card>
 
           <Card className="mt-4" title="Başlangıç kanalları" description="Trendyol, Amazon, Web, Mağaza, B2B, Manuel — henüz yoksa tek tıkla oluştur.">
             <form action={seedChannelsAction}><button type="submit" className={btn.secondary}>Başlangıç kanallarını oluştur</button></form>

@@ -11,6 +11,8 @@ import {
   upsertRecurring,
 } from "@/server/os/finance";
 import { parseDecimal } from "@/server/os/money";
+import { getOsSettings } from "@/server/os/settings";
+import { resolveFxRate } from "@/server/os/fx";
 
 function s(fd: FormData, key: string): string | null {
   const v = fd.get(key);
@@ -21,14 +23,20 @@ export async function createExpenseAction(fd: FormData): Promise<void> {
   const user = await requireUser();
   const title = s(fd, "title");
   if (!title) throw new Error("Gider başlığı zorunlu.");
+  const settings = await getOsSettings();
+  const occurredAt = s(fd, "occurredAt") ? new Date(s(fd, "occurredAt")!) : new Date();
+  const currency = (s(fd, "currency") ?? settings.baseCurrency).toUpperCase();
+  // Empty rate = the TCMB rate for the expense date. It used to default to 1,
+  // which booked a USD bill as if a dollar were a lira.
+  const fx = await resolveFxRate({ currency, date: occurredAt, given: s(fd, "fxRate"), settings });
   await createExpense({
     title,
     kind: (s(fd, "kind") as ExpenseKind) ?? "OTHER",
     partyId: s(fd, "partyId"),
     amount: parseDecimal(s(fd, "amount")),
-    currency: s(fd, "currency") ?? "TRY",
-    fxRate: parseDecimal(s(fd, "fxRate") ?? "1"),
-    occurredAt: s(fd, "occurredAt") ? new Date(s(fd, "occurredAt")!) : undefined,
+    currency,
+    fxRate: fx.rate,
+    occurredAt,
     dueDate: s(fd, "dueDate") ? new Date(s(fd, "dueDate")!) : undefined,
     note: s(fd, "note"),
     userId: user.id,

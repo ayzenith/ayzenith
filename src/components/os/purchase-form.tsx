@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { COST_ALLOCATION_LABELS, COST_KIND_LABELS, CURRENCIES } from "@/config/os";
 import { Card, Field, btn, input } from "./ui";
+import { FxNote, suggestedValue, useFxSuggestions, type RatesByCurrency } from "./fx-rate";
 
 /**
  * The new-purchase form.
@@ -19,7 +20,7 @@ export type PurchaseFormParty = { id: string; name: string };
 export type PurchaseFormLocation = { id: string; name: string };
 
 type Line = { key: string; itemId: string; quantity: string; unitPrice: string; discountRate: string; vatRate: string };
-type Cost = { key: string; kind: string; label: string; amount: string; currency: string; fxRate: string; allocation: string };
+type Cost = { key: string; kind: string; label: string; amount: string; currency: string; fxRate: string; fxTouched: boolean; allocation: string };
 
 let lineSeq = 0;
 function newLine(): Line {
@@ -30,7 +31,7 @@ function newLine(): Line {
 let costSeq = 0;
 function newCost(defaultCurrency: string, defaultFxRate: string): Cost {
   costSeq += 1;
-  return { key: `c${costSeq}`, kind: "FREIGHT", label: "", amount: "", currency: defaultCurrency, fxRate: defaultFxRate, allocation: "BY_VALUE" };
+  return { key: `c${costSeq}`, kind: "FREIGHT", label: "", amount: "", currency: defaultCurrency, fxRate: defaultFxRate, fxTouched: false, allocation: "BY_VALUE" };
 }
 
 export function PurchaseForm({
@@ -39,19 +40,26 @@ export function PurchaseForm({
   suppliers,
   locations,
   baseCurrency,
-  fxRates,
+  initialDay,
+  initialRates,
+  getRates,
 }: {
   action: (fd: FormData) => Promise<void>;
   items: PurchaseFormItem[];
   suppliers: PurchaseFormParty[];
   locations: PurchaseFormLocation[];
   baseCurrency: string;
-  fxRates: Record<string, number>;
+  /** The document date the initial rates were computed for (Istanbul day). */
+  initialDay: string;
+  initialRates: RatesByCurrency;
+  getRates: (day: string) => Promise<RatesByCurrency>;
 }) {
   const [lines, setLines] = useState<Line[]>([newLine()]);
   const [costs, setCosts] = useState<Cost[]>([]);
   const [currency, setCurrency] = useState(baseCurrency);
   const [fxRate, setFxRate] = useState("1");
+  const [fxTouched, setFxTouched] = useState(false);
+  const fx = useFxSuggestions(initialDay, initialRates, getRates);
 
   function updateLine(key: string, patch: Partial<Line>) {
     setLines((prev) => prev.map((l) => (l.key === key ? { ...l, ...patch } : l)));
@@ -67,14 +75,21 @@ export function PurchaseForm({
   }
 
   function suggestedRate(cur: string): string {
-    if (cur === baseCurrency) return "1";
-    const r = fxRates[cur];
-    return r && Number.isFinite(r) && r > 0 ? String(r) : "1";
+    return suggestedValue(fx.rates, cur, baseCurrency);
   }
 
   function onCurrencyChange(next: string) {
     setCurrency(next);
     setFxRate(suggestedRate(next));
+    setFxTouched(false);
+  }
+
+  async function onDateChange(next: string) {
+    const r = await fx.changeDay(next);
+    if (!r) return;
+    // Typed rates stay; only untouched suggestions follow the new date.
+    if (!fxTouched) setFxRate(suggestedValue(r, currency, baseCurrency));
+    setCosts((prev) => prev.map((c) => (c.fxTouched ? c : { ...c, fxRate: suggestedValue(r, c.currency, baseCurrency) })));
   }
 
   return (
@@ -98,7 +113,7 @@ export function PurchaseForm({
             </select>
           </Field>
           <Field label="Tarih">
-            <input name="issuedAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className={input} />
+            <input name="issuedAt" type="date" value={fx.day} onChange={(e) => onDateChange(e.target.value)} className={input} />
           </Field>
           <Field label="Para birimi">
             <select name="currency" className={input} value={currency} onChange={(e) => onCurrencyChange(e.target.value)}>
@@ -107,8 +122,18 @@ export function PurchaseForm({
               ))}
             </select>
           </Field>
-          <Field label="Kur" hint={`1 ${currency} = ? ${baseCurrency}`}>
-            <input name="fxRate" value={fxRate} onChange={(e) => setFxRate(e.target.value)} inputMode="decimal" className={input} />
+          <Field label="Kur" hint={`1 ${currency} = ? ${baseCurrency}`} required={currency !== baseCurrency}>
+            <input
+              name="fxRate"
+              value={fxRate}
+              onChange={(e) => { setFxRate(e.target.value); setFxTouched(true); }}
+              required={currency !== baseCurrency}
+              readOnly={currency === baseCurrency}
+              inputMode="decimal"
+              placeholder="Kuru girin"
+              className={input}
+            />
+            <FxNote suggestion={fx.rates[currency]} touched={fxTouched} loading={fx.loading} />
           </Field>
           <Field label="Durum">
             <select name="status" className={input} defaultValue="CONFIRMED">
@@ -216,15 +241,25 @@ export function PurchaseForm({
                   name="costCurrency"
                   className={input}
                   value={cost.currency}
-                  onChange={(e) => updateCost(cost.key, { currency: e.target.value, fxRate: suggestedRate(e.target.value) })}
+                  onChange={(e) => updateCost(cost.key, { currency: e.target.value, fxRate: suggestedRate(e.target.value), fxTouched: false })}
                 >
                   {CURRENCIES.map((c) => (
                     <option key={c.code} value={c.code}>{c.code}</option>
                   ))}
                 </select>
               </Field>
-              <Field label="Kur" hint={`1 ${cost.currency} = ? ${baseCurrency}`}>
-                <input name="costFxRate" inputMode="decimal" value={cost.fxRate} onChange={(e) => updateCost(cost.key, { fxRate: e.target.value })} className={input} />
+              <Field label="Kur" hint={`1 ${cost.currency} = ? ${baseCurrency}`} required={cost.currency !== baseCurrency}>
+                <input
+                  name="costFxRate"
+                  inputMode="decimal"
+                  value={cost.fxRate}
+                  onChange={(e) => updateCost(cost.key, { fxRate: e.target.value, fxTouched: true })}
+                  required={cost.currency !== baseCurrency}
+                  readOnly={cost.currency === baseCurrency}
+                  placeholder="Kuru girin"
+                  className={input}
+                />
+                <FxNote suggestion={fx.rates[cost.currency]} touched={cost.fxTouched} loading={fx.loading} />
               </Field>
               <Field label="Dağıtım">
                 <select name="costAllocation" className={input} value={cost.allocation} onChange={(e) => updateCost(cost.key, { allocation: e.target.value })}>

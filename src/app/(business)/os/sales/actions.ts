@@ -7,6 +7,8 @@ import { requireUser } from "@/server/auth";
 import { cancelSale, confirmSale, createSale, deleteSale, type SaleLineInput } from "@/server/os/sales";
 import { priceFor } from "@/server/os/items";
 import { parseDecimal, parseOptionalDecimal, toNumOrNull } from "@/server/os/money";
+import { getOsSettings } from "@/server/os/settings";
+import { resolveFxRate } from "@/server/os/fx";
 
 function s(fd: FormData, key: string): string | null {
   const v = fd.get(key);
@@ -34,14 +36,19 @@ export async function createSaleAction(fd: FormData): Promise<void> {
   const u = await requireUser();
   const lines = linesFrom(fd);
   if (lines.length === 0) throw new Error("En az bir ürün satırı seçmelisin.");
+  const settings = await getOsSettings();
+  const issuedAt = s(fd, "issuedAt") ? new Date(s(fd, "issuedAt")!) : new Date();
+  const currency = s(fd, "currency") ?? settings.baseCurrency;
+  const fx = await resolveFxRate({ currency, date: issuedAt, given: s(fd, "fxRate"), settings });
   const id = await createSale(
     {
       customerId: s(fd, "customerId"),
       channelId: s(fd, "channelId"),
       locationId: s(fd, "locationId"),
-      issuedAt: s(fd, "issuedAt") ? new Date(s(fd, "issuedAt")!) : undefined,
-      currency: s(fd, "currency") ?? "TRY",
-      fxRate: parseDecimal(s(fd, "fxRate") ?? "1"),
+      issuedAt,
+      currency,
+      fxRate: fx.rate,
+      fxRateDate: fx.fxRateDate,
       status: s(fd, "status") === "DRAFT" ? "DRAFT" : "CONFIRMED",
       tradeModel: (s(fd, "tradeModel") as TradeModel | null) ?? null,
       note: s(fd, "note"),

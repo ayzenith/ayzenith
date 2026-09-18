@@ -7,7 +7,9 @@ import { D, ZERO, lineTotal, money, sum, toNum, toNumOrNull, type Dec } from "./
 import { allocateCosts, commissionAmount, dueDateFor } from "./documents";
 import { nextCode } from "./sequence";
 import { averageCost, postMovements, StockError, ensureDefaultLocation } from "./inventory";
-import { getOsSettings, suggestFxRate } from "./settings";
+import { getOsSettings } from "./settings";
+import { suggestRates } from "./fx";
+import { docDay } from "./fx-tcmb";
 import { DocumentError, type CostLineInput } from "./purchases";
 import { DOC_PREFIX } from "@/config/os";
 
@@ -173,6 +175,18 @@ export async function createSale(input: SaleInput, userId?: string | null): Prom
 export async function confirmSale(id: string, userId?: string | null): Promise<void> {
   const settings = await getOsSettings();
 
+  // A dropship line is valued from the item's purchase price, converted at the
+  // TCMB rate for the SALE date. Fetched here, before the transaction, because a
+  // network call must never hold a pooled connection open.
+  const head = await db.sale.findUnique({
+    where: { id },
+    select: { issuedAt: true, tradeModel: true, lines: { select: { item: { select: { purchaseCurrency: true } } } } },
+  });
+  const dropshipRates =
+    head?.tradeModel === "DROPSHIP"
+      ? await suggestRates(docDay(head.issuedAt), [...new Set(head.lines.map((l) => l.item.purchaseCurrency))], settings)
+      : {};
+
   await db.$transaction(async (tx) => {
     const sale = await tx.sale.findUnique({
       where: { id },
@@ -213,9 +227,10 @@ export async function confirmSale(id: string, userId?: string | null): Promise<v
       let unit: Dec | null = null;
       if (dropship) {
         // No stock was consumed. Value from what the goods are known to cost.
-        if (line.item.purchasePrice) {
-          const rate = suggestFxRate(settings, line.item.purchaseCurrency);
-          unit = line.item.purchasePrice.mul(rate);
+        // No rate found → cost stays unknown (null), never valued at 1.
+        const rate = dropshipRates[line.item.purchaseCurrency]?.rate;
+        if (line.item.purchasePrice && rate) {
+          unit = line.item.purchasePrice.mul(D(rate));
         }
       } else {
         unit = await averageCost(tx, line.itemId, sale.locationId);

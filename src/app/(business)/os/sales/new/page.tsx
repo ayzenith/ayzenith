@@ -4,7 +4,10 @@ import { listItems } from "@/server/os/items";
 import { listChannels } from "@/server/os/channels";
 import { listLocations } from "@/server/os/inventory";
 import { getOsSettings } from "@/server/os/settings";
+import { suggestRates } from "@/server/os/fx";
+import { istanbulDay } from "@/server/os/fx-tcmb";
 import { createSaleAction, priceForAction } from "../actions";
+import { fxRatesForDayAction } from "../../fx-actions";
 import { SaleForm } from "@/components/os/sale-form";
 import { PageHead } from "@/components/os/ui";
 
@@ -19,6 +22,8 @@ export default async function NewSale() {
     listLocations(),
     getOsSettings(),
   ]);
+  const today = istanbulDay();
+  const rates = await suggestRates(today, undefined, settings);
 
   return (
     <>
@@ -31,7 +36,9 @@ export default async function NewSale() {
         channels={channels.map((c) => ({ id: c.id, name: c.name, commissionRate: c.commissionRate }))}
         locations={locations.map((l) => ({ id: l.id, name: l.name }))}
         baseCurrency={settings.baseCurrency}
-        fxRates={settings.fxRates}
+        initialDay={today}
+        initialRates={rates}
+        getRates={fxRatesForDayAction}
       />
     </>
   );

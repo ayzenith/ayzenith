@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import { CURRENCIES, TRADE_MODEL_LABELS } from "@/config/os";
 import { Card, Field, Note, btn, input } from "./ui";
+import { FxNote, suggestedValue, useFxSuggestions, type RatesByCurrency } from "./fx-rate";
 
 /**
  * The new-sale form.
@@ -51,7 +52,9 @@ export function SaleForm({
   channels,
   locations,
   baseCurrency,
-  fxRates,
+  initialDay,
+  initialRates,
+  getRates,
 }: {
   action: (fd: FormData) => Promise<void>;
   /** Wraps the server's `priceFor(itemId, channelId)` — the channel override if
@@ -62,7 +65,10 @@ export function SaleForm({
   channels: SaleFormChannel[];
   locations: SaleFormLocation[];
   baseCurrency: string;
-  fxRates: Record<string, number>;
+  /** The document date the initial rates were computed for (Istanbul day). */
+  initialDay: string;
+  initialRates: RatesByCurrency;
+  getRates: (day: string) => Promise<RatesByCurrency>;
 }) {
   const formId = useId();
   const [lines, setLines] = useState<Line[]>([newLine()]);
@@ -70,6 +76,8 @@ export function SaleForm({
   const [channelId, setChannelId] = useState("");
   const [currency, setCurrency] = useState(baseCurrency);
   const [fxRate, setFxRate] = useState("1");
+  const [fxTouched, setFxTouched] = useState(false);
+  const fx = useFxSuggestions(initialDay, initialRates, getRates);
 
   const dropship = tradeModel === "DROPSHIP";
 
@@ -97,12 +105,14 @@ export function SaleForm({
 
   function onCurrencyChange(next: string) {
     setCurrency(next);
-    if (next === baseCurrency) {
-      setFxRate("1");
-    } else {
-      const suggested = fxRates[next];
-      setFxRate(suggested && Number.isFinite(suggested) && suggested > 0 ? String(suggested) : "1");
-    }
+    setFxRate(suggestedValue(fx.rates, next, baseCurrency));
+    setFxTouched(false);
+  }
+
+  async function onDateChange(next: string) {
+    const r = await fx.changeDay(next);
+    // A rate the owner typed stays; only an untouched suggestion follows the date.
+    if (r && !fxTouched) setFxRate(suggestedValue(r, currency, baseCurrency));
   }
 
   return (
@@ -146,7 +156,7 @@ export function SaleForm({
             </Field>
           )}
           <Field label="Tarih">
-            <input name="issuedAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className={input} />
+            <input name="issuedAt" type="date" value={fx.day} onChange={(e) => onDateChange(e.target.value)} className={input} />
           </Field>
           <Field label="Para birimi">
             <select name="currency" className={input} value={currency} onChange={(e) => onCurrencyChange(e.target.value)}>
@@ -155,8 +165,18 @@ export function SaleForm({
               ))}
             </select>
           </Field>
-          <Field label="Kur" hint={`1 ${currency} = ? ${baseCurrency}`}>
-            <input name="fxRate" value={fxRate} onChange={(e) => setFxRate(e.target.value)} inputMode="decimal" className={input} />
+          <Field label="Kur" hint={`1 ${currency} = ? ${baseCurrency}`} required={currency !== baseCurrency}>
+            <input
+              name="fxRate"
+              value={fxRate}
+              onChange={(e) => { setFxRate(e.target.value); setFxTouched(true); }}
+              required={currency !== baseCurrency}
+              readOnly={currency === baseCurrency}
+              inputMode="decimal"
+              placeholder="Kuru girin"
+              className={input}
+            />
+            <FxNote suggestion={fx.rates[currency]} touched={fxTouched} loading={fx.loading} />
           </Field>
           <Field label="Durum">
             <select name="status" className={input} defaultValue="CONFIRMED">

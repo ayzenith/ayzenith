@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listExpenses, listRecurring } from "@/server/os/finance";
 import { listParties } from "@/server/os/parties";
-import { EXPENSE_KIND_LABELS, RECURRENCE_LABELS } from "@/config/os";
+import { getOsSettings } from "@/server/os/settings";
+import { CURRENCIES, EXPENSE_KIND_LABELS, RECURRENCE_LABELS } from "@/config/os";
 import { createExpenseAction, deleteExpenseAction, deleteRecurringAction, upsertRecurringAction } from "./actions";
 import { Card, EmptyState, Field, Money, PageHead, StatCard, Table, Td, Th, Tr, btn, input } from "@/components/os/ui";
 
@@ -13,10 +14,11 @@ type SP = Promise<{ new?: string }>;
 
 export default async function ExpensesPage({ searchParams }: { searchParams: SP }) {
   const sp = await searchParams;
-  const [e, recurring, parties] = await Promise.all([
+  const [e, recurring, parties, settings] = await Promise.all([
     listExpenses(),
     listRecurring(),
     listParties({ perPage: 200 }),
+    getOsSettings(),
   ]);
 
   return (
@@ -61,10 +63,12 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
               <input name="amount" required inputMode="decimal" className={input} />
             </Field>
             <Field label="Para birimi">
-              <input name="currency" defaultValue="TRY" className={input} />
+              <select name="currency" defaultValue={settings.baseCurrency} className={input}>
+                {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+              </select>
             </Field>
-            <Field label="Kur">
-              <input name="fxRate" defaultValue="1" inputMode="decimal" className={input} />
+            <Field label="Kur" hint={`Boş bırakırsan gider tarihinin TCMB kuru kullanılır (1 birim = ? ${settings.baseCurrency})`}>
+              <input name="fxRate" inputMode="decimal" placeholder="Otomatik (TCMB)" className={input} />
             </Field>
             <Field label="Tarih">
               <input name="occurredAt" type="date" defaultValue={new Date().toISOString().slice(0, 10)} className={input} />
@@ -163,8 +167,10 @@ export default async function ExpensesPage({ searchParams }: { searchParams: SP 
               <Field label="Tutar" required>
                 <input name="amount" required inputMode="decimal" className={input} />
               </Field>
-              <Field label="Para birimi">
-                <input name="currency" defaultValue="TRY" className={input} />
+              <Field label="Para birimi" hint="Döviz ise her dönemin kuru TCMB'den alınır">
+                <select name="currency" defaultValue={settings.baseCurrency} className={input}>
+                  {CURRENCIES.map((c) => <option key={c.code} value={c.code}>{c.code}</option>)}
+                </select>
               </Field>
               <Field label="Sıklık">
                 <select name="frequency" className={input} defaultValue="MONTHLY">

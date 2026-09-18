@@ -1591,6 +1591,13 @@ model OsSetting {
   allowNegativeStock Boolean   @default(false)
   fxRates            Json? // { "EUR": 47.2, "USD": 40.1 }
   fxUpdatedAt        DateTime?
+  /// Which TCMB column pre-fills a document: FOREX_BUYING (döviz alış) |
+  /// FOREX_SELLING | BANKNOTE_BUYING | BANKNOTE_SELLING. A suggestion only —
+  /// which rate the books must use is the owner's (and accountant's) call.
+  fxRateType         String    @default("FOREX_BUYING")
+  /// Which bulletin a document dated D uses: PREVIOUS_BULLETIN = the latest one
+  /// published BEFORE D; SAME_DAY_BULLETIN = the latest one on or before D.
+  fxDateRule         String    @default("PREVIOUS_BULLETIN")
 
   companyLegalName   String?
   companyTradingName String?
@@ -1610,6 +1617,41 @@ model OsSetting {
   defaultDocFooterNote String?
 
   updatedAt DateTime @updatedAt
+}
+
+/// One day's exchange-rate bulletin from an official source (TCMB). A day is
+/// recorded even when NO bulletin exists for it (weekend, public holiday:
+/// status NONE), so the system never asks the central bank about the same empty
+/// day twice. Only past days are ever marked NONE — today may still publish.
+model FxBulletin {
+  id         String   @id @default(cuid())
+  source     String   @default("TCMB")
+  date       DateTime @db.Date
+  status     String // OK | NONE
+  bulletinNo String?
+  fetchedAt  DateTime @default(now())
+  rates      FxRate[]
+
+  @@unique([source, date])
+  @@index([date])
+}
+
+/// One currency line of a bulletin, stored exactly as published: the four
+/// columns in TRY for `unit` units of the currency (JPY is quoted per 100).
+/// Empty columns (TCMB publishes no banknote rate for e.g. RUB/CNY) stay null.
+model FxRate {
+  id              String     @id @default(cuid())
+  bulletinId      String
+  bulletin        FxBulletin @relation(fields: [bulletinId], references: [id], onDelete: Cascade)
+  currency        String
+  unit            Int        @default(1)
+  forexBuying     Decimal?   @db.Decimal(18, 8)
+  forexSelling    Decimal?   @db.Decimal(18, 8)
+  banknoteBuying  Decimal?   @db.Decimal(18, 8)
+  banknoteSelling Decimal?   @db.Decimal(18, 8)
+
+  @@unique([bulletinId, currency])
+  @@index([currency])
 }
 
 /// Per-year document counters (key = "PURCHASE-2026"), incremented inside the

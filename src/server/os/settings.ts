@@ -6,6 +6,7 @@ import { db } from "@/lib/db";
 import { DEFAULT_BASE_CURRENCY } from "@/config/os";
 import { DEFAULT_COMPANY_PROFILE } from "@/config/trade-documents";
 import { D, type Dec } from "./money";
+import { asDateRule, asRateType, type FxDateRule, type FxRateType } from "./fx-tcmb";
 
 /**
  * Business OS settings — a single row (id = "os"), the same pattern RadarSetting
@@ -21,6 +22,10 @@ export type OsSettings = {
   allowNegativeStock: boolean;
   fxRates: Record<string, number>;
   fxUpdatedAt: Date | null;
+  /** Which TCMB column pre-fills documents (see fx-tcmb.ts). */
+  fxRateType: FxRateType;
+  /** Which bulletin a document dated D uses (see fx-tcmb.ts). */
+  fxDateRule: FxDateRule;
   company: CompanyProfile;
 };
 
@@ -30,6 +35,8 @@ const DEFAULTS: OsSettings = {
   allowNegativeStock: false,
   fxRates: {},
   fxUpdatedAt: null,
+  fxRateType: "FOREX_BUYING",
+  fxDateRule: "PREVIOUS_BULLETIN",
   company: DEFAULT_COMPANY_PROFILE,
 };
 
@@ -47,6 +54,8 @@ export const getOsSettings = cache(async (): Promise<OsSettings> => {
       allowNegativeStock: row.allowNegativeStock,
       fxRates: rates,
       fxUpdatedAt: row.fxUpdatedAt,
+      fxRateType: asRateType(row.fxRateType),
+      fxDateRule: asDateRule(row.fxDateRule),
       company: {
         companyLegalName: row.companyLegalName || DEFAULT_COMPANY_PROFILE.companyLegalName,
         companyTradingName: row.companyTradingName || DEFAULT_COMPANY_PROFILE.companyTradingName,
@@ -75,8 +84,12 @@ export async function saveOsSettings(input: {
   defaultCountry?: string;
   allowNegativeStock?: boolean;
   fxRates?: Record<string, number>;
+  fxRateType?: FxRateType;
+  fxDateRule?: FxDateRule;
 }): Promise<void> {
   const data: Prisma.OsSettingUpdateInput = {};
+  if (input.fxRateType) data.fxRateType = input.fxRateType;
+  if (input.fxDateRule) data.fxDateRule = input.fxDateRule;
   if (input.baseCurrency) data.baseCurrency = input.baseCurrency;
   if (input.defaultCountry) data.defaultCountry = input.defaultCountry;
   if (input.allowNegativeStock !== undefined) data.allowNegativeStock = input.allowNegativeStock;
@@ -93,6 +106,8 @@ export async function saveOsSettings(input: {
       allowNegativeStock: input.allowNegativeStock ?? false,
       fxRates: (input.fxRates ?? {}) as Prisma.InputJsonValue,
       fxUpdatedAt: input.fxRates ? new Date() : null,
+      fxRateType: input.fxRateType ?? DEFAULTS.fxRateType,
+      fxDateRule: input.fxDateRule ?? DEFAULTS.fxDateRule,
     },
     update: data,
   });
@@ -132,7 +147,8 @@ export async function saveCompanyProfile(input: Partial<CompanyProfile>): Promis
 }
 
 /**
- * The rate to PRE-FILL a new document with. It is only a suggestion: once the
+ * The MANUAL table's rate for a currency — the last-resort fallback behind the
+ * TCMB bulletin (`fx.ts`), kept for callers that cannot await a fetch. Once a
  * document is saved its own `fxRate` is authoritative and this table can move
  * freely without rewriting a single past margin.
  */

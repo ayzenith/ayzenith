@@ -13,6 +13,9 @@ import { db } from "@/lib/db";
 import { logActivity } from "@/server/activity";
 import { D, ZERO, money, toNum, toNumOrNull, type Dec } from "./money";
 import { CASHFLOW_BUCKETS, type CashflowBucketKey } from "@/config/os";
+import { getOsSettings } from "./settings";
+import { resolveFxRate, suggestRate } from "./fx";
+import { docDay } from "./fx-tcmb";
 
 /**
  * AYZENITH BUSINESS OS — money in, money out.
@@ -533,6 +536,7 @@ export async function materialiseRecurring(monthsAhead = 12): Promise<number> {
   horizon.setMonth(horizon.getMonth() + monthsAhead);
 
   const rules = await db.recurringExpense.findMany({ where: { active: true } });
+  const settings = await getOsSettings();
   let created = 0;
 
   for (const rule of rules) {
@@ -564,6 +568,17 @@ export async function materialiseRecurring(monthsAhead = 12): Promise<number> {
         select: { id: true },
       });
       if (exists) continue;
+      // A foreign-currency rule used to be booked at 1. A future period has no
+      // bulletin yet, so it carries the latest known TCMB rate — an estimate,
+      // which is what a cash-flow forecast is. Unknown stays out rather than 1.
+      let rate = D(1);
+      let rateDate: Date = date;
+      if (rule.currency !== settings.baseCurrency) {
+        const s = await suggestRate(rule.currency, docDay(date), settings);
+        if (s.rate == null) continue;
+        rate = D(s.rate);
+        if (s.bulletinDay) rateDate = new Date(`${s.bulletinDay}T00:00:00Z`);
+      }
       await db.$transaction(async (tx) => {
         const e = await tx.expense.create({
           data: {
@@ -572,8 +587,8 @@ export async function materialiseRecurring(monthsAhead = 12): Promise<number> {
             partyId: rule.partyId,
             amount: rule.amount,
             currency: rule.currency,
-            fxRate: D(1),
-            fxRateDate: date,
+            fxRate: rate,
+            fxRateDate: rateDate,
             occurredAt: date,
             dueDate: date,
             recurringId: rule.id,
@@ -589,8 +604,8 @@ export async function materialiseRecurring(monthsAhead = 12): Promise<number> {
             expenseId: e.id,
             amount: rule.amount,
             currency: rule.currency,
-            fxRate: D(1),
-            fxRateDate: date,
+            fxRate: rate,
+            fxRateDate: rateDate,
             dueDate: date,
             note: rule.title,
           },
@@ -645,6 +660,14 @@ export async function upsertTaxRecord(input: {
   note?: string | null;
   userId?: string | null;
 }): Promise<string> {
+  // Fetched before the transaction: a network call must never hold a pooled
+  // connection open. Taxes are almost always in lira; a foreign one gets the
+  // TCMB rate for its due date instead of the old silent 1.
+  const settings = await getOsSettings();
+  const taxFx = input.currency === settings.baseCurrency || !input.amount || !input.amount.gt(0)
+    ? { rate: D(1), fxRateDate: null as Date | null }
+    : await resolveFxRate({ currency: input.currency, date: input.dueDate, settings });
+
   const id = await db.$transaction(async (tx) => {
     const data = {
       kind: input.kind.trim(),
@@ -674,8 +697,8 @@ export async function upsertTaxRecord(input: {
           taxRecordId: row.id,
           amount: input.amount,
           currency: input.currency,
-          fxRate: D(1),
-          fxRateDate: input.dueDate,
+          fxRate: taxFx.rate,
+          fxRateDate: taxFx.fxRateDate ?? input.dueDate,
           dueDate: input.dueDate,
           note: `${data.kind} ${data.period}`,
           createdById: input.userId ?? null,

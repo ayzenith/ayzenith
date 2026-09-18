@@ -7,6 +7,7 @@ import { requireUser } from "@/server/auth";
 import { saveOsSettings, saveCompanyProfile } from "@/server/os/settings";
 import { seedStarterChannels } from "@/server/os/channels";
 import { CURRENCY_CODES } from "@/config/os";
+import { asDateRule, asRateType } from "@/server/os/fx-tcmb";
 import { createMediaFromUpload } from "@/server/media";
 import {
   createSignatory, updateSignatory, deleteSignatory, seedDefaultSignatory,
@@ -36,6 +37,8 @@ export async function saveSettingsAction(fd: FormData): Promise<void> {
     defaultCountry: String(fd.get("defaultCountry") || "TR").toUpperCase().slice(0, 2),
     allowNegativeStock: fd.get("allowNegativeStock") === "on",
     fxRates,
+    fxRateType: asRateType(fd.get("fxRateType")),
+    fxDateRule: asDateRule(fd.get("fxDateRule")),
   });
   revalidatePath("/os/settings");
 }

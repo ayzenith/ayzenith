@@ -5,7 +5,8 @@ import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
 import { logActivity } from "@/server/activity";
 import { D, ZERO, parseOptionalDecimal, type Dec } from "../money";
-import { getOsSettings, suggestFxRate } from "../settings";
+import { getOsSettings } from "../settings";
+import { resolveFxRate } from "../fx";
 import { ensureDefaultLocation, postMovements } from "../inventory";
 import { createPurchase } from "../purchases";
 import { createSale } from "../sales";
@@ -448,14 +449,16 @@ async function importExpenses(parsed: Array<{ rowNumber: number; values: RowValu
       const party = partyName
         ? await db.party.findFirst({ where: { name: { equals: partyName, mode: "insensitive" } }, select: { id: true } })
         : null;
+      const occurredAt = date(values.occurredAt) ?? new Date();
+      const fx = await resolveFxRate({ currency, date: occurredAt, settings });
       await createExpense({
         title: str(values.title)!,
         kind: (arr(values.kind)[0] ?? "OTHER") as never,
         partyId: party?.id ?? null,
         amount: dec(values.amount)!,
         currency,
-        fxRate: suggestFxRate(settings, currency),
-        occurredAt: date(values.occurredAt) ?? new Date(),
+        fxRate: fx.rate,
+        occurredAt,
         dueDate: date(values.dueDate),
         note: str(values.note),
         userId,
@@ -546,8 +549,13 @@ async function importDocuments(
     const rowNumbers = rowsInDoc.map((r) => r.rowNumber);
     try {
       const currency = (str(first.values.currency) ?? settings.baseCurrency).toUpperCase();
-      const fxRate = dec(first.values.fxRate) ?? suggestFxRate(settings, currency);
       const issuedAt = date(first.values.issuedAt) ?? new Date();
+      // A rate in the file wins; otherwise the TCMB rate for the document's own
+      // date. No rate anywhere → this document fails with a clear message
+      // instead of being booked at 1.
+      const fx = await resolveFxRate({ currency, date: issuedAt, given: dec(first.values.fxRate)?.toString(), settings });
+      const fxRate = fx.rate;
+      const fxRateDate = fx.fxRateDate;
       const dueDate = date(first.values.dueDate);
 
       const locName = str(first.values.locationName);
@@ -580,7 +588,7 @@ async function importDocuments(
         const supplierName = str(first.values.supplierName)!.trim();
         const supplier = await resolveParty(supplierName, "SUPPLIER");
         await createPurchase(
-          { supplierId: supplier, locationId, issuedAt, dueDate, currency, fxRate, status: "CONFIRMED", lines, note: str(first.values.note) },
+          { supplierId: supplier, locationId, issuedAt, dueDate, currency, fxRate, fxRateDate, status: "CONFIRMED", lines, note: str(first.values.note) },
           userId,
         );
       } else {
@@ -597,7 +605,7 @@ async function importDocuments(
           channelId = ch.id;
         }
         await createSale(
-          { customerId, channelId, locationId, issuedAt, dueDate, currency, fxRate, status: "CONFIRMED", lines, note: str(first.values.note) },
+          { customerId, channelId, locationId, issuedAt, dueDate, currency, fxRate, fxRateDate, status: "CONFIRMED", lines, note: str(first.values.note) },
           userId,
         );
       }

@@ -3,7 +3,10 @@ import { listParties } from "@/server/os/parties";
 import { listItems } from "@/server/os/items";
 import { listLocations } from "@/server/os/inventory";
 import { getOsSettings } from "@/server/os/settings";
+import { suggestRates } from "@/server/os/fx";
+import { istanbulDay } from "@/server/os/fx-tcmb";
 import { createPurchaseAction } from "../actions";
+import { fxRatesForDayAction } from "../../fx-actions";
 import { PurchaseForm } from "@/components/os/purchase-form";
 import { PageHead } from "@/components/os/ui";
 
@@ -17,6 +20,8 @@ export default async function NewPurchase() {
     listLocations(),
     getOsSettings(),
   ]);
+  const today = istanbulDay();
+  const rates = await suggestRates(today, undefined, settings);
 
   return (
     <>
@@ -27,7 +32,9 @@ export default async function NewPurchase() {
         suppliers={suppliers.rows.map((p) => ({ id: p.id, name: p.name }))}
         locations={locations.map((l) => ({ id: l.id, name: l.name }))}
         baseCurrency={settings.baseCurrency}
-        fxRates={settings.fxRates}
+        initialDay={today}
+        initialRates={rates}
+        getRates={fxRatesForDayAction}
       />
     </>
   );

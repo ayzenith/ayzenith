@@ -5,6 +5,8 @@ import type { PaymentDirection, PaymentMethod } from "@prisma/client";
 import { requireUser } from "@/server/auth";
 import { cancelPayment, createPayment, settlePayment } from "@/server/os/finance";
 import { parseDecimal } from "@/server/os/money";
+import { getOsSettings } from "@/server/os/settings";
+import { resolveFxRate } from "@/server/os/fx";
 
 function s(fd: FormData, key: string): string | null {
   const v = fd.get(key);
@@ -30,12 +32,17 @@ export async function createPaymentAction(fd: FormData): Promise<void> {
   const u = await requireUser();
   const dueDate = s(fd, "dueDate");
   if (!dueDate) throw new Error("Vade tarihi zorunlu.");
+  const settings = await getOsSettings();
+  const currency = (s(fd, "currency") ?? settings.baseCurrency).toUpperCase();
+  // The rate of the day the plan is recorded (createPayment stamps today as
+  // fxRateDate); empty = the TCMB rate, never a silent 1.
+  const fx = await resolveFxRate({ currency, date: new Date(), given: s(fd, "fxRate"), settings });
   await createPayment({
     direction: (s(fd, "direction") as PaymentDirection) ?? "IN",
     partyId: s(fd, "partyId"),
     amount: parseDecimal(s(fd, "amount")),
-    currency: s(fd, "currency") ?? "TRY",
-    fxRate: parseDecimal(s(fd, "fxRate") ?? "1"),
+    currency,
+    fxRate: fx.rate,
     dueDate: new Date(dueDate),
     method: (s(fd, "method") as PaymentMethod | null) ?? null,
     note: s(fd, "note"),

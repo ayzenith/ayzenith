@@ -14,6 +14,7 @@ import {
   Landmark,
   BarChart3,
   Settings,
+  Route,
 } from "lucide-react";
 
 /**
@@ -43,6 +44,7 @@ export const osNavGroups: OsNavGroup[] = [
       { label: "Alışlar", href: "/os/purchases", icon: Truck },
       { label: "Stok", href: "/os/inventory", icon: Boxes, hint: "Konum bazlı stok defteri" },
       { label: "Kanallar", href: "/os/channels", icon: Store },
+      { label: "Lojistik", href: "/os/logistics", icon: Route, hint: "Navlun tahmini ve piyasa referansı" },
     ],
   },
   {

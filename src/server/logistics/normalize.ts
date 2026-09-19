@@ -43,7 +43,9 @@ const VOLUMETRIC_DIVISOR = 3000;
 
 function volumetricWeightKg(input: RawShipmentInput): number | null {
   const { lengthCm, widthCm, heightCm } = input;
-  if (lengthCm == null || widthCm == null || heightCm == null) return null;
+  if (lengthCm == null || widthCm == null || heightCm == null) {
+    return input.volumeM3 != null && input.volumeM3 > 0 ? (input.volumeM3 * 1_000_000) / VOLUMETRIC_DIVISOR : null;
+  }
   if (lengthCm <= 0 || widthCm <= 0 || heightCm <= 0) return null;
   return (lengthCm * widthCm * heightCm) / VOLUMETRIC_DIVISOR;
 }

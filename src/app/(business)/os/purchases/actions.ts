@@ -15,6 +15,7 @@ import {
 import { parseDecimal, parseOptionalDecimal } from "@/server/os/money";
 import { getOsSettings, type OsSettings } from "@/server/os/settings";
 import { resolveFxRate } from "@/server/os/fx";
+import { linkImportCaseToPurchase } from "@/server/import/purchase-link";
 
 function s(fd: FormData, key: string): string | null {
   const v = fd.get(key);
@@ -91,6 +92,8 @@ export async function createPurchaseAction(fd: FormData): Promise<void> {
     },
     u.id,
   );
+  const importCaseId = s(fd, "importCaseId");
+  if (importCaseId) await linkImportCaseToPurchase(importCaseId, id);
   revalidatePath("/os/purchases");
   redirect(`/os/purchases/${id}`);
 }

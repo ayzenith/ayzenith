@@ -19,6 +19,16 @@ export type PurchaseFormItem = { id: string; sku: string; name: string; unit: st
 export type PurchaseFormParty = { id: string; name: string };
 export type PurchaseFormLocation = { id: string; name: string };
 
+/** Optional pre-fill (e.g. from an Import Intelligence case). Without it the form behaves as before. */
+export type PurchaseFormInitial = {
+  supplierId?: string | null;
+  currency?: string;
+  note?: string;
+  lines?: Array<{ itemId: string; quantity: string; unitPrice: string }>;
+  costs?: Array<{ kind: string; label: string; amount: string; currency: string }>;
+  hidden?: Record<string, string>;
+};
+
 type Line = { key: string; itemId: string; quantity: string; unitPrice: string; discountRate: string; vatRate: string };
 type Cost = { key: string; kind: string; label: string; amount: string; currency: string; fxRate: string; fxTouched: boolean; allocation: string };
 
@@ -43,6 +53,7 @@ export function PurchaseForm({
   initialDay,
   initialRates,
   getRates,
+  initial,
 }: {
   action: (fd: FormData) => Promise<void>;
   items: PurchaseFormItem[];
@@ -53,11 +64,16 @@ export function PurchaseForm({
   initialDay: string;
   initialRates: RatesByCurrency;
   getRates: (day: string) => Promise<RatesByCurrency>;
+  initial?: PurchaseFormInitial;
 }) {
-  const [lines, setLines] = useState<Line[]>([newLine()]);
-  const [costs, setCosts] = useState<Cost[]>([]);
-  const [currency, setCurrency] = useState(baseCurrency);
-  const [fxRate, setFxRate] = useState("1");
+  const [lines, setLines] = useState<Line[]>(() =>
+    initial?.lines?.length ? initial.lines.map((l) => ({ ...newLine(), ...l })) : [newLine()],
+  );
+  const [costs, setCosts] = useState<Cost[]>(() =>
+    (initial?.costs ?? []).map((c) => ({ ...newCost(c.currency, suggestedValue(initialRates, c.currency, baseCurrency)), kind: c.kind, label: c.label, amount: c.amount })),
+  );
+  const [currency, setCurrency] = useState(initial?.currency ?? baseCurrency);
+  const [fxRate, setFxRate] = useState(() => (initial?.currency ? suggestedValue(initialRates, initial.currency, baseCurrency) : "1"));
   const [fxTouched, setFxTouched] = useState(false);
   const fx = useFxSuggestions(initialDay, initialRates, getRates);
 
@@ -94,10 +110,13 @@ export function PurchaseForm({
 
   return (
     <form action={action} className="flex flex-col gap-4">
+      {Object.entries(initial?.hidden ?? {}).map(([k, v]) => (
+        <input key={k} type="hidden" name={k} value={v} />
+      ))}
       <Card>
         <div className="grid gap-4 md:grid-cols-3">
           <Field label="Tedarikçi" required>
-            <select name="supplierId" required className={input}>
+            <select name="supplierId" required className={input} defaultValue={initial?.supplierId ?? ""}>
               <option value="">Seç</option>
               {suppliers.map((p) => (
                 <option key={p.id} value={p.id}>{p.name}</option>
@@ -280,7 +299,7 @@ export function PurchaseForm({
       </Card>
 
       <Card title="Not">
-        <textarea name="note" rows={2} className={input} placeholder="Bu alışa dair not" />
+        <textarea name="note" rows={2} className={input} placeholder="Bu alışa dair not" defaultValue={initial?.note} />
       </Card>
 
       <div>

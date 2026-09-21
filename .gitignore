@@ -51,3 +51,6 @@ next-env.d.ts
 
 .vercel
 .env*
+
+# Import Intelligence ingestion downloads (official files, re-downloadable)
+.import-intel-cache/

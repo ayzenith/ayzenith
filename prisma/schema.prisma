@@ -1024,6 +1024,7 @@ model Party {
   stockLocations    StockLocation[]
   expenses          Expense[]
   recurringExpenses RecurringExpense[]
+  importCases       ImportCase[]
 
   @@index([name])
   @@index([country])
@@ -1116,6 +1117,7 @@ model Item {
   movements     StockMovement[]
   purchaseLines PurchaseLine[]
   saleLines     SaleLine[]
+  importCases   ImportCase[]
 
   @@index([name])
   @@index([category])
@@ -1276,10 +1278,11 @@ model Purchase {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  lines     PurchaseLine[]
-  costs     CostLine[]
-  payments  Payment[]
-  movements StockMovement[]
+  lines       PurchaseLine[]
+  costs       CostLine[]
+  payments    Payment[]
+  movements   StockMovement[]
+  importCases ImportCase[]
 
   @@index([supplierId])
   @@index([issuedAt])
@@ -2461,4 +2464,259 @@ model LogisticsMarketReference {
   createdAt  DateTime @default(now())
 
   @@index([originCountry, destCountry])
+}
+
+// ============================================================================
+// IMPORT INTELLIGENCE — V1 (additive, 2026-09-19). Importing a product INTO
+// Turkey: GTİP prediction, import duties and trade measures, import controls,
+// and landed cost on top of the existing Logistics Intelligence and FX layers.
+// Nothing above this line changes except three virtual back-relations.
+//
+// The three things this schema exists to keep apart, never merge:
+//   1. WHAT A SOURCE SAID — ImportSource (one row per fetched VERSION of a
+//      document) + ImportTariffLine / ImportRule parsed out of it. Sources are
+//      versioned by content hash and never edited or deleted, so a case analysed
+//      last month still points at exactly the text it was computed from.
+//   2. WHAT THE MODEL INFERRED — ImportClassificationCandidate. A predicted GTİP
+//      is a relative-confidence ranking over evidence, never a legal answer; its
+//      `status` says who asserted it (AI_PREDICTED / USER_ENTERED / BTB_DECLARED
+//      / OFFICIAL_VERIFIED), and nothing in code promotes one to another.
+//   3. WHY — ImportEvidence. Every positive, negative, missing or conflicting
+//      fact behind a result, each with its provenance and (when it came from a
+//      document) the exact ImportSource version.
+//
+// Costs are NOT a new table: a case turns into a Purchase with ordinary
+// CostLines, so landed cost reaches the item through the existing costing path.
+// ============================================================================
+
+enum ImportSourceStatus {
+  OK
+  UNREACHABLE // KAYNAĞA ERİŞİLEMEDİ — recorded, never replaced with made-up data
+  MANUAL_ONLY // e.g. CAPTCHA-protected (TARA): linked for a human, never automated
+  PARSE_FAILED
+  CHANGED // a later check found different bytes than the version ingested
+}
+
+/// One fetched VERSION of one source document or page. `key` names the source
+/// across versions ("TR_IRK_II_LIST", "WEB:https://…"); a re-fetch with the same
+/// bytes only bumps `lastCheckedAt`, different bytes create a new row and flip
+/// `isCurrent`. Binary files keep only their hash here — the publisher's URL is
+/// the raw copy; text sources keep a trimmed copy in `rawContent`.
+model ImportSource {
+  id         String  @id @default(cuid())
+  key        String
+  name       String
+  publisher  String?
+  /// OFFICIAL_TR | OFFICIAL_EU | OFFICIAL_INTL | MANUFACTURER | THIRD_PARTY | USER
+  sourceType String
+  /// 1 Turkish official · 2 EU / international official · 3 manufacturer · 4 third party / user
+  tier       Int
+  url        String?
+  title      String?
+
+  status        ImportSourceStatus @default(OK)
+  statusCode    Int?
+  contentType   String?
+  contentHash   String?
+  etag          String?
+  lastModified  String?
+  byteSize      Int?
+  fetchedAt     DateTime?
+  lastCheckedAt DateTime?
+
+  publicationDate  DateTime?
+  /// The period the content is valid for, as the source itself states it.
+  effectiveFrom    DateTime?
+  effectiveUntil   DateTime?
+  /// Consolidated legal texts: the last amendment already folded in. A rule
+  /// read from this version is only certain for dates on or after it.
+  consolidatedAsOf DateTime?
+  version          String?
+  extractionMethod String?
+  error            String?
+  rawContent       String?
+  parsed           Json?
+  isCurrent        Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tariffLines ImportTariffLine[]
+  rules       ImportRule[]
+  evidence    ImportEvidence[]
+
+  @@unique([key, contentHash])
+  @@index([key, isCurrent])
+}
+
+/// One line of a nomenclature, verbatim: the Turkish GTİP (TR_GTIP, 12-digit
+/// statistical positions plus their headings) or WCO HS 2022 (HS, 6-digit,
+/// English, used only to understand English product text). `fullDescription`
+/// is the chain of parent texts, because "- - Diğerleri" means nothing alone.
+model ImportTariffLine {
+  id              String       @id @default(cuid())
+  sourceId        String
+  source          ImportSource @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  system          String // TR_GTIP | HS
+  code            String // digits only
+  level           Int // digit count: 2, 4, 6, 8, 10, 12
+  description     String
+  fullDescription String
+  searchText      String
+  unit            String?
+  /// 474 sayılı Kanun vergi haddi — the statutory ceiling the İGV cap refers to.
+  legalRate474    Decimal?     @db.Decimal(9, 3)
+  sortOrder       Int
+
+  @@unique([sourceId, system, code])
+  @@index([system, code])
+}
+
+enum ImportRuleKind {
+  CUSTOMS_DUTY
+  ADDITIONAL_DUTY
+  ANTI_DUMPING
+  COUNTERVAILING
+  SAFEGUARD
+  VAT
+  EXCISE
+  SURVEILLANCE
+  QUOTA
+  IMPORT_INSPECTION
+  SPECIAL_REGIME
+}
+
+/// A legal rule as one source version states it, with its own validity window.
+/// Column-based lists (İthalat Rejimi Kararı, İGV) keep all seven country-group
+/// columns of one GTİP in `columnRates`; origin-specific measures (anti-dumping,
+/// safeguard) carry `originCountry`. A rate that is not a plain percentage
+/// (specific, compound, firm-specific range) keeps its text and is never
+/// squeezed into `ratePct`.
+model ImportRule {
+  id              String         @id @default(cuid())
+  sourceId        String
+  source          ImportSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  kind            ImportRuleKind
+  /// Digits-only GTİP or GTİP prefix; "" = every GTİP (e.g. the general VAT rate).
+  gtipPrefix      String
+  originCountry   String?
+  columnRates     Json?
+  ratePct         Decimal?       @db.Decimal(9, 4)
+  rateText        String?
+  rateType        String // AD_VALOREM | SPECIFIC | COMPOUND | RANGE | TEXT
+  footnote        String?
+  legalRef        String
+  validFrom       DateTime
+  validUntil      DateTime?
+  publicationDate DateTime?
+  sourceVersion   String?
+  amendment       String?
+  status          String         @default("IN_FORCE") // IN_FORCE | PROVISIONAL | NEEDS_REVIEW
+  meta            Json?
+  createdAt       DateTime       @default(now())
+
+  evidence ImportEvidence[]
+
+  @@index([kind, gtipPrefix])
+  @@index([sourceId])
+}
+
+/// One import analysis, frozen when it was run (like LogisticsEstimate): what
+/// was typed, what the engine concluded, and per-area statuses. Re-running
+/// creates a new case; an old one is never rewritten.
+model ImportCase {
+  id          String @id @default(cuid())
+  code        String @unique
+  productName String
+
+  itemId     String?
+  item       Item?     @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  supplierId String?
+  supplier   Party?    @relation(fields: [supplierId], references: [id], onDelete: SetNull)
+  /// Set when the case was turned into a purchase.
+  purchaseId String?
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id], onDelete: SetNull)
+
+  importDate      DateTime
+  originCountry   String?
+  dispatchCountry String?
+  atrAvailable    Boolean?
+  /// NONE | EUR1 | EUR_MED | ORIGIN_DECLARATION | FORM_A | CERT_OF_ORIGIN
+  originProof     String?
+  /// FREE_CIRCULATION_EU (A.TR) | THIRD_COUNTRY | UNKNOWN — derived, never typed
+  customsStatus   String?
+
+  gtipMode             String // PREDICT | USER
+  userGtip             String?
+  predictedGtip        String?
+  /// AI_PREDICTED | USER_ENTERED | BTB_DECLARED | OFFICIAL_VERIFIED | INSUFFICIENT
+  classificationStatus String
+
+  input          Json
+  productProfile Json
+  origin         Json
+  compliance     Json
+  tax            Json
+  logistics      Json
+  landedCost     Json
+  statusSummary  Json
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  candidates ImportClassificationCandidate[]
+  evidence   ImportEvidence[]
+
+  @@index([createdAt])
+  @@index([itemId])
+  @@index([supplierId])
+  @@index([purchaseId])
+}
+
+/// One ranked GTİP candidate. `confidencePct` is the model's RELATIVE confidence
+/// among the candidates it considered, on the evidence it had — not the
+/// probability that customs will agree.
+model ImportClassificationCandidate {
+  id              String     @id @default(cuid())
+  caseId          String
+  case            ImportCase @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  rank            Int
+  gtip            String
+  gtipDescription String
+  confidencePct   Decimal    @db.Decimal(6, 2)
+  status          String
+  selected        Boolean    @default(false)
+  rationale       Json
+
+  evidence ImportEvidence[]
+
+  @@index([caseId])
+}
+
+/// One reason behind a result. `sourceId` points at the exact source VERSION a
+/// fact came from; `ruleId` at the rule a tax line applied. Provenance is one of
+/// OFFICIAL | AI_PREDICTED | USER_ENTERED | CALCULATED | WEB_EXTRACTED |
+/// INFERRED | UNKNOWN, and is shown as-is in the UI.
+model ImportEvidence {
+  id          String                         @id @default(cuid())
+  caseId      String
+  case        ImportCase                     @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  candidateId String?
+  candidate   ImportClassificationCandidate? @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  sourceId    String?
+  source      ImportSource?                  @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  ruleId      String?
+  rule        ImportRule?                    @relation(fields: [ruleId], references: [id], onDelete: SetNull)
+
+  area       String // PRODUCT | CLASSIFICATION | ORIGIN | COMPLIANCE | TAX | LOGISTICS | LANDED
+  kind       String
+  polarity   String // POSITIVE | NEGATIVE | NEUTRAL
+  provenance String
+  text       String
+  detail     Json?
+  createdAt  DateTime @default(now())
+
+  @@index([caseId])
+  @@index([candidateId])
+  @@index([sourceId])
 }

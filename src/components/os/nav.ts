@@ -15,6 +15,7 @@ import {
   BarChart3,
   Settings,
   Route,
+  ScanSearch,
 } from "lucide-react";
 
 /**
@@ -45,6 +46,7 @@ export const osNavGroups: OsNavGroup[] = [
       { label: "Stok", href: "/os/inventory", icon: Boxes, hint: "Konum bazlı stok defteri" },
       { label: "Kanallar", href: "/os/channels", icon: Store },
       { label: "Lojistik", href: "/os/logistics", icon: Route, hint: "Navlun tahmini ve piyasa referansı" },
+      { label: "İthalat", href: "/os/import", icon: ScanSearch, hint: "GTİP tahmini, vergiler, denetimler, iniş maliyeti" },
     ],
   },
   {

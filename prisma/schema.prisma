@@ -1118,10 +1118,31 @@ model Item {
   purchaseLines PurchaseLine[]
   saleLines     SaleLine[]
   importCases   ImportCase[]
+  costState     ItemCostState?
 
   @@index([name])
   @@index([category])
   @@index([active])
+}
+
+/// Moving weighted-average cost of one SKU, company-wide (location ignored).
+/// A CHECKED CACHE of the StockMovement ledger, not a second truth: it is
+/// updated in the same transaction as every movement, under a row lock, and
+/// `movementCount` is compared with the ledger on every write — if anything
+/// wrote movements around it, the row is rebuilt from the ledger by the same
+/// rule (`src/server/os/moving-average.ts`). Past sales are never re-costed.
+model ItemCostState {
+  itemId String @id
+  item   Item   @relation(fields: [itemId], references: [id], onDelete: Cascade)
+
+  onHand      Decimal  @db.Decimal(18, 3)
+  /// Base currency. Null = no average (no stock, or only uncosted history).
+  avgUnitCost Decimal? @db.Decimal(18, 6)
+  /// Units on hand with no known cost — only old history can leave these.
+  uncostedQty Decimal  @default(0) @db.Decimal(18, 3)
+
+  movementCount Int
+  updatedAt     DateTime @updatedAt
 }
 
 /// Where you sell. A channel may BE a firm (a dealer, a distributor), in which

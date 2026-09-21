@@ -392,12 +392,10 @@ export async function stockReport(): Promise<{ rows: StockReportRow[]; totalValu
   >(Prisma.sql`
     SELECT i."sku", i."name", i."unit", i."category", i."minStock",
            COALESCE(SUM(m."quantity"), 0) AS "onHand",
-           CASE WHEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END) > 0
-                THEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" * m."unitCost" ELSE 0 END)
-                     / SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END)
-                ELSE NULL END AS "avgCost"
+           MAX(cs."avgUnitCost") AS "avgCost"
     FROM "Item" i
     LEFT JOIN "StockMovement" m ON m."itemId" = i."id"
+    LEFT JOIN "ItemCostState" cs ON cs."itemId" = i."id"
     WHERE i."active" = true
     GROUP BY i."id"
     ORDER BY i."name" ASC

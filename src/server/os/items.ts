@@ -136,11 +136,9 @@ export async function itemStats(itemIds: string[]): Promise<Map<string, ItemStat
     stock AS (
       SELECT m."itemId",
              SUM(m."quantity") AS "onHand",
-             CASE WHEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END) > 0
-                  THEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" * m."unitCost" ELSE 0 END)
-                       / SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END)
-                  ELSE NULL END AS "avgCost"
+             MAX(cs."avgUnitCost") AS "avgCost"
       FROM "StockMovement" m
+      LEFT JOIN "ItemCostState" cs ON cs."itemId" = m."itemId"
       WHERE m."itemId" = ANY(${itemIds})
       GROUP BY m."itemId"
     ),

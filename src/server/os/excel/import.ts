@@ -473,10 +473,11 @@ async function importExpenses(parsed: Array<{ rowNumber: number; values: RowValu
 
 async function importStock(parsed: Array<{ rowNumber: number; values: RowValues }>, result: ImportResult, userId?: string | null) {
   const defaultLocation = await ensureDefaultLocation();
+  const { baseCurrency } = await getOsSettings();
   for (const { rowNumber, values } of parsed) {
     try {
       const sku = str(values.sku)!.trim();
-      const item = await db.item.findUnique({ where: { sku }, select: { id: true, purchasePrice: true } });
+      const item = await db.item.findUnique({ where: { sku }, select: { id: true, purchasePrice: true, purchaseCurrency: true } });
       if (!item) throw new Error(`"${sku}" stok kodlu ürün bulunamadı. Önce ürünleri içe aktar.`);
 
       const locName = str(values.locationName);
@@ -492,7 +493,12 @@ async function importStock(parsed: Array<{ rowNumber: number; values: RowValues 
 
       const quantity = dec(values.quantity)!;
       if (quantity.isZero()) throw new Error("Miktar sıfır olamaz.");
-      const cost = dec(values.unitCost) ?? item.purchasePrice ?? null;
+      // The item's purchase price is only a fallback when it is already in base
+      // currency — a USD price booked as lira is the "rate 1" error in disguise.
+      // Anything else stays null and the cost rule decides: current average, or
+      // a refusal naming the SKU.
+      const fallback = item.purchaseCurrency === baseCurrency ? item.purchasePrice : null;
+      const cost = dec(values.unitCost) ?? fallback ?? null;
       const reason = (arr(values.reason)[0] ?? "OPENING") as never;
 
       await db.$transaction(async (tx) => {

@@ -128,7 +128,7 @@ export default async function Inventory({ searchParams }: { searchParams: SP }) 
               </select>
             </div>
             <input name="quantity" required inputMode="decimal" placeholder="Miktar" className={input} />
-            <input name="unitCost" inputMode="decimal" placeholder="Birim maliyet (opsiyonel)" className={input} />
+            <input name="unitCost" inputMode="decimal" placeholder="Birim maliyet — girişte, ortalama yoksa zorunlu" className={input} />
             <input name="note" placeholder="Not (opsiyonel)" className={input} />
             <button type="submit" className={`${btn.primary} self-start`}>Hareketi kaydet</button>
           </form>

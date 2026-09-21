@@ -4,6 +4,7 @@ import { Prisma, type StockMoveReason } from "@prisma/client";
 import { db } from "@/lib/db";
 import { getOsSettings } from "./settings";
 import { D, ZERO, qty, toNum, unitCost, type Dec } from "./money";
+import { applyMove, replay, CostRequiredError, type CostState, type CostWarning } from "./moving-average";
 
 /**
  * AYZENITH BUSINESS OS — the stock ledger.
@@ -59,49 +60,108 @@ async function onHandTx(
   return rows._sum.quantity ?? ZERO();
 }
 
+// ---------------------------------------------------------------------------
+// Cost state — moving weighted average, per SKU, company-wide
+// ---------------------------------------------------------------------------
+
+type LockedCost = { state: CostState; movementCount: number };
+
 /**
- * Weighted-average landed cost of the units currently sitting in a location.
+ * Lock one SKU's `ItemCostState` row for the rest of the transaction and make
+ * sure it matches the ledger. Two sales of the same SKU therefore take turns:
+ * the second one reads the average the first one left behind, never the same
+ * stale one.
  *
- * Averaging only the INBOUND rows is deliberate. An outbound row carries the
- * cost it consumed, so including them would double-count the same money and
- * push the average toward zero after every sale.
+ * If the row's `movementCount` differs from the ledger (first use, or something
+ * wrote movements around this function), it is rebuilt from the ledger with the
+ * same rule. Rebuilding changes no movement and no past sale.
  */
-export async function averageCost(
-  tx: Prisma.TransactionClient,
-  itemId: string,
-  locationId?: string | null,
-): Promise<Dec | null> {
-  const rows = await tx.stockMovement.findMany({
-    where: {
-      itemId,
-      ...(locationId ? { locationId } : {}),
-      quantity: { gt: 0 },
-      unitCost: { not: null },
-    },
-    select: { quantity: true, unitCost: true },
-  });
-  if (rows.length === 0) return null;
-  let value = ZERO();
-  let units = ZERO();
-  for (const r of rows) {
-    if (!r.unitCost) continue;
-    value = value.plus(r.quantity.mul(r.unitCost));
-    units = units.plus(r.quantity);
+async function lockCostState(tx: Prisma.TransactionClient, itemId: string): Promise<LockedCost> {
+  await tx.$executeRaw`
+    INSERT INTO "ItemCostState" ("itemId", "onHand", "avgUnitCost", "uncostedQty", "movementCount", "updatedAt")
+    VALUES (${itemId}, 0, NULL, 0, -1, NOW())
+    ON CONFLICT ("itemId") DO NOTHING`;
+  const rows = await tx.$queryRaw<
+    Array<{ onHand: Prisma.Decimal; avgUnitCost: Prisma.Decimal | null; uncostedQty: Prisma.Decimal; movementCount: number }>
+  >`SELECT "onHand", "avgUnitCost", "uncostedQty", "movementCount"
+      FROM "ItemCostState" WHERE "itemId" = ${itemId} FOR UPDATE`;
+  const row = rows[0];
+  if (!row) throw new StockError("Maliyet kaydı kilitlenemedi.");
+
+  const ledgerCount = await tx.stockMovement.count({ where: { itemId } });
+  if (row.movementCount === ledgerCount) {
+    return {
+      state: { onHand: D(row.onHand), avgUnitCost: row.avgUnitCost ? D(row.avgUnitCost) : null, uncostedQty: D(row.uncostedQty) },
+      movementCount: row.movementCount,
+    };
   }
-  if (units.isZero()) return null;
-  return unitCost(value.div(units));
+
+  const history = await tx.stockMovement.findMany({
+    where: { itemId },
+    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+    select: { quantity: true, reason: true, unitCost: true, purchaseId: true, note: true },
+  });
+  const rebuilt = replay(
+    history.map((m) => ({ quantity: m.quantity, reason: m.reason, unitCost: m.unitCost, purchaseId: m.purchaseId, ref: m.note })),
+  );
+  await tx.itemCostState.update({
+    where: { itemId },
+    data: {
+      onHand: rebuilt.state.onHand,
+      avgUnitCost: rebuilt.state.avgUnitCost,
+      uncostedQty: rebuilt.state.uncostedQty,
+      movementCount: ledgerCount,
+    },
+  });
+  if (row.movementCount !== -1) {
+    await tx.activityLog.create({
+      data: {
+        userId: null,
+        action: "os.cost.rebuilt",
+        entity: "Item",
+        entityId: itemId,
+        summary: `Maliyet durumu defterle uyuşmuyordu (${row.movementCount} ≠ ${ledgerCount} hareket); defterden yeniden hesaplandı.`,
+      },
+    });
+  }
+  return { state: rebuilt.state, movementCount: ledgerCount };
+}
+
+/**
+ * Lock several SKUs at once, always in the same (sorted) order, so two
+ * documents touching the same SKUs in a different line order cannot deadlock.
+ * Call this before reading `averageCost` for a multi-line document.
+ */
+export async function lockItemCosts(tx: Prisma.TransactionClient, itemIds: string[]): Promise<void> {
+  for (const id of [...new Set(itemIds)].sort()) await lockCostState(tx, id);
+}
+
+/**
+ * The SKU's current moving weighted-average cost in base currency, company-wide.
+ * Locks the SKU's cost row until the transaction ends. Null = there is no
+ * average (no stock, or only uncosted history).
+ */
+export async function averageCost(tx: Prisma.TransactionClient, itemId: string): Promise<Dec | null> {
+  const { state } = await lockCostState(tx, itemId);
+  return state.avgUnitCost;
 }
 
 /**
  * Write movements atomically, refusing any that would create stock that does not
  * exist. `tx` is required: a movement never stands alone — it always belongs to
  * the purchase, sale or adjustment that caused it.
+ *
+ * Every movement also moves its SKU's cost state, in the same transaction:
+ * the cost each row carries is DECIDED here by the moving-average rule
+ * (outbound at the current average, a purchase cancellation at its own cost, a
+ * costless inbound at the current average or refused). Cost warnings are
+ * written to the activity log inside the transaction and returned.
  */
 export async function postMovements(
   tx: Prisma.TransactionClient,
   movements: MovementInput[],
-): Promise<void> {
-  if (movements.length === 0) return;
+): Promise<CostWarning[]> {
+  if (movements.length === 0) return [];
   const { allowNegativeStock } = await getOsSettings();
 
   if (!allowNegativeStock) {
@@ -130,21 +190,81 @@ export async function postMovements(
     }
   }
 
+  // Run every movement through its SKU's cost state, SKUs locked in sorted order.
+  const decidedCost = new Map<MovementInput, Dec | null>();
+  const nextState = new Map<string, LockedCost & { added: number }>();
+  const warnings: Array<CostWarning & { itemId: string; userId: string | null }> = [];
+  for (const itemId of [...new Set(movements.map((m) => m.itemId))].sort()) {
+    const locked = await lockCostState(tx, itemId);
+    let state = locked.state;
+    let added = 0;
+    for (const m of movements) {
+      if (m.itemId !== itemId) continue;
+      let r;
+      try {
+        r = applyMove(
+          state,
+          { quantity: qty(m.quantity), reason: m.reason, unitCost: m.unitCost ?? null, purchaseId: m.purchaseId, ref: m.note },
+          "live",
+        );
+      } catch (e) {
+        if (e instanceof CostRequiredError) {
+          const item = await tx.item.findUnique({ where: { id: itemId }, select: { name: true } });
+          throw new StockError(`"${item?.name ?? itemId}": ${e.message}`);
+        }
+        throw e;
+      }
+      state = r.state;
+      added += 1;
+      decidedCost.set(m, r.unitCost);
+      for (const w of r.warnings) warnings.push({ ...w, itemId, userId: m.createdById ?? null });
+    }
+    nextState.set(itemId, { state, movementCount: locked.movementCount, added });
+  }
+
   await tx.stockMovement.createMany({
-    data: movements.map((m) => ({
-      itemId: m.itemId,
-      locationId: m.locationId,
-      quantity: qty(m.quantity),
-      reason: m.reason,
-      unitCost: m.unitCost ? unitCost(m.unitCost) : null,
-      occurredAt: m.occurredAt ?? new Date(),
-      purchaseId: m.purchaseId ?? null,
-      saleId: m.saleId ?? null,
-      transferGroup: m.transferGroup ?? null,
-      note: m.note ?? null,
-      createdById: m.createdById ?? null,
-    })),
+    data: movements.map((m) => {
+      const cost = decidedCost.get(m) ?? null;
+      return {
+        itemId: m.itemId,
+        locationId: m.locationId,
+        quantity: qty(m.quantity),
+        reason: m.reason,
+        unitCost: cost ? unitCost(cost) : null,
+        occurredAt: m.occurredAt ?? new Date(),
+        purchaseId: m.purchaseId ?? null,
+        saleId: m.saleId ?? null,
+        transferGroup: m.transferGroup ?? null,
+        note: m.note ?? null,
+        createdById: m.createdById ?? null,
+      };
+    }),
   });
+
+  for (const [itemId, s] of nextState) {
+    await tx.itemCostState.update({
+      where: { itemId },
+      data: {
+        onHand: s.state.onHand,
+        avgUnitCost: s.state.avgUnitCost,
+        uncostedQty: s.state.uncostedQty,
+        movementCount: s.movementCount + s.added,
+      },
+    });
+  }
+
+  if (warnings.length > 0) {
+    await tx.activityLog.createMany({
+      data: warnings.map((w) => ({
+        userId: w.userId,
+        action: `os.cost.${w.code.toLowerCase()}`,
+        entity: "Item",
+        entityId: w.itemId,
+        summary: w.message,
+      })),
+    });
+  }
+  return warnings;
 }
 
 // ---------------------------------------------------------------------------
@@ -216,12 +336,10 @@ export async function listStock(opts: {
         i."category",
         i."minStock",
         COALESCE(SUM(m."quantity"), 0) AS "onHand",
-        CASE WHEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END) > 0
-             THEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" * m."unitCost" ELSE 0 END)
-                  / SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END)
-             ELSE NULL END AS "avgCost"
+        MAX(cs."avgUnitCost") AS "avgCost"
       FROM "Item" i
       LEFT JOIN "StockMovement" m ON m."itemId" = i."id" ${locFilter}
+      LEFT JOIN "ItemCostState" cs ON cs."itemId" = i."id"
       WHERE i."active" = true ${searchFilter}
       GROUP BY i."id"
     )
@@ -279,12 +397,10 @@ export async function stockSummary(): Promise<{ value: number; lowCount: number;
       WITH agg AS (
         SELECT i."id", i."minStock",
           COALESCE(SUM(m."quantity"), 0) AS "onHand",
-          CASE WHEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END) > 0
-               THEN SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" * m."unitCost" ELSE 0 END)
-                    / SUM(CASE WHEN m."quantity" > 0 AND m."unitCost" IS NOT NULL THEN m."quantity" ELSE 0 END)
-               ELSE NULL END AS "avgCost"
+          MAX(cs."avgUnitCost") AS "avgCost"
         FROM "Item" i
         LEFT JOIN "StockMovement" m ON m."itemId" = i."id"
+        LEFT JOIN "ItemCostState" cs ON cs."itemId" = i."id"
         WHERE i."active" = true
         GROUP BY i."id"
       )
@@ -368,7 +484,9 @@ export async function transferStock(input: {
   if (input.quantity.lte(0)) throw new StockError("Transfer miktarı sıfırdan büyük olmalı.");
 
   await db.$transaction(async (tx) => {
-    const cost = await averageCost(tx, input.itemId, input.fromLocationId);
+    // Company-wide cost: a transfer moves units, not value. Both legs carry the
+    // current average only so the ledger reads sensibly.
+    const cost = await averageCost(tx, input.itemId);
     const group = `TR-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     await postMovements(tx, [
       {
@@ -409,18 +527,16 @@ export async function adjustStock(input: {
 }): Promise<void> {
   if (input.quantity.isZero()) throw new StockError("Miktar sıfır olamaz.");
   await db.$transaction(async (tx) => {
-    // An inbound adjustment with no cost given inherits the average, so it does
-    // not dilute the item's valuation toward zero.
-    let cost = input.unitCost ?? null;
-    if (input.quantity.gt(0) && !cost) cost = await averageCost(tx, input.itemId, input.locationId);
-    if (input.quantity.lt(0) && !cost) cost = await averageCost(tx, input.itemId, input.locationId);
+    // postMovements decides the cost: an outbound leaves at the average, an
+    // inbound with no cost given takes the average — or is refused when there
+    // is none, rather than entering at zero.
     await postMovements(tx, [
       {
         itemId: input.itemId,
         locationId: input.locationId,
         quantity: input.quantity,
         reason: input.reason,
-        unitCost: cost,
+        unitCost: input.unitCost ?? null,
         note: input.note ?? null,
         createdById: input.userId ?? null,
       },

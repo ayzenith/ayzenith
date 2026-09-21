@@ -6,7 +6,7 @@ import { logActivity } from "@/server/activity";
 import { D, ZERO, lineTotal, money, sum, toNum, toNumOrNull, type Dec } from "./money";
 import { allocateCosts, commissionAmount, dueDateFor } from "./documents";
 import { nextCode } from "./sequence";
-import { averageCost, postMovements, StockError, ensureDefaultLocation } from "./inventory";
+import { averageCost, lockItemCosts, postMovements, StockError, ensureDefaultLocation } from "./inventory";
 import { getOsSettings } from "./settings";
 import { suggestRates } from "./fx";
 import { docDay } from "./fx-tcmb";
@@ -217,6 +217,9 @@ export async function confirmSale(id: string, userId?: string | null): Promise<v
     let cogsTotal = ZERO();
     let profitTotal = ZERO();
     const movements: Parameters<typeof postMovements>[1] = [];
+    // Lock every SKU's cost row up front, in sorted order: the cost read below
+    // is then the one this sale posts at, and no concurrent sale can interleave.
+    if (!dropship) await lockItemCosts(tx, sale.lines.map((l) => l.itemId));
 
     for (let i = 0; i < sale.lines.length; i += 1) {
       const line = sale.lines[i];
@@ -233,7 +236,7 @@ export async function confirmSale(id: string, userId?: string | null): Promise<v
           unit = line.item.purchasePrice.mul(D(rate));
         }
       } else {
-        unit = await averageCost(tx, line.itemId, sale.locationId);
+        unit = await averageCost(tx, line.itemId);
       }
 
       const lineCogs = unit ? unit.mul(line.quantity) : ZERO();

@@ -16,6 +16,7 @@ import {
   Settings,
   Route,
   ScanSearch,
+  Lightbulb,
 } from "lucide-react";
 
 /**
@@ -47,6 +48,7 @@ export const osNavGroups: OsNavGroup[] = [
       { label: "Kanallar", href: "/os/channels", icon: Store },
       { label: "Lojistik", href: "/os/logistics", icon: Route, hint: "Navlun tahmini ve piyasa referansı" },
       { label: "İthalat", href: "/os/import", icon: ScanSearch, hint: "GTİP tahmini, vergiler, denetimler, iniş maliyeti" },
+      { label: "Ürün Analizi", href: "/os/product-intel", icon: Lightbulb, hint: "Rakip, fırsat ve maliyete dayalı fiyat bandı" },
     ],
   },
   {
@@ -72,6 +74,7 @@ export const osNavGroups: OsNavGroup[] = [
 export const quickActions: Array<{ label: string; href: string }> = [
   { label: "Firma", href: "/os/companies/new" },
   { label: "Ürün", href: "/os/products/new" },
+  { label: "Ürün analizi", href: "/os/product-intel/new" },
   { label: "Satış", href: "/os/sales/new" },
   { label: "Alış", href: "/os/purchases/new" },
   { label: "Gider", href: "/os/expenses?new=1" },

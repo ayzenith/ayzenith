@@ -319,9 +319,9 @@ model RadarSnapshot {
   // providerAvailability, freshness, dataCompleteness } }, each 0–1.
   // The FINAL SCORE IS NOT AFFECTED BY ANY OF THIS — it never was, and Phase 4
   // does not change the score path at all.
-  completenessBreakdown Json @default("{}")
-  subCategories    Json          @default("[]") // [{ hs6, productGroup, score, trendPct }]
-  aiSummary        String? // AI interpretation (sourced-data-only); null until generated
+  completenessBreakdown Json    @default("{}")
+  subCategories         Json    @default("[]") // [{ hs6, productGroup, score, trendPct }]
+  aiSummary             String? // AI interpretation (sourced-data-only); null until generated
 
   // Non-fatal provider warnings from the pipeline that produced THIS snapshot
   // (e.g. "3 kıyas pazarı ölçülemedi — kaynak yanıt vermedi"). Previously
@@ -620,21 +620,27 @@ model LeadCompany {
   // answerable if the evidence is stored with the decision, exactly as
   // RadarSnapshot freezes its criteria. All additive and nullable: null means
   // "not measured", never zero, and every pre-V4 row keeps its meaning.
-  identityStatus       String? // VERIFIED | PARTIAL | MISMATCH | UNVERIFIED
-  identityConfidence   Int? // 0–100
-  identityReasons      Json    @default("[]") // string[] — sourced, human-readable
-  productEvidenceLevel Int? // 0–5, see ProductEvidenceLevel
-  productConfidence    Int? // 0–100 — distinct from the CATEGORY productFit
-  productNegatives     Json    @default("[]") // string[] of NegativeSignalKind
-  /** MANUFACTURER | DISTRIBUTOR | … | UNKNOWN — a SEPARATE axis from product fit. */
-  companyType          String?
+  identityStatus        String? // VERIFIED | PARTIAL | MISMATCH | UNVERIFIED
+  identityConfidence    Int? // 0–100
+  identityReasons       Json    @default("[]") // string[] — sourced, human-readable
+  productEvidenceLevel  Int? // 0–5, see ProductEvidenceLevel
+  productConfidence     Int? // 0–100 — distinct from the CATEGORY productFit
+  productNegatives      Json    @default("[]") // string[] of NegativeSignalKind
+  /**
+   * MANUFACTURER | DISTRIBUTOR | … | UNKNOWN — a SEPARATE axis from product fit.
+   */
+  companyType           String?
   companyTypeConfidence Int?
-  /** { consulted, available, failed, missing } — `missing` (not applicable to
-   *  this firm) is deliberately NOT the same as `failed` (we asked, no answer). */
-  evidenceCoverage     Json    @default("{}")
-  /** Model C output. Distinct from `leadConfidence`, which stays as it was so no
-   *  existing row silently changes meaning. */
-  overallConfidence    Int?
+  /**
+   * { consulted, available, failed, missing } — `missing` (not applicable to
+   * this firm) is deliberately NOT the same as `failed` (we asked, no answer).
+   */
+  evidenceCoverage      Json    @default("{}")
+  /**
+   * Model C output. Distinct from `leadConfidence`, which stays as it was so no
+   * existing row silently changes meaning.
+   */
+  overallConfidence     Int?
 
   status    LeadStatus    @default(DISCOVERED)
   freshness LeadFreshness @default(FRESH)
@@ -1119,6 +1125,7 @@ model Item {
   saleLines     SaleLine[]
   importCases   ImportCase[]
   costState     ItemCostState?
+  analyses      ProductAnalysis[]
 
   @@index([name])
   @@index([category])
@@ -1170,9 +1177,10 @@ model Channel {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  prices         ItemChannelPrice[]
-  sales          Sale[]
-  stockLocations StockLocation[]
+  prices          ItemChannelPrice[]
+  sales           Sale[]
+  stockLocations  StockLocation[]
+  productAnalyses ProductAnalysis[]
 
   @@index([type])
   @@index([active])
@@ -1923,15 +1931,15 @@ model TradeDocumentLine {
 // ============================================================================
 
 enum LogisticsSourceType {
-  OFFICIAL_INDEX       // EU weekly fuel bulletin, CNR, official toll tariffs
+  OFFICIAL_INDEX // EU weekly fuel bulletin, CNR, official toll tariffs
   COMMERCIAL_BENCHMARK // Upply/Ti/IRU quarterly report (entered manually)
 }
 
 enum EvidenceLevel {
-  DIRECT_LANE          // same origin+dest+mode+profile, ≥2 observations
-  NEARBY_LANE          // same country pair, similar city/route
-  COUNTRY_CORRIDOR      // e.g. TR→DE, any city within the corridor
-  REGIONAL_INDEX_ONLY  // only an index movement applied to an existing corridor base — NEVER standalone
+  DIRECT_LANE // same origin+dest+mode+profile, ≥2 observations
+  NEARBY_LANE // same country pair, similar city/route
+  COUNTRY_CORRIDOR // e.g. TR→DE, any city within the corridor
+  REGIONAL_INDEX_ONLY // only an index movement applied to an existing corridor base — NEVER standalone
   NONE
 }
 
@@ -1981,26 +1989,26 @@ enum BenchmarkMethod {
 /// LogisticsNormalizedObservation) — a highly authoritative source can still
 /// contribute a stale, low-quality individual observation.
 model LogisticsSource {
-  id                     String              @id @default(cuid())
+  id                    String              @id @default(cuid())
   // Unique so an ingestion job can `upsert` its own source row by name
   // instead of needing to look up an id first — one named source, one row,
   // always (e.g. "EU Weekly Oil Bulletin", "CNR").
-  name                   String              @unique
-  sourceType             LogisticsSourceType
-  authorityScore         Int // 0-100, curated
-  transparencyScore      Int
-  coverageScore          Int
-  historicalDepthMonths  Int?
-  updateFrequency        String // "weekly" | "quarterly" | ...
-  lastFetchedAt          DateTime?
-  url                    String?
+  name                  String              @unique
+  sourceType            LogisticsSourceType
+  authorityScore        Int // 0-100, curated
+  transparencyScore     Int
+  coverageScore         Int
+  historicalDepthMonths Int?
+  updateFrequency       String // "weekly" | "quarterly" | ...
+  lastFetchedAt         DateTime?
+  url                   String?
 
   rawObservations       LogisticsRawObservation[]
   fuelIndexObservations LogisticsFuelIndexObservation[]
   costIndexDefinitions  LogisticsCostIndexDefinition[]
   marketReferences      LogisticsMarketReference[]
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  createdAt             DateTime                        @default(now())
+  updatedAt             DateTime                        @updatedAt
 }
 
 /// Country-level fuel-price INDEX data (e.g. EU Weekly Oil Bulletin) — kept
@@ -2018,7 +2026,7 @@ model LogisticsFuelIndexObservation {
   sourceId String
   source   LogisticsSource @relation(fields: [sourceId], references: [id])
 
-  country          String   // ISO alpha-2
+  country          String // ISO alpha-2
   fuelType         FuelType @default(DIESEL)
   priceEurPerLiter Decimal  @db.Decimal(6, 4)
   /// The published period this price is valid for (the bulletin's own week-of
@@ -2030,12 +2038,12 @@ model LogisticsFuelIndexObservation {
   /// index value per country has no sibling set to compare against the way a
   /// lane's freight observations do). Diesel outside ~€0.30-3.50/L is almost
   /// certainly a parsing error, not a real price.
-  plausible       Boolean @default(true)
+  plausible        Boolean @default(true)
   plausibilityNote String?
 
-  rawPayload  Json     // the source file's row, verbatim, for audit
-  capturedAt  DateTime @default(now())
-  createdAt   DateTime @default(now())
+  rawPayload Json // the source file's row, verbatim, for audit
+  capturedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
 
   @@unique([sourceId, country, fuelType, periodStart])
   @@index([country, fuelType, periodStart])
@@ -2094,8 +2102,8 @@ model LogisticsCostIndexDefinition {
 
   components   LogisticsCostIndexComponent[]
   observations LogisticsCostIndexObservation[]
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt    DateTime                        @default(now())
+  updatedAt    DateTime                        @updatedAt
 
   @@unique([sourceId, indexName])
 }
@@ -2114,9 +2122,9 @@ model LogisticsCostIndexComponent {
   definitionId String
   definition   LogisticsCostIndexDefinition @relation(fields: [definitionId], references: [id])
 
-  component      String
-  effectiveYear  Int // the weight published for THIS year — weights move annually, real CNR data confirmed
-  weightPct      Float? // null for a synthetic total like COMPOSITE, which has no weight of its own
+  component     String
+  effectiveYear Int // the weight published for THIS year — weights move annually, real CNR data confirmed
+  weightPct     Float? // null for a synthetic total like COMPOSITE, which has no weight of its own
 
   createdAt DateTime @default(now())
 
@@ -2155,15 +2163,15 @@ model LogisticsLane {
   mode          TransportMode @default(ROAD)
   corridorType  CorridorType
 
-  distanceKm       Float?
-  borderCrossings  Json     @default("[]")
+  distanceKm        Float?
+  borderCrossings   Json      @default("[]")
   // Placeholder only — toll varies by vehicle class, exact route and period,
   // so a single static number on the lane is NOT trustworthy on its own.
   // `tollLastUpdatedAt` exists so a stale value can be flagged; a proper
   // `LaneTollSnapshot` (time-boxed, vehicle-class-aware) is the post-MVP fix.
-  tollExposureEur    Decimal?  @db.Decimal(10, 2)
-  tollLastUpdatedAt  DateTime?
-  lastCalibratedAt   DateTime?
+  tollExposureEur   Decimal?  @db.Decimal(10, 2)
+  tollLastUpdatedAt DateTime?
+  lastCalibratedAt  DateTime?
 
   rawObservations LogisticsRawObservation[]
   benchmarks      LogisticsBenchmark[]
@@ -2197,17 +2205,17 @@ model LogisticsRawObservation {
 
   rawShipmentDescription String? // the source's own free text, untouched
 
-  priceType  RawPriceType @default(EXACT)
-  priceExact Decimal?     @db.Decimal(10, 2) // set when priceType = EXACT
-  priceMin   Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
-  priceMax   Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
-  rawCurrency            String
-  observedAt             DateTime // when the price was actually valid
-  capturedAt             DateTime @default(now()) // when WE saw it
-  rawPayload             Json // the source's full original response
+  priceType   RawPriceType @default(EXACT)
+  priceExact  Decimal?     @db.Decimal(10, 2) // set when priceType = EXACT
+  priceMin    Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
+  priceMax    Decimal?     @db.Decimal(10, 2) // set when priceType = RANGE
+  rawCurrency String
+  observedAt  DateTime // when the price was actually valid
+  capturedAt  DateTime     @default(now()) // when WE saw it
+  rawPayload  Json // the source's full original response
 
   normalized LogisticsNormalizedObservation?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime                        @default(now())
 
   @@index([laneId])
   @@index([sourceId])
@@ -2240,17 +2248,17 @@ model LogisticsNormalizedObservation {
   tollIncluded       Boolean? // null = unknown, never coerced to false
   fuelIncluded       Boolean?
 
-  priceEur      Decimal    @db.Decimal(10, 2) // the single value benchmark math uses
-  priceBasis    PriceBasis @default(EXACT)
-  priceMinEur   Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
-  priceMaxEur   Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
+  priceEur    Decimal    @db.Decimal(10, 2) // the single value benchmark math uses
+  priceBasis  PriceBasis @default(EXACT)
+  priceMinEur Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
+  priceMaxEur Decimal?   @db.Decimal(10, 2) // only set when priceBasis = RANGE_MIDPOINT
 
   normalizationConfidence Int // 0-100 — drops as more fields were MISSING
   normalizationMethod     NormalizationMethod
 
   validation           LogisticsValidation?
   benchmarkMemberships LogisticsBenchmarkObservation[]
-  createdAt            DateTime @default(now())
+  createdAt            DateTime                        @default(now())
 }
 
 /// 1:1 with a normalized observation. Flags, never deletes or silently edits —
@@ -2295,7 +2303,7 @@ model LogisticsBenchmark {
 
   members    LogisticsBenchmarkObservation[]
   estimates  LogisticsEstimate[]
-  computedAt DateTime @default(now())
+  computedAt DateTime                        @default(now())
 
   @@index([laneId, mode, shipmentType])
 }
@@ -2326,16 +2334,16 @@ model LogisticsEstimate {
 
   queryProfile Json // the query's own shipment profile (weight, volume, mode...)
 
-  evidenceLevel           EvidenceLevel
-  estimateability         EstimateabilityBand
-  estimateabilityFactors  Json // { evidenceLevel, observationCount, avgObservationQuality, profileSimilarity, sourceDiversity }
+  evidenceLevel          EvidenceLevel
+  estimateability        EstimateabilityBand
+  estimateabilityFactors Json // { evidenceLevel, observationCount, avgObservationQuality, profileSimilarity, sourceDiversity }
 
   // How the band was actually produced — audit-critical, distinct from the
   // human-readable `citations` shown in the UI: this is what the BACKEND
   // needs to answer "what exact observations fed this number" even if a
   // benchmark's own membership changes later.
   estimateMethod       String // e.g. "benchmark_median" | "index_adjusted_corridor_base"
-  sourceObservationIds Json   // string[] of LogisticsNormalizedObservation ids
+  sourceObservationIds Json // string[] of LogisticsNormalizedObservation ids
 
   estimatedMinEur    Decimal? @db.Decimal(10, 2) // null ⇒ VERİ YETERSİZ
   estimatedMaxEur    Decimal? @db.Decimal(10, 2)
@@ -2344,7 +2352,7 @@ model LogisticsEstimate {
   citations Json // user-facing source chain shown in the UI
 
   actualCosts LogisticsActualCost[]
-  createdAt   DateTime @default(now())
+  createdAt   DateTime              @default(now())
 
   @@index([laneId])
 }
@@ -2355,14 +2363,14 @@ model LogisticsEstimate {
 /// estimate at all, and nothing here forces a 1:1 relationship an estimate's
 /// own definition (one query snapshot) doesn't actually guarantee.
 model LogisticsActualCost {
-  id         String              @id @default(cuid())
+  id         String             @id @default(cuid())
   estimateId String?
-  estimate   LogisticsEstimate?  @relation(fields: [estimateId], references: [id])
+  estimate   LogisticsEstimate? @relation(fields: [estimateId], references: [id])
 
-  purchaseId             String? // Business OS Purchase.id — the real freight CostLine
-  actualCostEur          Decimal  @db.Decimal(10, 2)
-  actualDate             DateTime
-  actualShipmentProfile  Json
+  purchaseId            String? // Business OS Purchase.id — the real freight CostLine
+  actualCostEur         Decimal  @db.Decimal(10, 2)
+  actualDate            DateTime
+  actualShipmentProfile Json
 
   absoluteError        Decimal? @db.Decimal(10, 2)
   withinPredictionBand Boolean?
@@ -2457,9 +2465,9 @@ model LogisticsMarketReference {
   unitType  String? // e.g. "PALLET" | "CONTAINER" — the source's own unit, free text
   unitCount Int? // e.g. 1 (Euro-pallet)
 
-  weightScopeType   WeightScopeType
-  weightScopeMinKg  Float? // null when weightScopeType = UP_TO (no floor claimed)
-  weightScopeMaxKg  Float? // null when weightScopeType = EXACT and min alone carries it
+  weightScopeType  WeightScopeType
+  weightScopeMinKg Float? // null when weightScopeType = UP_TO (no floor claimed)
+  weightScopeMaxKg Float? // null when weightScopeType = EXACT and min alone carries it
 
   shipmentType ShipmentType?
   incoterm     String?
@@ -2557,7 +2565,7 @@ model ImportSource {
   error            String?
   rawContent       String?
   parsed           Json?
-  isCurrent        Boolean  @default(true)
+  isCurrent        Boolean   @default(true)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2687,6 +2695,7 @@ model ImportCase {
 
   candidates ImportClassificationCandidate[]
   evidence   ImportEvidence[]
+  analyses   ProductAnalysis[]
 
   @@index([createdAt])
   @@index([itemId])
@@ -2740,4 +2749,178 @@ model ImportEvidence {
   @@index([caseId])
   @@index([candidateId])
   @@index([sourceId])
+}
+
+// ============================================================================
+// AYZENITH PRODUCT INTELLIGENCE — "Ürün Fiyat & Fırsat Analizi".
+//
+// Answers "how do I sell this product better?" BEFORE the first listing exists.
+// It deliberately sits ON TOP of what the business already knows rather than
+// beside it: the product is understood by Import Intelligence's attribute
+// extractor, the cost comes from the real cost engine (ItemCostState, then a
+// landed-cost case, then an explicitly flagged assumption — never a guess), and
+// the AI layer only phrases what deterministic code already measured.
+//
+// Layering, enforced by src/server/product-intel/*:
+//   INPUT → ATTRIBUTES → COMPETITOR DATA → MEASUREMENT → COST → EVIDENCE → AI
+//
+// No second product system: `itemId` is nullable exactly like ImportCase's, so
+// a product that does not exist in the catalogue yet can still be analysed, and
+// the analysis binds to the Item the day it is created.
+// ============================================================================
+
+/// One analysis run, FROZEN. Never updated after it is written — a re-run makes
+/// a new row, so a decision can always be traced back to what was known then.
+/// Every Json column below is the output of deterministic code except
+/// `aiSummary`, which is commentary and is labelled as such in the UI.
+model ProductAnalysis {
+  id          String @id @default(cuid())
+  code        String @unique
+  productName String
+
+  /// Both nullable on purpose — the point is analysing a product you do not own.
+  itemId       String?
+  item         Item?       @relation(fields: [itemId], references: [id], onDelete: SetNull)
+  importCaseId String?
+  importCase   ImportCase? @relation(fields: [importCaseId], references: [id], onDelete: SetNull)
+  channelId    String?
+  channel      Channel?    @relation(fields: [channelId], references: [id], onDelete: SetNull)
+
+  /// TRENDYOL | HEPSIBURADA | AMAZON_TR | N11 | CICEKSEPETI | ETSY | EBAY | OTHER
+  marketplace   String
+  marketCountry String @default("TR")
+
+  /// ProductAttributes from import/attributes.ts — every value keeps provenance.
+  inputAttributes Json
+  /// What was actually looked at: how many offers, from where, what was missed.
+  /// Without this, "not observed in the market" would be an unfalsifiable claim.
+  scanScope       Json
+  /// Price distribution, segments, brand and seller density, rating stats.
+  marketProfile   Json
+  /// Feature coverage against the readable sample — never against the full one.
+  gapFindings     Json
+  /// AI drafts that PASSED deterministic validation, with their rejections.
+  titleCandidates Json
+  /// Cost basis, minimum profitable price, the four bands, scenarios.
+  priceStrategy   Json
+  /// Only the quadrants that evidence supported; the rest stay empty.
+  swot            Json
+  launchPlan      Json
+
+  /// 0–100, computed in code from sample size and readability. Not an opinion.
+  dataConfidence Int
+  /// OK | INSUFFICIENT_DATA | BLOCKED
+  status         String
+  /// Turkish commentary. Null when the AI layer is off or data was insufficient.
+  aiSummary      String?
+  aiDisabledNote String?
+
+  createdById String?
+  createdAt   DateTime @default(now())
+
+  offers   CompetitorOffer[]
+  evidence ProductEvidence[]
+  sources  ProductScanSource[]
+
+  @@index([createdAt])
+  @@index([itemId])
+  @@index([marketplace])
+  @@index([status])
+}
+
+/// ONE seller's offer as observed at ONE moment — not "a product". Price, rating
+/// and review count are properties of a listing at a time, which is why this is
+/// an offer and why `observedAt` is mandatory.
+model CompetitorOffer {
+  id         String          @id @default(cuid())
+  analysisId String
+  analysis   ProductAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  rank       Int
+
+  sourceUrl String?
+  /// RadarRawCache.key when the row came from a fetched page — the raw response
+  /// stays in the one shared cache rather than being copied into a second one.
+  sourceKey String?
+
+  observedAt DateTime
+  title      String
+  brand      String?
+  sellerName String?
+
+  price       Decimal? @db.Decimal(18, 4)
+  currency    String   @default("TRY")
+  ratingAvg   Decimal? @db.Decimal(4, 2)
+  ratingCount Int?
+
+  /// Attributes read from this offer's own text by the SAME extractor used on
+  /// our product, so "they have USB-C" and "we have USB-C" mean the same thing.
+  attributes Json
+  /// The text the attributes were read from, so any reading can be checked.
+  rawExcerpt String
+  /// USER_ENTERED (pasted/Excel) | WEB_EXTRACTED (a page we read)
+  provenance String
+
+  excluded     Boolean @default(false)
+  excludedNote String?
+
+  createdAt DateTime @default(now())
+
+  evidence ProductEvidence[]
+
+  @@index([analysisId])
+  @@index([analysisId, rank])
+}
+
+/// One reason behind one conclusion — the same shape as ImportEvidence, kept
+/// separate rather than merged so neither module can break the other's history.
+model ProductEvidence {
+  id         String           @id @default(cuid())
+  analysisId String
+  analysis   ProductAnalysis  @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  offerId    String?
+  offer      CompetitorOffer? @relation(fields: [offerId], references: [id], onDelete: SetNull)
+
+  /// PRODUCT | MARKET | COMPETITOR | GAP | KEYWORD | PRICE | SWOT | LAUNCH
+  area       String
+  kind       String
+  /// POSITIVE | NEGATIVE | NEUTRAL
+  polarity   String
+  /// OFFICIAL | AI_PREDICTED | USER_ENTERED | CALCULATED | WEB_EXTRACTED | INFERRED | UNKNOWN
+  provenance String
+  text       String
+  detail     Json?
+  sourceKey  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([analysisId])
+  @@index([analysisId, area])
+  @@index([offerId])
+}
+
+/// The ledger of where a scan went and what came back — including what did NOT.
+/// Lead Finder's lesson, written into a table: recording "unreachable" as "does
+/// not exist" throws away truth and tells the operator something false. An
+/// analysis may never say "the market does not have this" without these rows.
+model ProductScanSource {
+  id         String          @id @default(cuid())
+  analysisId String
+  analysis   ProductAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+
+  marketplace String
+  queryText   String?
+  url         String?
+
+  /// OK | BLOCKED | RATE_LIMITED | EMPTY | ROBOTS_DISALLOWED | ERROR
+  status     String
+  /// BOT_REFUSED | WAF_CHALLENGE | RATE_LIMITED, from leads/blocking.ts
+  blockKind  String?
+  httpStatus Int?
+  itemsFound Int     @default(0)
+  note       String?
+
+  fetchedAt DateTime @default(now())
+  fromCache Boolean  @default(false)
+
+  @@index([analysisId])
 }

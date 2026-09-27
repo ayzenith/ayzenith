@@ -90,11 +90,19 @@ async function call(
     if (!res.ok) return { text: null, disabledReason: `AI API HTTP ${res.status}` };
     const data = (await res.json()) as { content?: Array<{ type: string; text?: string }>; stop_reason?: string };
     if (data.stop_reason === "refusal") return { text: null, disabledReason: "AI isteği güvenlik nedeniyle yanıtlamadı." };
+
     const text = (data.content ?? [])
       .filter((b) => b.type === "text")
       .map((b) => b.text ?? "")
       .join("\n")
       .trim();
+
+    // A cut-off answer is worse than none: half a sentence of commentary reads
+    // as a finished thought, and half a list of title drafts silently loses the
+    // ones the model had not written yet. Say it was truncated instead.
+    if (data.stop_reason === "max_tokens") {
+      return { text: text || null, disabledReason: "AI yanıtı token sınırına takıldı; metin eksik olabilir." };
+    }
     return { text: text || null };
   } catch (e) {
     return { text: null, disabledReason: `AI erişilemedi: ${(e as Error).message}` };
@@ -102,18 +110,27 @@ async function call(
 }
 
 export async function interpretAnalysis(factSheet: string): Promise<AiNarrative> {
-  const r = await call(NARRATIVE_SYSTEM, `Aşağıdaki ÖLÇÜLMÜŞ analiz sonuçlarını yorumla. Yalnızca bunları kullan:\n\n${factSheet}`, 2000);
+  // Adaptive thinking spends from the SAME budget as the answer, so a ceiling
+  // sized for the prose alone truncates the reply. This is a ceiling, not a
+  // target: the narrative is a few hundred words and is billed as what it uses.
+  const r = await call(NARRATIVE_SYSTEM, `Aşağıdaki ÖLÇÜLMÜŞ analiz sonuçlarını yorumla. Yalnızca bunları kullan:\n\n${factSheet}`, 8000);
   if (!r.text) return { summary: null, launchNarrative: null, disabledReason: r.disabledReason };
 
   // The launch half is split out so the detail screen can show it under the
-  // launch tab while the summary stays on the overview.
+  // launch tab while the summary stays on the overview. `disabledReason` is
+  // carried through even when there IS text: a truncated answer still has
+  // prose, and the note is the only thing telling the reader it is unfinished.
   const idx = r.text.indexOf("KONUMLANDIRMA:");
-  if (idx < 0) return { summary: r.text, launchNarrative: null };
-  return { summary: r.text.slice(0, idx).trim(), launchNarrative: r.text.slice(idx).trim() };
+  if (idx < 0) return { summary: r.text, launchNarrative: null, disabledReason: r.disabledReason };
+  return {
+    summary: r.text.slice(0, idx).trim(),
+    launchNarrative: r.text.slice(idx).trim(),
+    disabledReason: r.disabledReason,
+  };
 }
 
 export async function draftTitles(context: string): Promise<{ drafts: AiTitleDraft[]; disabledReason?: string }> {
-  const r = await call(TITLE_SYSTEM, context, 1500);
+  const r = await call(TITLE_SYSTEM, context, 4000);
   if (!r.text) return { drafts: [], disabledReason: r.disabledReason };
 
   const drafts: AiTitleDraft[] = [];
@@ -121,5 +138,7 @@ export async function draftTitles(context: string): Promise<{ drafts: AiTitleDra
     const m = line.match(/^\s*BASLIK\s*\|\s*([^|]+?)\s*\|\s*(.+?)\s*$/i);
     if (m && m[1] && m[2]) drafts.push({ title: m[1].trim(), rationale: m[2].trim() });
   }
-  return { drafts: drafts.slice(0, 5) };
+  // As above: a truncated reply can carry two good drafts and be missing three,
+  // and only the note says so.
+  return { drafts: drafts.slice(0, 5), disabledReason: r.disabledReason };
 }

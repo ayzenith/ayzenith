@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import {
   Prisma,
@@ -142,7 +143,7 @@ export async function listPayments(opts: {
   page?: number;
   perPage?: number;
 } = {}): Promise<{ rows: PaymentRow[]; total: number; page: number; perPage: number; openTotal: number }> {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 25));
   const today = startOfDay();
 
@@ -347,7 +348,7 @@ export async function listExpenses(opts: {
   page?: number;
   perPage?: number;
 } = {}) {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 25));
   const where: Prisma.ExpenseWhereInput = {
     ...(opts.kind ? { kind: opts.kind } : {}),

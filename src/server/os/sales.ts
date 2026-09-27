@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import { Prisma, type DocStatus, type TradeModel } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -382,7 +383,7 @@ export async function listSales(opts: {
   page?: number;
   perPage?: number;
 } = {}) {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 25));
   const where: Prisma.SaleWhereInput = {
     ...(opts.customerId ? { customerId: opts.customerId } : {}),

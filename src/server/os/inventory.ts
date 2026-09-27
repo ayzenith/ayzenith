@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import { Prisma, type StockMoveReason } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -303,7 +304,7 @@ export async function listStock(opts: {
   page?: number;
   perPage?: number;
 } = {}): Promise<{ rows: StockRow[]; total: number }> {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 50));
   const offset = (page - 1) * perPage;
   const search = opts.search?.trim();
@@ -426,7 +427,7 @@ export async function listMovements(opts: {
   page?: number;
   perPage?: number;
 }) {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 50));
   const where: Prisma.StockMovementWhereInput = {
     ...(opts.itemId ? { itemId: opts.itemId } : {}),

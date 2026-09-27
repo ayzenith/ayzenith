@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import { Prisma } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -41,7 +42,7 @@ export async function listItems(opts: {
   page?: number;
   perPage?: number;
 } = {}): Promise<{ rows: ItemListRow[]; total: number; page: number; perPage: number }> {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 25));
   const search = opts.search?.trim();
 

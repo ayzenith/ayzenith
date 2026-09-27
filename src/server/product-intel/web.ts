@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 
 import { db } from "@/lib/db";
 import { httpGetText, HttpStatusError } from "../leads/http";
+import { checkFetchableUrl } from "@/lib/safe-url";
 import { extractWebProduct, type WebProduct } from "../import/webextract";
 import type { ScanStatus } from "./types";
 
@@ -45,40 +46,10 @@ export type PageRead = {
   note: string | null;
 };
 
-/**
- * Refuse anything that is not a public http(s) address.
- *
- * The URL comes from a form, and a server that will fetch whatever it is told
- * can be pointed at the private network it is sitting in. This is the cheap,
- * boring guard that stops that: scheme allow-list plus the private ranges.
- */
-export function checkFetchableUrl(raw: string): { ok: true; url: URL } | { ok: false; reason: string } {
-  let url: URL;
-  try {
-    url = new URL(raw.trim());
-  } catch {
-    return { ok: false, reason: "Geçerli bir adres değil." };
-  }
-  if (url.protocol !== "http:" && url.protocol !== "https:") {
-    return { ok: false, reason: "Yalnızca http ve https adresleri okunur." };
-  }
-  const host = url.hostname.toLowerCase();
-  if (
-    host === "localhost" ||
-    host === "::1" ||
-    host.endsWith(".local") ||
-    host.endsWith(".internal") ||
-    /^127\./.test(host) ||
-    /^10\./.test(host) ||
-    /^192\.168\./.test(host) ||
-    /^169\.254\./.test(host) ||
-    /^172\.(1[6-9]|2\d|3[01])\./.test(host) ||
-    /^0\./.test(host)
-  ) {
-    return { ok: false, reason: "Yerel veya özel ağ adresleri okunamaz." };
-  }
-  return { ok: true, url };
-}
+// The private-network guard now lives in `src/lib/safe-url.ts` and is shared
+// with Import Intelligence, which reads operator-pasted URLs too and had no
+// guard at all. Re-exported here so this module's own callers are unaffected.
+export { checkFetchableUrl } from "@/lib/safe-url";
 
 function cacheKey(url: string): string {
   return createHash("sha256").update(`${PROVIDER}:page:${url}`).digest("hex");

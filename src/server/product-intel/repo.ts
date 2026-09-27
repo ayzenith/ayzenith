@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { pageSkip } from "@/lib/paging";
 import type { ProductAttributes } from "../import/attributes";
 import type { AnalysisStatus, PiEvidence, ScanStatus } from "./types";
 import type { GapFinding } from "./gap";
@@ -48,7 +49,10 @@ export async function listAnalyses(params: {
     db.productAnalysis.findMany({
       where,
       orderBy: { createdAt: "desc" },
-      skip: (params.page - 1) * params.perPage,
+      // Clamped here, not trusted from the screen: an unbounded `?page=` turns
+      // into a skip Postgres cannot hold and the list 500s instead of showing
+      // page one. Every other repository in the module does the same.
+      skip: pageSkip(params.page, params.perPage),
       take: params.perPage,
       select: {
         id: true,

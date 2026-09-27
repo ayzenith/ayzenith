@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import { Prisma, type PartyRoleType, type RelationStatus, type TradeModel } from "@prisma/client";
 import { db } from "@/lib/db";
@@ -42,7 +43,7 @@ export async function listParties(opts: {
   page?: number;
   perPage?: number;
 } = {}): Promise<PartyListResult> {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = Math.min(200, Math.max(10, opts.perPage ?? 25));
   const search = opts.search?.trim();
 

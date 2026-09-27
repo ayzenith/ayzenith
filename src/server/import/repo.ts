@@ -1,4 +1,5 @@
 import "server-only";
+import { safePage } from "@/lib/paging";
 
 import { db } from "@/lib/db";
 import type { ImportRuleKind } from "@prisma/client";
@@ -240,7 +241,7 @@ export async function loadComplianceSources(): Promise<ComplianceSources> {
 // ---------------------------------------------------------------------------
 
 export async function listImportCases(opts: { page?: number; perPage?: number } = {}) {
-  const page = Math.max(1, opts.page ?? 1);
+  const page = safePage(opts.page);
   const perPage = opts.perPage ?? 25;
   const [rows, total] = await Promise.all([
     db.importCase.findMany({

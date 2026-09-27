@@ -1,6 +1,7 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { checkFetchableUrl } from "@/lib/safe-url";
 import type { ImportSourceStatus, Prisma } from "@prisma/client";
 import { sha256Hex } from "./text";
 import { extractWebProduct, looksLikeManufacturerDomain, type WebProduct } from "./webextract";
@@ -289,6 +290,16 @@ const WEB_CACHE_DAYS = 30;
 export type WebSourceResult = { sourceId: string | null; key: string; url: string; status: "OK" | "UNREACHABLE"; tier: number; product: WebProduct | null; fromCache: boolean; error: string | null };
 
 export async function fetchProductPage(url: string, brandHint: string | null): Promise<WebSourceResult> {
+  // This URL is typed into a form by the operator, unlike the official sources
+  // above whose addresses are fixed in the catalogue. Without this check the
+  // server will fetch whatever it is handed — including its own private network
+  // — and show the answer on screen. Refused before anything is cached, so a
+  // rejected address never becomes a stored source version either.
+  const guard = checkFetchableUrl(url);
+  if (!guard.ok) {
+    return { sourceId: null, key: `WEB:${url}`, url, status: "UNREACHABLE", tier: 4, product: null, fromCache: false, error: guard.reason };
+  }
+
   const key = `WEB:${url}`;
   const cached = await db.importSource.findFirst({ where: { key, isCurrent: true }, orderBy: { fetchedAt: "desc" } });
   const fresh = cached?.fetchedAt && Date.now() - cached.fetchedAt.getTime() < WEB_CACHE_DAYS * 86_400_000;

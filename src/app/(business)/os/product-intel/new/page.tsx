@@ -163,6 +163,24 @@ export default async function NewProductAnalysis() {
               <input name="targetMarginPct" inputMode="decimal" className={input} defaultValue={String(DEFAULT_TARGET_MARGIN_PCT)} />
             </Field>
           </div>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <Field
+              label={`Reklam — sabit (${settings.baseCurrency}/adet)`}
+              hint="Bütçeni satmayı beklediğin adede böldüysen buraya yaz."
+            >
+              <input name="adPerUnit" inputMode="decimal" className={input} defaultValue="0" />
+            </Field>
+            <Field
+              label="Reklam — oran (%)"
+              hint="Pazaryeri reklam raporundaki ACoS. Fiyatla birlikte büyür; ikisi birlikte kullanılabilir."
+            >
+              <input name="adPctOfPrice" inputMode="decimal" className={input} defaultValue="0" />
+            </Field>
+            <Field label={`Diğer operasyonel gider (${settings.baseCurrency}/adet)`}>
+              <input name="otherOpsPerUnit" inputMode="decimal" className={input} defaultValue="0" />
+            </Field>
+          </div>
         </Card>
 
         <div className="flex justify-end gap-2">

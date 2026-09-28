@@ -105,6 +105,9 @@ const INPUTS: PriceInputs = {
   vatRatePct: 20,
   commissionPct: 10,
   commissionBase: "GROSS",
+  adPerUnit: 0,
+  adPctOfPrice: 0,
+  otherOpsPerUnit: 0,
   targetMarginPct: 25,
 };
 
@@ -153,6 +156,86 @@ test("price: when commission swallows the whole net there is NO profitable price
   assert.equal(p.status, "IMPOSSIBLE");
   assert.equal(p.minProfitablePrice, null);
   assert.ok(p.warnings.some((w) => w.includes("kârlı bir fiyat yok")));
+});
+
+// --- advertising and other operating costs ---------------------------------
+// The two advertising inputs are deliberately NOT interchangeable: a flat
+// amount per unit sits in the fixed cost, a percentage scales with the price.
+// These tests pin that difference, because collapsing one into the other would
+// silently change every break-even on the screen.
+
+test("price: a flat advertising amount lands in the per-unit cost", () => {
+  const p = strategy({ adPerUnit: 10 });
+  assert.equal(p.breakdown.find((b) => b.key === "AD_UNIT")!.amount, 10);
+  assert.equal(p.fixedPerUnit, 139.5);
+  // 139.50 / (1/1.2 - 0.10) = 190.23
+  assert.equal(p.minProfitablePrice, 190.23);
+});
+
+test("price: other operating cost lands in the per-unit cost too", () => {
+  const p = strategy({ otherOpsPerUnit: 15 });
+  assert.equal(p.breakdown.find((b) => b.key === "OTHER_OPS")!.amount, 15);
+  assert.equal(p.fixedPerUnit, 144.5);
+});
+
+test("price: percentage advertising sits beside commission, not in the fixed cost", () => {
+  const p = strategy({ adPctOfPrice: 10 });
+  // The per-unit cost is untouched — the ad is charged on the price.
+  assert.equal(p.fixedPerUnit, 129.5);
+  // 129.50 / (1/1.2 - 0.10 - 0.10) = 204.47
+  assert.equal(p.minProfitablePrice, 204.47);
+  const at = profitAtPrice(p.minProfitablePrice!, p.fixedPerUnit!, { ...INPUTS, adPctOfPrice: 10 });
+  assert.ok(Math.abs(at.profit) < 0.01, `profit at break-even should be ~0, got ${at.profit}`);
+  assert.equal(at.adCost, 20.45);
+});
+
+test("price: the same advertising spend costs more as a percentage than as a flat amount", () => {
+  // Both describe "about 20 lira of advertising" at a ~200 TRY price, but the
+  // percentage keeps growing with the price, so it needs a higher break-even.
+  const flat = strategy({ adPerUnit: 20 });
+  const pct = strategy({ adPctOfPrice: 10 });
+  assert.ok(
+    pct.minProfitablePrice! > flat.minProfitablePrice!,
+    `percentage ${pct.minProfitablePrice} should exceed flat ${flat.minProfitablePrice}`,
+  );
+});
+
+test("price: percentage advertising can make every price unprofitable, and says so", () => {
+  const p = strategy({ adPctOfPrice: 75 });
+  assert.equal(p.status, "IMPOSSIBLE");
+  assert.equal(p.minProfitablePrice, null);
+  assert.ok(p.warnings.some((w) => w.includes("reklam")), "the warning must name advertising as the cause");
+  assert.ok(p.warnings.some((w) => w.includes("Fiyatı yükseltmek bunu çözmez")));
+});
+
+test("price: a flat advertising amount never makes a price impossible", () => {
+  // However large, a fixed amount is escaped by charging more — the opposite of
+  // the percentage case above. This is the whole reason they are separate.
+  const p = strategy({ adPerUnit: 100_000 });
+  assert.equal(p.status, "OK");
+  assert.ok(p.minProfitablePrice! > 0);
+});
+
+test("price: advertising is charged on the gross price on the NET commission base too", () => {
+  const p = strategy({ commissionBase: "NET", adPctOfPrice: 10 });
+  // 129.50 / ((1 - 0.10)/1.2 - 0.10) = 129.50 / 0.65 = 199.23
+  assert.equal(p.minProfitablePrice, 199.23);
+});
+
+test("price: the target margin still holds exactly once advertising is in", () => {
+  const p = strategy({ adPctOfPrice: 10 });
+  assert.equal(p.targetPrice, 304.71);
+  const at = profitAtPrice(p.targetPrice!, p.fixedPerUnit!, { ...INPUTS, adPctOfPrice: 10 });
+  assert.ok(Math.abs(at.marginPct - 25) < 0.1, `margin should be ~25%, got ${at.marginPct}`);
+});
+
+test("price: zero advertising leaves every existing figure unchanged", () => {
+  // The regression guard for analyses created before these fields existed.
+  const before = strategy();
+  const explicitZero = strategy({ adPerUnit: 0, adPctOfPrice: 0, otherOpsPerUnit: 0 });
+  assert.equal(explicitZero.minProfitablePrice, before.minProfitablePrice);
+  assert.equal(explicitZero.targetPrice, before.targetPrice);
+  assert.equal(explicitZero.fixedPerUnit, before.fixedPerUnit);
 });
 
 test("price: no cost means no price advice at all", () => {

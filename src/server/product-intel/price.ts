@@ -16,9 +16,23 @@
  *                                            GOODS are not lost — they come
  *                                            back and are sold again — so COGS
  *                                            is deliberately NOT in this term.
- *   fixed      = cost + shipping + packaging + returnCost
- *   profit(P)  = netRevenue - commission - fixed
+ *   adCost     = P * a                       advertising as a SHARE of the shown
+ *                                            price — the ACoS the marketplace's
+ *                                            own ad report quotes. Always on the
+ *                                            gross price, on both commission
+ *                                            bases, because that is what the ad
+ *                                            panel measures against.
+ *   fixed      = cost + shipping + packaging + returnCost + adPerUnit + otherOps
+ *   profit(P)  = netRevenue - commission - adCost - fixed
  *   margin(P)  = profit / netRevenue
+ *
+ * ADVERTISING IS ACCEPTED TWO WAYS, ON PURPOSE. A marketplace ad report states a
+ * percentage (ACoS); a budget divided by expected units states an amount. Both
+ * are real ways an operator knows this number, and they behave DIFFERENTLY: a
+ * per-unit amount is fixed and shifts the break-even up by itself, while a
+ * percentage scales with the price and can make a profitable price impossible
+ * no matter how high you go. Forcing one into the other would hide that. They
+ * may be used together; each defaults to zero and changes nothing when unset.
  *
  * Break-even (profit = 0) and target-margin prices are the closed-form
  * solutions of that equation, not a search. Where the denominator is zero or
@@ -61,6 +75,13 @@ export type PriceInputs = {
   /** Percent, e.g. 21.5 — from Channel.commissionRate. */
   commissionPct: number;
   commissionBase: CommissionBase;
+  /** Advertising as a flat amount per unit, base currency, VAT excluded — a
+   *  budget the operator has already divided by the units they expect to sell. */
+  adPerUnit: number;
+  /** Advertising as a percent of the shown price (ACoS), e.g. 8 means 8%. */
+  adPctOfPrice: number;
+  /** Anything else the operator bears per unit that is not listed above. */
+  otherOpsPerUnit: number;
   /** Percent of net revenue the operator wants to keep. */
   targetMarginPct: number;
 };
@@ -71,6 +92,9 @@ export type PriceScenario = {
   price: number;
   netRevenue: number;
   commission: number;
+  /** The price-proportional advertising term only. The flat per-unit part is
+   *  inside `fixedPerUnit`, so adding these two would double-count it. */
+  adCost: number;
   profit: number;
   marginPct: number;
   band: PriceBand;
@@ -105,23 +129,31 @@ export type MarketAnchor = { key: string; label: string; price: number };
 function terms(inputs: PriceInputs) {
   const v = 1 + inputs.vatRatePct / 100;
   const c = inputs.commissionPct / 100;
+  const a = inputs.adPctOfPrice / 100;
   const m = inputs.targetMarginPct / 100;
-  return { v, c, m };
+  return { v, c, a, m };
 }
 
-export function profitAtPrice(price: number, fixedPerUnit: number, inputs: PriceInputs): { netRevenue: number; commission: number; profit: number; marginPct: number } {
-  const { v, c } = terms(inputs);
+export function profitAtPrice(price: number, fixedPerUnit: number, inputs: PriceInputs): { netRevenue: number; commission: number; adCost: number; profit: number; marginPct: number } {
+  const { v, c, a } = terms(inputs);
   const netRevenue = price / v;
   const commission = inputs.commissionBase === "GROSS" ? price * c : netRevenue * c;
-  const profit = netRevenue - commission - fixedPerUnit;
+  const adCost = price * a;
+  const profit = netRevenue - commission - adCost - fixedPerUnit;
   const marginPct = netRevenue === 0 ? 0 : (profit / netRevenue) * 100;
-  return { netRevenue: r2(netRevenue), commission: r2(commission), profit: r2(profit), marginPct: Math.round(marginPct * 10) / 10 };
+  return { netRevenue: r2(netRevenue), commission: r2(commission), adCost: r2(adCost), profit: r2(profit), marginPct: Math.round(marginPct * 10) / 10 };
 }
 
-/** Price at which profit is exactly `marginFraction` of net revenue. */
+/** Price at which profit is exactly `marginFraction` of net revenue.
+ *
+ *  Both bases carry `- a`: percentage advertising is charged on the shown price
+ *  whichever way the marketplace bills its commission. */
 function priceForMargin(fixedPerUnit: number, inputs: PriceInputs, marginFraction: number): number | null {
-  const { v, c } = terms(inputs);
-  const denom = inputs.commissionBase === "GROSS" ? (1 - marginFraction) / v - c : (1 - marginFraction - c) / v;
+  const { v, c, a } = terms(inputs);
+  const denom =
+    inputs.commissionBase === "GROSS"
+      ? (1 - marginFraction) / v - c - a
+      : (1 - marginFraction - c) / v - a;
   if (!(denom > 0)) return null;
   return r2(fixedPerUnit / denom);
 }
@@ -187,6 +219,18 @@ export function computePriceStrategy(args: {
       amount: r2(returnCost),
       note: `%${inputs.returnRatePct} iade × (kargo × 2 + paketleme). Ürün geri geldiği için maliyeti dahil değil.`,
     },
+    {
+      key: "AD_UNIT",
+      label: "Reklam (sabit)",
+      amount: r2(inputs.adPerUnit),
+      note: "Birim başına sabit reklam payı. Yüzde olarak girilen reklam bu satırda değil, fiyatla birlikte değişir.",
+    },
+    {
+      key: "OTHER_OPS",
+      label: "Diğer operasyonel gider",
+      amount: r2(inputs.otherOpsPerUnit),
+      note: "Birim başına, KDV hariç.",
+    },
   ];
   const fixedPerUnit = r2(breakdown.reduce((s, b) => s + b.amount, 0));
 
@@ -195,7 +239,9 @@ export function computePriceStrategy(args: {
 
   if (minProfitablePrice == null) {
     warnings.push(
-      `Bu kanalda kârlı bir fiyat yok: %${inputs.commissionPct} komisyon, %${inputs.vatRatePct} KDV sonrası kalan net gelirin tamamını alıyor. Komisyon veya KDV oranını kontrol edin.`,
+      inputs.adPctOfPrice > 0
+        ? `Bu kanalda kârlı bir fiyat yok: %${inputs.commissionPct} komisyon + %${inputs.adPctOfPrice} reklam, %${inputs.vatRatePct} KDV sonrası kalan net gelirin tamamını alıyor. Fiyatı yükseltmek bunu çözmez — bu kalemler fiyatla birlikte büyüyor. Reklam oranını düşürün veya komisyonu kontrol edin.`
+        : `Bu kanalda kârlı bir fiyat yok: %${inputs.commissionPct} komisyon, %${inputs.vatRatePct} KDV sonrası kalan net gelirin tamamını alıyor. Komisyon veya KDV oranını kontrol edin.`,
     );
     return {
       status: "IMPOSSIBLE",
@@ -259,6 +305,7 @@ export function computePriceStrategy(args: {
       price: rounded,
       netRevenue: at.netRevenue,
       commission: at.commission,
+      adCost: at.adCost,
       profit: at.profit,
       marginPct: at.marginPct,
       band: classifyPrice(rounded, minProfitablePrice, targetPrice, marketCeiling),
@@ -272,6 +319,11 @@ export function computePriceStrategy(args: {
       : "Komisyon, KDV hariç net tutar üzerinden hesaplandı.",
   );
   notes.push("Marj, KDV hariç net gelire oranla verilmiştir.");
+  if (inputs.adPctOfPrice > 0) {
+    notes.push(
+      `Reklam, satış fiyatının %${inputs.adPctOfPrice}'i olarak hesaplandı (pazaryeri reklam raporlarının ACoS tanımı). Fiyat arttıkça bu tutar da artar.`,
+    );
+  }
 
   return {
     status: "OK",

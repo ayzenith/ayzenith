@@ -598,6 +598,10 @@ function Fiyat({ a }: { a: StoredAnalysis }) {
               <Th align="right">Fiyat</Th>
               <Th align="right">Net gelir</Th>
               <Th align="right">Komisyon</Th>
+              {/* Only when advertising scales with the price. A column of zeroes
+                  would be noise, and analyses frozen before this field existed
+                  simply do not have it. */}
+              {(p.inputs.adPctOfPrice ?? 0) > 0 ? <Th align="right">Reklam</Th> : null}
               <Th align="right">Birim kâr</Th>
               <Th align="right">Marj</Th>
               <Th>Bant</Th>
@@ -610,6 +614,7 @@ function Fiyat({ a }: { a: StoredAnalysis }) {
                 <Td align="right">{fmt(s.price)}</Td>
                 <Td align="right">{fmt(s.netRevenue)}</Td>
                 <Td align="right">{fmt(s.commission)}</Td>
+                {(p.inputs.adPctOfPrice ?? 0) > 0 ? <Td align="right">{fmt(s.adCost ?? 0)}</Td> : null}
                 <Td align="right">{fmt(s.profit)}</Td>
                 <Td align="right">%{fmt(s.marginPct, 1)}</Td>
                 <Td>
@@ -631,6 +636,9 @@ function Fiyat({ a }: { a: StoredAnalysis }) {
           <Detail label="Kargo">{fmt(p.inputs.shipping)} {cur}</Detail>
           <Detail label="Paketleme">{fmt(p.inputs.packaging)} {cur}</Detail>
           <Detail label="İade oranı">%{fmt(p.inputs.returnRatePct, 1)}</Detail>
+          <Detail label="Reklam (sabit)">{fmt(p.inputs.adPerUnit ?? 0)} {cur}</Detail>
+          <Detail label="Reklam (oran)">%{fmt(p.inputs.adPctOfPrice ?? 0, 1)}</Detail>
+          <Detail label="Diğer operasyonel">{fmt(p.inputs.otherOpsPerUnit ?? 0)} {cur}</Detail>
         </div>
       </Card>
     </div>

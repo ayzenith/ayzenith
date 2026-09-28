@@ -74,6 +74,9 @@ export async function analyzeProductAction(fd: FormData): Promise<void> {
     returnRatePct: n(fd, "returnRatePct"),
     vatRatePct: n(fd, "vatRatePct"),
     commissionPct: n(fd, "commissionPct"),
+    adPerUnit: n(fd, "adPerUnit") ?? 0,
+    adPctOfPrice: n(fd, "adPctOfPrice") ?? 0,
+    otherOpsPerUnit: n(fd, "otherOpsPerUnit") ?? 0,
     targetMarginPct: n(fd, "targetMarginPct"),
   };
 

@@ -77,6 +77,9 @@ export type ProductAnalysisInput = {
   returnRatePct: number | null;
   vatRatePct: number | null;
   commissionPct: number | null;
+  adPerUnit: number;
+  adPctOfPrice: number;
+  otherOpsPerUnit: number;
   targetMarginPct: number | null;
 };
 
@@ -270,6 +273,9 @@ export async function runProductAnalysis(
     vatRatePct: input.vatRatePct ?? (await defaultVatRate(input.itemId)) ?? 20,
     commissionPct: input.commissionPct ?? (await channelCommission(input.channelId)) ?? 0,
     commissionBase: meta.commissionBase,
+    adPerUnit: input.adPerUnit,
+    adPctOfPrice: input.adPctOfPrice,
+    otherOpsPerUnit: input.otherOpsPerUnit,
     targetMarginPct: input.targetMarginPct ?? DEFAULT_TARGET_MARGIN_PCT,
   };
   const price = computePriceStrategy({ costBasis, inputs: priceInputs, marketPrices: offers.map((o) => o.price ?? 0), marketAnchors: marketAnchors(market) });
@@ -451,6 +457,11 @@ function buildFactSheet(a: {
   if (a.price.status === "OK") {
     L.push(`- Başabaş fiyat: ${a.price.minProfitablePrice} ${a.market.currency}`);
     L.push(`- Hedef marj (%${a.price.inputs.targetMarginPct}) fiyatı: ${a.price.targetPrice ?? "ulaşılamıyor"}`);
+    if (a.price.inputs.adPctOfPrice > 0 || a.price.inputs.adPerUnit > 0) {
+      L.push(
+        `- Reklam gideri hesaba DAHİL: ${a.price.inputs.adPerUnit} ${a.market.currency}/adet sabit + fiyatın %${a.price.inputs.adPctOfPrice}'i. Bu rakamlar operatörün girdiği VARSAYIMLARDIR, ölçülmedi.`,
+      );
+    }
     for (const s of a.price.scenarios) L.push(`- ${s.label}: fiyat ${s.price}, birim kâr ${s.profit}, marj %${s.marginPct} (${s.band})`);
   } else {
     L.push(`- Hesaplanamadı: ${a.price.costBasis.note}`);

@@ -25,6 +25,7 @@ import {
   btn,
   type BadgeTone,
 } from "@/components/os/ui";
+import { PriceSimulator } from "@/components/os/product-intel/price-simulator";
 import { deleteAnalysisAction } from "../actions";
 
 export const metadata: Metadata = { title: "Ürün analizi · Business OS" };
@@ -624,6 +625,28 @@ function Fiyat({ a }: { a: StoredAnalysis }) {
             ))}
           </tbody>
         </Table>
+      </Card>
+
+      {/* The what-if surface. It runs the SAME `profitAtPrice` this frozen
+          analysis was computed with, so a price dragged here and the same price
+          in the table above can never disagree. It writes nothing. */}
+      <Card
+        title="Fiyat simülatörü"
+        description="Farklı satış fiyatlarını dene. Hiçbir şey kaydedilmez; kayıtlı analiz değişmez."
+      >
+        <PriceSimulator
+          fixedPerUnit={p.fixedPerUnit!}
+          inputs={p.inputs}
+          minProfitablePrice={p.minProfitablePrice}
+          targetPrice={p.targetPrice}
+          marketFloor={p.marketFloor}
+          marketCeiling={p.marketCeiling}
+          currency={cur}
+          initialPrice={p.targetPrice ?? p.minProfitablePrice!}
+          anchors={p.scenarios.map((s) => ({ key: `${s.key}-${s.price}`, label: s.label, price: s.price }))}
+          costLabel={p.costBasis.label}
+          costIsAssumption={p.costBasis.isAssumption}
+        />
       </Card>
 
       <Card title="Kullanılan varsayımlar">

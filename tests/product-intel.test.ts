@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
 import { resolveCostBasis } from "../src/server/product-intel/cost-source";
-import { classifyPrice, computePriceStrategy, profitAtPrice, type PriceInputs } from "../src/server/product-intel/price";
+import { classifyPrice, computePriceStrategy, profitAtPrice, simulatorBounds, type PriceInputs } from "../src/server/product-intel/price";
 import { computeGapFindings } from "../src/server/product-intel/gap";
 import { readFacets, ourFacets, readFacetsFromText } from "../src/server/product-intel/facets";
 import { extractClaims, supportedClaimsFor, validateTitle, checkTitleCandidates } from "../src/server/product-intel/title";
@@ -236,6 +236,82 @@ test("price: zero advertising leaves every existing figure unchanged", () => {
   assert.equal(explicitZero.minProfitablePrice, before.minProfitablePrice);
   assert.equal(explicitZero.targetPrice, before.targetPrice);
   assert.equal(explicitZero.fixedPerUnit, before.fixedPerUnit);
+});
+
+// --- the interactive simulator ---------------------------------------------
+// The simulator is a CLIENT component, so it cannot be driven from node:test
+// without adding a DOM harness this project deliberately does not carry. What
+// actually matters is testable without one: that it computes with the SAME
+// function the frozen analysis used, and that its slider range is derived
+// rather than guessed. Both are pinned here.
+
+test("simulator: the slider span contains every anchor it was given", () => {
+  const b = simulatorBounds({
+    minProfitablePrice: 176.59,
+    targetPrice: 246.67,
+    marketFloor: 150,
+    marketCeiling: 400,
+    currentPrice: 246.67,
+  });
+  assert.ok(b.min < 150, `min ${b.min} must sit below the market floor`);
+  assert.ok(b.max > 400, `max ${b.max} must sit above the market ceiling`);
+  assert.ok(b.step > 0);
+});
+
+test("simulator: the span reaches below break-even, so loss is reachable by dragging", () => {
+  const b = simulatorBounds({ minProfitablePrice: 200, targetPrice: 300, marketFloor: null, marketCeiling: null, currentPrice: 300 });
+  assert.ok(b.min < 200, "an operator must be able to drag into the red band");
+});
+
+test("simulator: with nothing to anchor to it still returns a usable range", () => {
+  const b = simulatorBounds({ minProfitablePrice: null, targetPrice: null, marketFloor: null, marketCeiling: null, currentPrice: 0 });
+  assert.ok(b.max > b.min);
+  assert.ok(b.step > 0);
+});
+
+test("simulator: a single anchor still yields a span with room on both sides", () => {
+  const b = simulatorBounds({ minProfitablePrice: 100, targetPrice: null, marketFloor: null, marketCeiling: null, currentPrice: 100 });
+  assert.ok(b.min < 100 && b.max > 100);
+});
+
+test("simulator: it reproduces every stored scenario exactly — one engine, not two", () => {
+  // This is the guarantee the whole design rests on. If the simulator ever grew
+  // its own copy of the formula, the same price would read differently on the
+  // frozen table and on the slider, and nothing would say which was right.
+  const p = strategy({ adPerUnit: 8, adPctOfPrice: 6, otherOpsPerUnit: 3 }, [180, 220, 260, 300]);
+  assert.equal(p.status, "OK");
+  assert.ok(p.scenarios.length > 0);
+  for (const s of p.scenarios) {
+    const live = profitAtPrice(s.price, p.fixedPerUnit!, p.inputs);
+    assert.equal(live.profit, s.profit, `profit at ${s.price}`);
+    assert.equal(live.marginPct, s.marginPct, `margin at ${s.price}`);
+    assert.equal(live.commission, s.commission, `commission at ${s.price}`);
+    assert.equal(live.adCost, s.adCost, `ad cost at ${s.price}`);
+    assert.equal(
+      classifyPrice(s.price, p.minProfitablePrice, p.targetPrice, p.marketCeiling),
+      s.band,
+      `band at ${s.price}`,
+    );
+  }
+});
+
+test("simulator: the component imports the engine and never restates the formula", () => {
+  const src = readFileSync(new URL("../src/components/os/product-intel/price-simulator.tsx", import.meta.url), "utf8");
+  assert.ok(/profitAtPrice/.test(src), "must call the shared profit function");
+  assert.ok(/classifyPrice/.test(src), "must call the shared band classifier");
+  assert.ok(/from "@\/server\/product-intel\/price"/.test(src), "must import them from the one price module");
+  // The arithmetic itself must live in price.ts. These are the shapes a
+  // re-implementation would take.
+  assert.ok(!/netRevenue\s*=\s*[^;]*\/\s*v/.test(src), "must not recompute net revenue");
+  assert.ok(!/1\s*\+\s*\w*[Vv]at\w*\s*\/\s*100/.test(src), "must not rebuild the VAT divisor");
+  assert.ok(!/commissionPct\s*\/\s*100/.test(src), "must not rebuild the commission fraction");
+});
+
+test("simulator: it writes nothing — no action, no mutation, no fetch", () => {
+  const src = readFileSync(new URL("../src/components/os/product-intel/price-simulator.tsx", import.meta.url), "utf8");
+  assert.ok(!/use server/.test(src));
+  assert.ok(!/\bfetch\(/.test(src), "a what-if surface must not call the server");
+  assert.ok(!/Action\b/.test(src), "must not invoke a server action");
 });
 
 test("price: no cost means no price advice at all", () => {

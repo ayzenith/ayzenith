@@ -158,6 +158,40 @@ function priceForMargin(fixedPerUnit: number, inputs: PriceInputs, marginFractio
   return r2(fixedPerUnit / denom);
 }
 
+/**
+ * The range a price slider should span, derived from the points that actually
+ * matter rather than from a guessed constant.
+ *
+ * It is a pure function and lives here, beside the formula, for one reason: the
+ * simulator is a CLIENT component, and everything it computes has to be the
+ * same arithmetic the frozen analysis used. A bound invented inside the
+ * component would be untestable and would drift.
+ *
+ * The span always contains every anchor it was given, with room on both sides,
+ * so break-even, target and the observed market are all reachable by dragging.
+ */
+export function simulatorBounds(a: {
+  minProfitablePrice: number | null;
+  targetPrice: number | null;
+  marketFloor: number | null;
+  marketCeiling: number | null;
+  currentPrice: number;
+}): { min: number; max: number; step: number } {
+  const anchors = [a.minProfitablePrice, a.targetPrice, a.marketFloor, a.marketCeiling, a.currentPrice].filter(
+    (n): n is number => n != null && Number.isFinite(n) && n > 0,
+  );
+  if (anchors.length === 0) return { min: 0, max: 100, step: 1 };
+
+  const lo = Math.min(...anchors);
+  const hi = Math.max(...anchors);
+  // Half an order below the cheapest anchor and half again above the dearest —
+  // enough to drag into loss on one side and out of the market on the other.
+  const min = Math.max(0, Math.floor((lo * 0.5) / 10) * 10);
+  const max = Math.max(Math.ceil((hi * 1.5) / 10) * 10, min + 10);
+  const step = Math.max(1, Math.round((max - min) / 400));
+  return { min, max, step };
+}
+
 export function classifyPrice(
   price: number,
   minProfitable: number | null,
